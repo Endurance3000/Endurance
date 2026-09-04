@@ -1,0 +1,91 @@
+.m3-sidebar {
+  width: var(--sidebar-width);
+  background: var(--md-sys-color-surface-container-low);
+  border-right: 1px solid var(--md-sys-color-outline-variant);
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  padding: var(--space-md) var(--space-sm);
+  user-select: none;
+}
+
+.m3-nav-group {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-xs);
+}
+
+.m3-nav-label {
+  padding: var(--space-xs) var(--space-md);
+  font-family: var(--font-family-base);
+  font-size: 0.6875rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--md-sys-color-on-surface-variant);
+}
+
+.m3-nav-item {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: var(--space-md);
+  padding: var(--space-sm) var(--space-md);
+  border: none;
+  background: transparent;
+  border-radius: var(--radius-full);
+  cursor: pointer;
+  color: var(--md-sys-color-on-surface-variant);
+  font-family: var(--font-family-base);
+  font-size: 0.875rem;
+  font-weight: 500;
+  text-align: left;
+  outline: none;
+  transition: color var(--motion-duration-short-2) var(--motion-easing-standard),
+              transform var(--motion-duration-short-2) var(--motion-easing-standard);
+  overflow: hidden;
+}
+
+.m3-nav-item:hover {
+  color: var(--md-sys-color-on-surface);
+  background: var(--md-sys-color-surface-container);
+}
+
+.m3-nav-item:active {
+  transform: scale(0.98);
+}
+
+.m3-nav-item.active {
+  color: var(--md-sys-color-on-primary-container);
+  font-weight: 600;
+}
+
+.m3-nav-indicator {
+  position: absolute;
+  inset: 0;
+  border-radius: var(--radius-full);
+  background: var(--md-sys-color-primary-container);
+  opacity: 0;
+  z-index: 0;
+  transition: opacity var(--motion-duration-medium-1) var(--motion-easing-emphasized-decelerate);
+}
+
+.m3-nav-item.active .m3-nav-indicator {
+  opacity: 1;
+}
+
+.m3-nav-icon,
+.m3-nav-text {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+}
+
+.m3-nav-footer {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-xs);
+  padding-top: var(--space-sm);
+  border-top: 1px solid var(--md-sys-color-outline-variant);
+}

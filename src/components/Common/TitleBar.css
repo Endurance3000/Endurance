@@ -1,0 +1,92 @@
+.titlebar {
+  height: var(--titlebar-height);
+  background: var(--md-sys-color-surface-container-lowest);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 0 0 var(--space-md);
+  user-select: none;
+  border-bottom: 1px solid var(--md-sys-color-outline-variant);
+  z-index: 1000;
+  -webkit-app-region: drag;
+}
+
+.titlebar-leading {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  color: var(--md-sys-color-on-surface);
+  -webkit-app-region: drag;
+}
+
+.titlebar-logo {
+  color: var(--md-sys-color-primary);
+  display: flex;
+  align-items: center;
+}
+
+.titlebar-title {
+  font-family: var(--font-family-display);
+  font-size: 0.8125rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  color: var(--md-sys-color-on-surface);
+}
+
+.titlebar-badge {
+  font-size: 0.6875rem;
+  font-weight: 600;
+  padding: 1px 6px;
+  background: var(--md-sys-color-surface-container-high);
+  color: var(--md-sys-color-primary);
+  border-radius: var(--radius-full);
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.titlebar-center {
+  flex: 1;
+  height: 100%;
+  -webkit-app-region: drag;
+}
+
+.titlebar-controls {
+  display: flex;
+  height: 100%;
+  -webkit-app-region: no-drag;
+}
+
+.titlebar-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 46px;
+  height: 100%;
+  background: transparent;
+  border: none;
+  color: var(--md-sys-color-on-surface-variant);
+  cursor: pointer;
+  outline: none;
+  transition: background-color var(--motion-duration-short-2) var(--motion-easing-standard),
+              color var(--motion-duration-short-2) var(--motion-easing-standard);
+  -webkit-app-region: no-drag;
+}
+
+.titlebar-btn:hover {
+  background: var(--md-sys-color-surface-container-highest);
+  color: var(--md-sys-color-on-surface);
+}
+
+.titlebar-btn:active {
+  background: var(--md-sys-color-surface-bright);
+}
+
+.titlebar-btn-close:hover {
+  background: #e81123 !important;
+  color: #ffffff !important;
+}
+
+.titlebar-btn-close:active {
+  background: #c40e1d !important;
+  color: #ffffff !important;
+}
