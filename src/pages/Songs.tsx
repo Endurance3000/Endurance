@@ -1,71 +1,39 @@
 import React, { useState } from 'react';
-import { Music, FolderPlus, Heart, MoreHorizontal, Play } from 'lucide-react';
+import { Music, FolderPlus, Heart, MoreHorizontal, Play, RefreshCw, Loader2 } from 'lucide-react';
 import { Button } from '../components/Common/Button';
 import { IconButton } from '../components/Common/IconButton';
 import { SearchField } from '../components/Common/SearchField';
 import { Chip } from '../components/Common/Chip';
 import { EmptyState } from '../components/Common/EmptyState';
+import { TrackArtwork } from '../components/Library/TrackArtwork';
+import { formatDuration } from '../utils/formatters';
+import { Track, LibraryFolder, ScanProgressPayload } from '../types';
 import './Pages.css';
 
-interface DemoTrack {
-  id: string;
-  title: string;
-  artist: string;
-  album: string;
-  duration: string;
-  isFavorite: boolean;
+interface SongsProps {
+  tracks: Track[];
+  folders: LibraryFolder[];
+  isScanning: boolean;
+  scanProgress: ScanProgressPayload | null;
+  onAddFolder: () => Promise<void>;
+  onToggleFavorite: (trackId: string) => Promise<void>;
+  onRescan: () => Promise<void>;
 }
 
-export const Songs: React.FC = () => {
+export const Songs: React.FC<SongsProps> = ({
+  tracks,
+  folders,
+  isScanning,
+  scanProgress,
+  onAddFolder,
+  onToggleFavorite,
+  onRescan,
+}) => {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedFilter, setSelectedFilter] = useState<'all' | 'recent' | 'favorites'>('all');
-  const [favoritesMap, setFavoritesMap] = useState<Record<string, boolean>>({
-    '1': true,
-    '3': true,
-  });
 
-  // Visual layout demonstration tracks showing typography, row hover, and controls
-  const demoTracks: DemoTrack[] = [
-    {
-      id: '1',
-      title: 'Solar Eclipse Phenomenon',
-      artist: 'Celestial Soundscapes',
-      album: 'Universal Harmonies',
-      duration: '4:18',
-      isFavorite: true,
-    },
-    {
-      id: '2',
-      title: 'Midnight Highway Drive',
-      artist: 'Endurance Ensemble',
-      album: 'After Hours',
-      duration: '3:42',
-      isFavorite: false,
-    },
-    {
-      id: '3',
-      title: 'Whispering Pines & Cold Rain',
-      artist: 'Acoustic Solitude',
-      album: 'Northern Forests',
-      duration: '5:05',
-      isFavorite: true,
-    },
-    {
-      id: '4',
-      title: 'Neon Skyline Horizon',
-      artist: 'Digital Odyssey',
-      album: 'Cybernetics',
-      duration: '3:15',
-      isFavorite: false,
-    },
-  ];
-
-  const toggleFavorite = (id: string) => {
-    setFavoritesMap((prev) => ({ ...prev, [id]: !prev[id] }));
-  };
-
-  const filteredTracks = demoTracks.filter((track) => {
-    if (selectedFilter === 'favorites' && !favoritesMap[track.id]) return false;
+  const filteredTracks = tracks.filter((track) => {
+    if (selectedFilter === 'favorites' && !track.is_favorite) return false;
     if (searchQuery.trim() === '') return true;
     const query = searchQuery.toLowerCase();
     return (
@@ -75,13 +43,20 @@ export const Songs: React.FC = () => {
     );
   });
 
+  // Sort by date added if "Recently Added" filter is chosen
+  const displayTracks = selectedFilter === 'recent'
+    ? [...filteredTracks].sort((a, b) => (parseInt(b.date_added, 10) || 0) - (parseInt(a.date_added, 10) || 0))
+    : filteredTracks;
+
   return (
     <div className="page-container motion-fade-in">
       <header className="page-header">
         <div className="header-row">
           <div>
             <h1 className="page-title">Songs</h1>
-            <p className="page-subtitle">Your local audio collection (visual layout foundation)</p>
+            <p className="page-subtitle">
+              {tracks.length === 1 ? '1 track' : `${tracks.length} tracks`} in your local offline library
+            </p>
           </div>
           <div className="header-actions">
             <SearchField
@@ -89,6 +64,16 @@ export const Songs: React.FC = () => {
               onChange={setSearchQuery}
               placeholder="Search songs, artists, albums..."
             />
+            <Button
+              variant="tonal"
+              size="md"
+              icon={isScanning ? <Loader2 size={16} className="spin-animation" /> : <RefreshCw size={16} />}
+              onClick={onRescan}
+              disabled={isScanning || folders.length === 0}
+              title="Rescan configured folders for new or changed music"
+            >
+              {isScanning ? 'Scanning...' : 'Rescan'}
+            </Button>
           </div>
         </div>
 
@@ -98,7 +83,7 @@ export const Songs: React.FC = () => {
             selected={selectedFilter === 'all'}
             onClick={() => setSelectedFilter('all')}
           >
-            All Tracks
+            All Tracks ({tracks.length})
           </Chip>
           <Chip
             selected={selectedFilter === 'recent'}
@@ -111,111 +96,143 @@ export const Songs: React.FC = () => {
             onClick={() => setSelectedFilter('favorites')}
             icon={<Heart size={14} fill={selectedFilter === 'favorites' ? 'currentColor' : 'none'} />}
           >
-            Favorites
+            Favorites ({tracks.filter((t) => t.is_favorite).length})
           </Chip>
         </div>
       </header>
 
-      {/* Songs Table Header */}
-      <div className="songs-table-header">
-        <span className="col-index">#</span>
-        <span className="col-title">Title</span>
-        <span className="col-album">Album</span>
-        <span className="col-duration">Time</span>
-        <span className="col-actions">Actions</span>
-      </div>
+      {/* Real-time Scan Progress Banner */}
+      {isScanning && (
+        <div className="library-scanning-banner">
+          <Loader2 size={18} className="spin-animation scan-spinner" />
+          <div className="scan-banner-info">
+            <span className="scan-banner-title">
+              {scanProgress?.phase === 'indexing'
+                ? `Indexing audio files... (${scanProgress.processed_count} / ${scanProgress.total_discovered})`
+                : 'Traversing directories and discovering audio files...'}
+            </span>
+            {scanProgress?.current_file && (
+              <span className="scan-banner-file truncate">{scanProgress.current_file}</span>
+            )}
+          </div>
+        </div>
+      )}
 
-      {/* Song Rows List */}
-      <div className="songs-list" role="list">
-        {filteredTracks.map((track, idx) => {
-          const isFav = !!favoritesMap[track.id];
-          return (
-            <div
-              key={track.id}
-              className="song-row"
-              role="listitem"
-              tabIndex={0}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter') console.log(`Selected track: ${track.title}`);
-              }}
-            >
-              <div className="col-index">
-                <span className="index-number">{idx + 1}</span>
-                <button
-                  type="button"
-                  className="index-play-btn"
-                  aria-label={`Play ${track.title}`}
-                  title={`Play ${track.title}`}
-                >
-                  <Play size={14} fill="currentColor" />
-                </button>
-              </div>
-
-              <div className="col-title">
-                <div className="song-artwork-thumb">
-                  <Music size={16} />
-                </div>
-                <div className="song-title-group">
-                  <span className="song-row-title">{track.title}</span>
-                  <span className="song-row-artist">{track.artist}</span>
-                </div>
-              </div>
-
-              <div className="col-album">
-                <span className="song-row-album">{track.album}</span>
-              </div>
-
-              <div className="col-duration">
-                <span className="song-row-time">{track.duration}</span>
-              </div>
-
-              <div className="col-actions">
-                <IconButton
-                  icon={
-                    <Heart
-                      size={16}
-                      fill={isFav ? 'currentColor' : 'none'}
-                      color={isFav ? 'var(--md-sys-color-tertiary)' : 'currentColor'}
-                    />
-                  }
-                  aria-label={isFav ? "Remove from favorites" : "Add to favorites"}
-                  onClick={() => toggleFavorite(track.id)}
-                  size="sm"
-                />
-                <IconButton
-                  icon={<MoreHorizontal size={16} />}
-                  aria-label="More options"
-                  size="sm"
-                />
-              </div>
-            </div>
-          );
-        })}
-      </div>
-
-      {filteredTracks.length === 0 && (
+      {/* No Folders Configured Empty State */}
+      {folders.length === 0 && (
         <EmptyState
-          icon={<Music size={36} />}
-          title="No matching tracks found"
-          description={`No songs match "${searchQuery}". Clear your search query to see all songs.`}
-          actionLabel="Clear Search"
-          onAction={() => setSearchQuery('')}
+          icon={<FolderPlus size={38} />}
+          title="No music folder configured"
+          description="Select one or more folders on your computer containing MP3 or M4A files to populate your Endurance library."
+          actionLabel="Add Music Folder"
+          actionIcon={<FolderPlus size={16} />}
+          onAction={onAddFolder}
         />
       )}
 
-      {/* Library Scan Callout Banner */}
-      <div className="library-scanner-notice">
-        <div className="notice-icon">
-          <FolderPlus size={20} />
-        </div>
-        <div className="notice-text">
-          <strong>Local Scanning in Phase 3</strong>
-          <p>This layout demonstrates the visual hierarchy of your music rows. Directory traversal and ID3/M4A metadata extraction will be connected in the upcoming Library phase.</p>
-        </div>
-        <Button variant="tonal" size="sm" icon={<FolderPlus size={16} />}>
-          Scan Folder
-        </Button>
-      </div>
+      {/* Folders Configured but 0 Tracks Found */}
+      {folders.length > 0 && tracks.length === 0 && !isScanning && (
+        <EmptyState
+          icon={<Music size={38} />}
+          title="No supported music found"
+          description="Endurance recursively scanned your configured folder(s), but found no .mp3 or .m4a audio files. Try adding a folder with supported music files."
+          actionLabel="Add Another Folder"
+          actionIcon={<FolderPlus size={16} />}
+          onAction={onAddFolder}
+        />
+      )}
+
+      {/* Tracks Table Header & List */}
+      {tracks.length > 0 && (
+        <>
+          <div className="songs-table-header">
+            <span className="col-index">#</span>
+            <span className="col-title">Title</span>
+            <span className="col-album">Album</span>
+            <span className="col-duration">Time</span>
+            <span className="col-actions">Actions</span>
+          </div>
+
+          <div className="songs-list" role="list">
+            {displayTracks.map((track, idx) => (
+              <div
+                key={track.id}
+                className="song-row"
+                role="listitem"
+                tabIndex={0}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') console.log(`Selected track: ${track.title}`);
+                }}
+              >
+                <div className="col-index">
+                  <span className="index-number">{idx + 1}</span>
+                  <button
+                    type="button"
+                    className="index-play-btn"
+                    aria-label={`Select ${track.title}`}
+                    title={`Select ${track.title}`}
+                  >
+                    <Play size={14} fill="currentColor" />
+                  </button>
+                </div>
+
+                <div className="col-title">
+                  <TrackArtwork
+                    artworkHash={track.artwork_hash}
+                    alt={track.album || track.title}
+                    size="sm"
+                  />
+                  <div className="song-title-group">
+                    <span className="song-row-title truncate">{track.title}</span>
+                    <span className="song-row-artist truncate">{track.artist}</span>
+                  </div>
+                </div>
+
+                <div className="col-album">
+                  <span className="song-row-album truncate">{track.album}</span>
+                </div>
+
+                <div className="col-duration">
+                  <span className="song-row-time">{formatDuration(track.duration)}</span>
+                </div>
+
+                <div className="col-actions">
+                  <IconButton
+                    icon={
+                      <Heart
+                        size={16}
+                        fill={track.is_favorite ? 'currentColor' : 'none'}
+                        color={track.is_favorite ? 'var(--md-sys-color-tertiary)' : 'currentColor'}
+                      />
+                    }
+                    aria-label={track.is_favorite ? 'Remove from favorites' : 'Add to favorites'}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onToggleFavorite(track.id);
+                    }}
+                    size="sm"
+                  />
+                  <IconButton
+                    icon={<MoreHorizontal size={16} />}
+                    aria-label="More options"
+                    size="sm"
+                  />
+                </div>
+              </div>
+            ))}
+          </div>
+
+          {displayTracks.length === 0 && searchQuery && (
+            <EmptyState
+              icon={<Music size={36} />}
+              title="No matching tracks found"
+              description={`No songs match "${searchQuery}". Clear your search query to see all songs.`}
+              actionLabel="Clear Search"
+              onAction={() => setSearchQuery('')}
+            />
+          )}
+        </>
+      )}
     </div>
   );
 };

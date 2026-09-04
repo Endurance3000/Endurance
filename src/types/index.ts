@@ -10,20 +10,50 @@ export interface SystemInfo {
   offline: boolean;
 }
 
-export interface SongMetadata {
-  id?: string;
+export interface LibraryFolder {
+  id: number;
+  path: string;
+  date_added: string;
+  last_scanned: string | null;
+}
+
+export interface Track {
+  id: string;
+  file_path: string;
+  file_name: string;
+  file_size: number;
+  modified_time: number;
   title: string;
   artist: string;
-  album?: string;
-  albumArtist?: string;
-  genre?: string;
-  trackNumber?: number;
-  discNumber?: number;
+  album: string;
+  album_artist?: string | null;
+  genre?: string | null;
+  year?: number | null;
+  track_number?: number | null;
+  disc_number?: number | null;
   duration: number; // in seconds
-  year?: number;
-  artworkUri?: string;
-  filePath: string;
-  isFavorite?: boolean;
+  artwork_hash?: string | null;
+  is_favorite: boolean;
+  is_available: boolean;
+  date_added: string;
+  last_scanned: string;
+}
+
+export interface ScanSummary {
+  discovered_files: number;
+  new_tracks: number;
+  updated_tracks: number;
+  unchanged_tracks: number;
+  missing_tracks: number;
+  total_tracks_in_library: number;
+  errors: string[];
+}
+
+export interface ScanProgressPayload {
+  phase: string;
+  current_file: string;
+  processed_count: number;
+  total_discovered: number;
 }
 
 export type NavigationPage = 'home' | 'songs' | 'favorites' | 'settings';

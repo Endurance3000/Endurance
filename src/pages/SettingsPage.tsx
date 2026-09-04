@@ -1,20 +1,51 @@
 import React, { useState } from 'react';
-import { Palette, PlaySquare, FolderCog, FileText, Volume2, Keyboard, Info, ShieldCheck } from 'lucide-react';
+import {
+  Palette,
+  PlaySquare,
+  FolderCog,
+  FileText,
+  Volume2,
+  Keyboard,
+  Info,
+  ShieldCheck,
+  FolderPlus,
+  Trash2,
+  RefreshCw,
+  Loader2,
+  Folder,
+} from 'lucide-react';
 import { Card } from '../components/Common/Card';
 import { Chip } from '../components/Common/Chip';
-import { SystemInfo } from '../types';
+import { Button } from '../components/Common/Button';
+import { IconButton } from '../components/Common/IconButton';
+import { formatDate } from '../utils/formatters';
+import { SystemInfo, LibraryFolder } from '../types';
 import './Pages.css';
 
 interface SettingsPageProps {
   systemInfo: SystemInfo | null;
+  folders: LibraryFolder[];
+  tracksCount: number;
+  isScanning: boolean;
+  onAddFolder: () => Promise<void>;
+  onRemoveFolder: (path: string) => Promise<void>;
+  onRescan: () => Promise<void>;
 }
 
 type SettingsCategory = 'appearance' | 'playback' | 'library' | 'lyrics' | 'audio' | 'shortcuts' | 'about';
 
-export const SettingsPage: React.FC<SettingsPageProps> = ({ systemInfo }) => {
-  const [activeCategory, setActiveCategory] = useState<SettingsCategory>('appearance');
+export const SettingsPage: React.FC<SettingsPageProps> = ({
+  systemInfo,
+  folders,
+  tracksCount,
+  isScanning,
+  onAddFolder,
+  onRemoveFolder,
+  onRescan,
+}) => {
+  const [activeCategory, setActiveCategory] = useState<SettingsCategory>('library');
 
-  // Interactive toggle states for design feedback
+  // Interactive toggle states
   const [dynamicColor, setDynamicColor] = useState(true);
   const [highContrast, setHighContrast] = useState(false);
   const [gaplessPlayback, setGaplessPlayback] = useState(true);
@@ -22,9 +53,9 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({ systemInfo }) => {
   const [hardwareAcceleration, setHardwareAcceleration] = useState(true);
 
   const categories = [
+    { id: 'library', label: 'Library', icon: <FolderCog size={16} /> },
     { id: 'appearance', label: 'Appearance', icon: <Palette size={16} /> },
     { id: 'playback', label: 'Playback', icon: <PlaySquare size={16} /> },
-    { id: 'library', label: 'Library', icon: <FolderCog size={16} /> },
     { id: 'lyrics', label: 'Lyrics', icon: <FileText size={16} /> },
     { id: 'audio', label: 'Audio', icon: <Volume2 size={16} /> },
     { id: 'shortcuts', label: 'Shortcuts', icon: <Keyboard size={16} /> },
@@ -55,6 +86,89 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({ systemInfo }) => {
       </div>
 
       <div className="settings-content-area">
+        {/* Library Settings */}
+        {activeCategory === 'library' && (
+          <Card variant="filled" padding="lg" className="settings-section-card motion-fade-in">
+            <div className="settings-header-action-row">
+              <div>
+                <h2 className="settings-section-title">Music Library Folders</h2>
+                <p className="settings-section-desc">
+                  Manage indexed directories on your Windows computer ({folders.length} configured, {tracksCount} tracks indexed)
+                </p>
+              </div>
+              <div className="settings-header-buttons">
+                <Button
+                  variant="tonal"
+                  size="sm"
+                  icon={isScanning ? <Loader2 size={15} className="spin-animation" /> : <RefreshCw size={15} />}
+                  onClick={onRescan}
+                  disabled={isScanning || folders.length === 0}
+                >
+                  {isScanning ? 'Scanning...' : 'Rescan All'}
+                </Button>
+                <Button
+                  variant="filled"
+                  size="sm"
+                  icon={<FolderPlus size={15} />}
+                  onClick={onAddFolder}
+                  disabled={isScanning}
+                >
+                  Add Folder
+                </Button>
+              </div>
+            </div>
+
+            {/* Configured Folders List */}
+            <div className="folders-list">
+              {folders.length === 0 ? (
+                <div className="folders-empty-notice">
+                  <Folder size={24} className="folders-empty-icon" />
+                  <span>No music folders added yet. Click &quot;Add Folder&quot; to pick your music directory.</span>
+                </div>
+              ) : (
+                folders.map((folder) => (
+                  <div key={folder.id} className="folder-item-row">
+                    <div className="folder-item-icon">
+                      <Folder size={18} />
+                    </div>
+                    <div className="folder-item-details">
+                      <span className="folder-item-path truncate">{folder.path}</span>
+                      <span className="folder-item-meta">
+                        Last scanned: {folder.last_scanned ? formatDate(folder.last_scanned) : 'Never'}
+                      </span>
+                    </div>
+                    <IconButton
+                      icon={<Trash2 size={16} />}
+                      aria-label={`Remove folder ${folder.path}`}
+                      tooltip="Remove folder from library"
+                      onClick={() => onRemoveFolder(folder.path)}
+                      size="sm"
+                    />
+                  </div>
+                ))
+              )}
+            </div>
+
+            <div className="settings-row">
+              <div>
+                <div className="setting-label">Supported Formats</div>
+                <div className="setting-sublabel">Case-insensitive offline formats: MP3 (.mp3) and AAC/M4A (.m4a)</div>
+              </div>
+              <span className="setting-badge">MP3 & M4A</span>
+            </div>
+
+            <div className="settings-row">
+              <div>
+                <div className="setting-label">File Safety Principle</div>
+                <div className="setting-sublabel">
+                  Endurance never moves, renames, or modifies your local audio files. Scanning is strictly read-only.
+                </div>
+              </div>
+              <span className="setting-badge setting-badge-success">Read-Only Safe</span>
+            </div>
+          </Card>
+        )}
+
         {/* Appearance Settings */}
         {activeCategory === 'appearance' && (
           <Card variant="filled" padding="lg" className="settings-section-card motion-fade-in">
@@ -132,30 +246,6 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({ systemInfo }) => {
                 <div className="setting-sublabel">Duration skipped when using Left/Right arrow keys</div>
               </div>
               <span className="setting-badge">5 seconds</span>
-            </div>
-          </Card>
-        )}
-
-        {/* Library Settings */}
-        {activeCategory === 'library' && (
-          <Card variant="filled" padding="lg" className="settings-section-card motion-fade-in">
-            <h2 className="settings-section-title">Music Library</h2>
-            <p className="settings-section-desc">Manage indexed folders and local file references</p>
-
-            <div className="settings-row">
-              <div>
-                <div className="setting-label">Supported Formats</div>
-                <div className="setting-sublabel">Initial offline audio formats: MP3 (.mp3) and AAC/M4A (.m4a)</div>
-              </div>
-              <span className="setting-badge">MP3 & M4A</span>
-            </div>
-
-            <div className="settings-row">
-              <div>
-                <div className="setting-label">Storage Principle</div>
-                <div className="setting-sublabel">Direct filesystem references without duplicating audio files</div>
-              </div>
-              <span className="setting-badge setting-badge-success">Local Reference</span>
             </div>
           </Card>
         )}

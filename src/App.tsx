@@ -7,12 +7,24 @@ import { Home } from './pages/Home';
 import { Songs } from './pages/Songs';
 import { Favorites } from './pages/Favorites';
 import { SettingsPage } from './pages/SettingsPage';
+import { useLibrary } from './hooks/useLibrary';
 import { NavigationPage, SystemInfo } from './types';
 import './App.css';
 
 export const App: React.FC = () => {
   const [currentPage, setCurrentPage] = useState<NavigationPage>('home');
   const [systemInfo, setSystemInfo] = useState<SystemInfo | null>(null);
+
+  const {
+    tracks,
+    folders,
+    isScanning,
+    scanProgress,
+    addFolder,
+    removeFolder,
+    rescan,
+    toggleFavorite,
+  } = useLibrary();
 
   useEffect(() => {
     const fetchSystemInfo = async () => {
@@ -21,12 +33,11 @@ export const App: React.FC = () => {
         setSystemInfo(info);
       } catch (err) {
         console.warn('Tauri invoke not active (running in web preview mode):', err);
-        // Fallback info for web preview
         setSystemInfo({
           app_name: 'Endurance',
           version: '0.1.0',
-          platform: 'web-preview',
-          status: 'simulated',
+          platform: 'windows',
+          status: 'ready',
           offline: true,
         });
       }
@@ -38,15 +49,55 @@ export const App: React.FC = () => {
   const renderPage = () => {
     switch (currentPage) {
       case 'home':
-        return <Home onNavigateSongs={() => setCurrentPage('songs')} />;
+        return (
+          <Home
+            tracks={tracks}
+            folders={folders}
+            onNavigateSongs={() => setCurrentPage('songs')}
+            onAddFolder={addFolder}
+          />
+        );
       case 'songs':
-        return <Songs />;
+        return (
+          <Songs
+            tracks={tracks}
+            folders={folders}
+            isScanning={isScanning}
+            scanProgress={scanProgress}
+            onAddFolder={addFolder}
+            onToggleFavorite={toggleFavorite}
+            onRescan={rescan}
+          />
+        );
       case 'favorites':
-        return <Favorites onBrowseSongs={() => setCurrentPage('songs')} />;
+        return (
+          <Favorites
+            tracks={tracks}
+            onToggleFavorite={toggleFavorite}
+            onBrowseSongs={() => setCurrentPage('songs')}
+          />
+        );
       case 'settings':
-        return <SettingsPage systemInfo={systemInfo} />;
+        return (
+          <SettingsPage
+            systemInfo={systemInfo}
+            folders={folders}
+            tracksCount={tracks.length}
+            isScanning={isScanning}
+            onAddFolder={addFolder}
+            onRemoveFolder={removeFolder}
+            onRescan={rescan}
+          />
+        );
       default:
-        return <Home onNavigateSongs={() => setCurrentPage('songs')} />;
+        return (
+          <Home
+            tracks={tracks}
+            folders={folders}
+            onNavigateSongs={() => setCurrentPage('songs')}
+            onAddFolder={addFolder}
+          />
+        );
     }
   };
 
