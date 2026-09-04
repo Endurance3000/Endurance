@@ -1,0 +1,42 @@
+.m3-divider {
+  background: var(--md-sys-color-outline-variant);
+  flex-shrink: 0;
+}
+
+.m3-divider-horizontal {
+  height: 1px;
+  width: 100%;
+}
+
+.m3-divider-vertical {
+  width: 1px;
+  height: 100%;
+}
+
+.m3-divider-space-none {
+  margin: 0;
+}
+
+.m3-divider-space-sm.m3-divider-horizontal {
+  margin: var(--space-sm) 0;
+}
+
+.m3-divider-space-md.m3-divider-horizontal {
+  margin: var(--space-md) 0;
+}
+
+.m3-divider-space-lg.m3-divider-horizontal {
+  margin: var(--space-xl) 0;
+}
+
+.m3-divider-space-sm.m3-divider-vertical {
+  margin: 0 var(--space-sm);
+}
+
+.m3-divider-space-md.m3-divider-vertical {
+  margin: 0 var(--space-md);
+}
+
+.m3-divider-space-lg.m3-divider-vertical {
+  margin: 0 var(--space-xl);
+}

@@ -1,4 +1,4 @@
-.m3-button {
+.m3-btn {
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -11,76 +11,100 @@
   user-select: none;
   white-space: nowrap;
   outline: none;
+  position: relative;
   transition: transform var(--motion-duration-short-2) var(--motion-easing-standard-decelerate),
               background-color var(--motion-duration-short-3) var(--motion-easing-standard),
-              box-shadow var(--motion-duration-short-3) var(--motion-easing-standard),
-              border-color var(--motion-duration-short-3) var(--motion-easing-standard);
+              color var(--motion-duration-short-3) var(--motion-easing-standard),
+              border-color var(--motion-duration-short-3) var(--motion-easing-standard),
+              box-shadow var(--motion-duration-short-3) var(--motion-easing-standard);
 }
 
-.m3-button:active {
+.m3-btn:active:not(:disabled) {
   transform: scale(0.97);
 }
 
+.m3-btn:disabled {
+  opacity: 0.38;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.m3-btn-full {
+  width: 100%;
+}
+
 /* Sizes */
-.m3-button-sm {
+.m3-btn-sm {
   height: 32px;
   padding: 0 var(--space-md);
   font-size: 0.8125rem;
 }
 
-.m3-button-md {
+.m3-btn-md {
   height: 40px;
   padding: 0 var(--space-xl);
   font-size: 0.875rem;
 }
 
-.m3-button-lg {
+.m3-btn-lg {
   height: 48px;
   padding: 0 var(--space-2xl);
   font-size: 1rem;
 }
 
-/* Variants */
-.m3-button-primary {
+/* Filled Variant (Primary) */
+.m3-btn-filled {
   background: var(--md-sys-color-primary);
   color: var(--md-sys-color-on-primary);
   box-shadow: var(--elevation-1);
 }
 
-.m3-button-primary:hover {
+.m3-btn-filled:hover:not(:disabled) {
   background: #bae6fd;
   box-shadow: var(--elevation-2);
 }
 
-.m3-button-tonal {
+/* Tonal Variant */
+.m3-btn-tonal {
   background: var(--md-sys-color-surface-container-high);
   color: var(--md-sys-color-on-surface);
   border-color: var(--md-sys-color-outline-variant);
 }
 
-.m3-button-tonal:hover {
+.m3-btn-tonal:hover:not(:disabled) {
   background: var(--md-sys-color-surface-container-highest);
+  color: #ffffff;
 }
 
-.m3-button-secondary {
-  background: var(--md-sys-color-secondary-container);
-  color: var(--md-sys-color-on-secondary-container);
+/* Outlined Variant */
+.m3-btn-outlined {
+  background: transparent;
+  color: var(--md-sys-color-primary);
+  border-color: var(--md-sys-color-outline);
 }
 
-.m3-button-secondary:hover {
-  background: #1e40af;
+.m3-btn-outlined:hover:not(:disabled) {
+  background: var(--md-sys-color-surface-container);
+  border-color: var(--md-sys-color-primary);
 }
 
-.m3-button-text {
+/* Text Variant */
+.m3-btn-text {
   background: transparent;
   color: var(--md-sys-color-primary);
 }
 
-.m3-button-text:hover {
-  background: var(--md-sys-color-surface-container-high);
+.m3-btn-text:hover:not(:disabled) {
+  background: var(--md-sys-color-surface-container);
 }
 
-.m3-button-icon {
+.m3-btn-icon {
+  display: flex;
+  align-items: center;
+  flex-shrink: 0;
+}
+
+.m3-btn-label {
   display: flex;
   align-items: center;
 }

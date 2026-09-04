@@ -1,0 +1,46 @@
+.m3-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-xs);
+  height: 32px;
+  padding: 0 var(--space-md);
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--md-sys-color-outline-variant);
+  background: var(--md-sys-color-surface-container);
+  color: var(--md-sys-color-on-surface-variant);
+  font-family: var(--font-family-base);
+  font-size: 0.8125rem;
+  font-weight: 500;
+  cursor: pointer;
+  user-select: none;
+  outline: none;
+  white-space: nowrap;
+  transition: all var(--motion-duration-short-2) var(--motion-easing-standard);
+}
+
+.m3-chip:hover {
+  background: var(--md-sys-color-surface-container-high);
+  color: var(--md-sys-color-on-surface);
+  border-color: var(--md-sys-color-outline);
+}
+
+.m3-chip:active {
+  transform: scale(0.96);
+}
+
+.m3-chip.selected {
+  background: var(--md-sys-color-primary-container);
+  color: var(--md-sys-color-on-primary-container);
+  border-color: transparent;
+  font-weight: 600;
+}
+
+.m3-chip.selected:hover {
+  background: #0e5a84;
+}
+
+.m3-chip-icon {
+  display: flex;
+  align-items: center;
+  color: inherit;
+}

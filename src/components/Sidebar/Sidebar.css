@@ -4,25 +4,29 @@
   border-right: 1px solid var(--md-sys-color-outline-variant);
   display: flex;
   flex-direction: column;
-  justify-content: space-between;
   padding: var(--space-md) var(--space-sm);
   user-select: none;
+  flex-shrink: 0;
+}
+
+.m3-sidebar-brand {
+  padding: var(--space-xs) var(--space-md) var(--space-sm);
+}
+
+.m3-nav-label {
+  font-family: var(--font-family-base);
+  font-size: 0.6875rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--md-sys-color-on-surface-variant);
 }
 
 .m3-nav-group {
   display: flex;
   flex-direction: column;
   gap: var(--space-xs);
-}
-
-.m3-nav-label {
-  padding: var(--space-xs) var(--space-md);
-  font-family: var(--font-family-base);
-  font-size: 0.6875rem;
-  font-weight: 600;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  color: var(--md-sys-color-on-surface-variant);
+  flex: 1;
 }
 
 .m3-nav-item {
@@ -30,7 +34,8 @@
   display: flex;
   align-items: center;
   gap: var(--space-md);
-  padding: var(--space-sm) var(--space-md);
+  padding: var(--space-sm) var(--space-lg);
+  height: 44px;
   border: none;
   background: transparent;
   border-radius: var(--radius-full);
@@ -42,7 +47,7 @@
   text-align: left;
   outline: none;
   transition: color var(--motion-duration-short-2) var(--motion-easing-standard),
-              transform var(--motion-duration-short-2) var(--motion-easing-standard);
+              transform var(--motion-duration-short-1) var(--motion-easing-standard);
   overflow: hidden;
 }
 
@@ -66,12 +71,15 @@
   border-radius: var(--radius-full);
   background: var(--md-sys-color-primary-container);
   opacity: 0;
+  transform: scale(0.92);
   z-index: 0;
-  transition: opacity var(--motion-duration-medium-1) var(--motion-easing-emphasized-decelerate);
+  transition: opacity var(--motion-duration-medium-1) var(--motion-easing-emphasized-decelerate),
+              transform var(--motion-duration-medium-1) var(--motion-easing-emphasized-decelerate);
 }
 
 .m3-nav-item.active .m3-nav-indicator {
   opacity: 1;
+  transform: scale(1);
 }
 
 .m3-nav-icon,

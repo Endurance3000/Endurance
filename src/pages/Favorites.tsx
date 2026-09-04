@@ -1,24 +1,29 @@
 import React from 'react';
-import { Heart } from 'lucide-react';
+import { Heart, Music2 } from 'lucide-react';
+import { EmptyState } from '../components/Common/EmptyState';
 import './Pages.css';
 
-export const Favorites: React.FC = () => {
+interface FavoritesProps {
+  onBrowseSongs?: () => void;
+}
+
+export const Favorites: React.FC<FavoritesProps> = ({ onBrowseSongs }) => {
   return (
-    <div className="page-container">
+    <div className="page-container motion-fade-in">
       <header className="page-header">
         <h1 className="page-title">Favorites</h1>
-        <p className="page-subtitle">Tracks you've marked as favorites</p>
+        <p className="page-subtitle">Your personal collection of loved tracks</p>
       </header>
 
-      <div className="empty-state-card">
-        <div className="empty-state-icon">
-          <Heart size={48} />
-        </div>
-        <h2 className="empty-state-title">No favorites yet</h2>
-        <p className="empty-state-description">
-          Songs you mark with a heart will be saved locally to your SQLite database and appear here.
-        </p>
-      </div>
+      <EmptyState
+        icon={<Heart size={38} color="var(--md-sys-color-tertiary)" />}
+        title="Your Favorite Songs"
+        description="Tracks you mark with a heart while browsing or playing will be saved locally to your Endurance database and gathered here for quick listening."
+        actionLabel="Explore Your Library"
+        actionIcon={<Music2 size={16} />}
+        actionVariant="tonal"
+        onAction={onBrowseSongs}
+      />
     </div>
   );
 };

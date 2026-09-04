@@ -1,0 +1,94 @@
+.m3-icon-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--radius-full);
+  border: 1px solid transparent;
+  cursor: pointer;
+  user-select: none;
+  outline: none;
+  position: relative;
+  background: transparent;
+  color: var(--md-sys-color-on-surface-variant);
+  transition: transform var(--motion-duration-short-2) var(--motion-easing-standard-decelerate),
+              background-color var(--motion-duration-short-2) var(--motion-easing-standard),
+              color var(--motion-duration-short-2) var(--motion-easing-standard),
+              border-color var(--motion-duration-short-2) var(--motion-easing-standard),
+              box-shadow var(--motion-duration-short-2) var(--motion-easing-standard);
+}
+
+.m3-icon-btn:active:not(:disabled) {
+  transform: scale(0.93);
+}
+
+.m3-icon-btn:disabled {
+  opacity: 0.38;
+  cursor: not-allowed;
+  transform: none;
+}
+
+/* Sizes */
+.m3-icon-btn-sm {
+  width: 32px;
+  height: 32px;
+}
+
+.m3-icon-btn-md {
+  width: 40px;
+  height: 40px;
+}
+
+.m3-icon-btn-lg {
+  width: 48px;
+  height: 48px;
+}
+
+/* Variants */
+.m3-icon-btn-standard:hover:not(:disabled) {
+  background: var(--md-sys-color-surface-container-highest);
+  color: var(--md-sys-color-on-surface);
+}
+
+.m3-icon-btn-standard.selected {
+  color: var(--md-sys-color-primary);
+  background: var(--md-sys-color-primary-container);
+}
+
+.m3-icon-btn-filled {
+  background: var(--md-sys-color-primary);
+  color: var(--md-sys-color-on-primary);
+  box-shadow: var(--elevation-1);
+}
+
+.m3-icon-btn-filled:hover:not(:disabled) {
+  background: #bae6fd;
+  box-shadow: var(--elevation-2);
+}
+
+.m3-icon-btn-tonal {
+  background: var(--md-sys-color-surface-container-high);
+  color: var(--md-sys-color-on-surface);
+  border-color: var(--md-sys-color-outline-variant);
+}
+
+.m3-icon-btn-tonal:hover:not(:disabled) {
+  background: var(--md-sys-color-surface-container-highest);
+  color: #ffffff;
+}
+
+.m3-icon-btn-outlined {
+  border-color: var(--md-sys-color-outline);
+  color: var(--md-sys-color-on-surface-variant);
+}
+
+.m3-icon-btn-outlined:hover:not(:disabled) {
+  background: var(--md-sys-color-surface-container);
+  border-color: var(--md-sys-color-on-surface);
+  color: var(--md-sys-color-on-surface);
+}
+
+.m3-icon-btn-inner {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}

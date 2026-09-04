@@ -1,48 +1,77 @@
 /**
- * Material 3 Expressive Design Tokens for Endurance
- * Color roles, surfaces, radii, and elevation
+ * Material 3 Expressive Design System Tokens for Endurance
+ * Fully semantic dark-first color architecture, tonal surfaces, spacing, and shape
  */
 
 :root {
-  /* Surface hierarchy (Dark mode primary for desktop music player) */
-  --md-sys-color-surface: #0e131b;
-  --md-sys-color-surface-dim: #090d13;
-  --md-sys-color-surface-bright: #1b2330;
-  
-  --md-sys-color-surface-container-lowest: #070a0f;
-  --md-sys-color-surface-container-low: #111722;
-  --md-sys-color-surface-container: #161e2b;
-  --md-sys-color-surface-container-high: #1d2636;
-  --md-sys-color-surface-container-highest: #242f42;
+  /* ==========================================================================
+     COLOR SYSTEM (Semantic Dark Tonal Palette)
+     ========================================================================== */
 
-  /* On-surface text & icons */
+  /* Surface Container Hierarchy (Tonal elevation replaces heavy drop shadows) */
+  --md-sys-color-background: #090d13;
+  --md-sys-color-on-background: #e2e8f0;
+
+  --md-sys-color-surface: #0d1219;
+  --md-sys-color-surface-dim: #080c12;
+  --md-sys-color-surface-bright: #1c2432;
+  
+  --md-sys-color-surface-container-lowest: #05080c;
+  --md-sys-color-surface-container-low: #0f1520;
+  --md-sys-color-surface-container: #141b27;
+  --md-sys-color-surface-container-high: #1b2332;
+  --md-sys-color-surface-container-highest: #232d3f;
+
+  /* On-Surface Text & Content */
   --md-sys-color-on-surface: #e2e8f0;
   --md-sys-color-on-surface-variant: #94a3b8;
+  --md-sys-color-surface-variant: #1e2838;
+
+  /* Outlines & Borders */
   --md-sys-color-outline: #334155;
   --md-sys-color-outline-variant: #1e293b;
+  --md-sys-color-outline-subtle: rgba(255, 255, 255, 0.06);
 
-  /* Accent & Primary Roles */
+  /* Primary Role (Sky Cyan / Pixel-inspired vibrant accent) */
   --md-sys-color-primary: #7dd3fc;
   --md-sys-color-on-primary: #082f49;
   --md-sys-color-primary-container: #0c4a6e;
   --md-sys-color-on-primary-container: #e0f2fe;
 
-  /* Secondary & Tertiary */
+  /* Secondary Role (Soft Indigo / Lavender) */
   --md-sys-color-secondary: #93c5fd;
   --md-sys-color-on-secondary: #172554;
   --md-sys-color-secondary-container: #1e3a8a;
   --md-sys-color-on-secondary-container: #dbeafe;
 
+  /* Tertiary Role (Coral Rose / Warm Expressive) */
   --md-sys-color-tertiary: #f472b6;
   --md-sys-color-on-tertiary: #500724;
   --md-sys-color-tertiary-container: #831843;
   --md-sys-color-on-tertiary-container: #fce7f3;
 
-  /* Error */
+  /* Functional Status Roles */
   --md-sys-color-error: #f87171;
   --md-sys-color-on-error: #450a0a;
+  --md-sys-color-error-container: #7f1d1d;
+  --md-sys-color-on-error-container: #fee2e2;
 
-  /* Spacing Tokens (4px base scale) */
+  --md-sys-color-warning: #fbbf24;
+  --md-sys-color-on-warning: #451a03;
+  --md-sys-color-warning-container: #78350f;
+  --md-sys-color-on-warning-container: #fef3c7;
+
+  --md-sys-color-success: #34d399;
+  --md-sys-color-on-success: #022c22;
+  --md-sys-color-success-container: #064e3b;
+  --md-sys-color-on-success-container: #d1fae5;
+
+  /* Focus Indicator Ring */
+  --md-sys-color-focus-ring: #38bdf8;
+
+  /* ==========================================================================
+     SPACING SYSTEM (4px Grid)
+     ========================================================================== */
   --space-2xs: 2px;
   --space-xs: 4px;
   --space-sm: 8px;
@@ -52,26 +81,31 @@
   --space-2xl: 24px;
   --space-3xl: 32px;
   --space-4xl: 48px;
+  --space-5xl: 64px;
 
-  /* Corner Radii (M3 Expressive: generous, rounded, tactile) */
-  --radius-xs: 4px;
-  --radius-sm: 8px;
-  --radius-md: 12px;
-  --radius-lg: 16px;
-  --radius-xl: 20px;
-  --radius-2xl: 28px;
-  --radius-full: 9999px;
+  /* ==========================================================================
+     SHAPE & RADIUS SYSTEM (Material 3 Expressive)
+     ========================================================================== */
+  --radius-xs: 4px;        /* Tooltips, indicators */
+  --radius-sm: 8px;        /* Small buttons, badges, chips */
+  --radius-md: 12px;       /* Input fields, song rows, small cards */
+  --radius-lg: 16px;       /* Standard cards, dialogs, artwork preview */
+  --radius-xl: 20px;       /* Hero cards, elevated containers */
+  --radius-2xl: 28px;      /* Large surfaces, modal dialogs */
+  --radius-full: 9999px;   /* Pills, primary action buttons, search bar */
 
-  /* Shadows / Elevation */
+  /* ==========================================================================
+     ELEVATION (Subtle ambient depth supporting tonal surfaces)
+     ========================================================================== */
   --elevation-0: none;
-  --elevation-1: 0 1px 3px rgba(0, 0, 0, 0.35), 0 1px 2px rgba(0, 0, 0, 0.25);
-  --elevation-2: 0 4px 12px rgba(0, 0, 0, 0.4), 0 2px 4px rgba(0, 0, 0, 0.25);
-  --elevation-3: 0 8px 24px rgba(0, 0, 0, 0.5), 0 4px 8px rgba(0, 0, 0, 0.3);
+  --elevation-1: 0 1px 3px rgba(0, 0, 0, 0.3), 0 1px 2px rgba(0, 0, 0, 0.2);
+  --elevation-2: 0 4px 14px rgba(0, 0, 0, 0.35), 0 2px 4px rgba(0, 0, 0, 0.2);
+  --elevation-3: 0 8px 28px rgba(0, 0, 0, 0.45), 0 4px 10px rgba(0, 0, 0, 0.25);
 
-  /* Title bar height */
+  /* ==========================================================================
+     SHELL LAYOUT MEASUREMENTS
+     ========================================================================== */
   --titlebar-height: 38px;
-  /* Sidebar width */
-  --sidebar-width: 220px;
-  /* Player bar height */
+  --sidebar-width: 230px;
   --player-bar-height: 84px;
 }

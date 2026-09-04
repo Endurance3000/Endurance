@@ -1,5 +1,6 @@
 /**
  * Material 3 Motion CSS Tokens and Animation Utilities
+ * Reference: https://m3.material.io/styles/motion/overview/how-it-works
  */
 
 :root {
@@ -29,6 +30,43 @@
   --motion-duration-long-4: 600ms;
 }
 
+/* Common Motion Utilities */
+.motion-fade-in {
+  animation: m3FadeIn var(--motion-duration-medium-2) var(--motion-easing-standard-decelerate) forwards;
+}
+
+.motion-scale-in {
+  animation: m3ScaleIn var(--motion-duration-medium-2) var(--motion-easing-emphasized-decelerate) forwards;
+}
+
+@keyframes m3FadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes m3ScaleIn {
+  from {
+    opacity: 0;
+    transform: scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+/* Interactive Focus Outline Standard */
+:focus-visible {
+  outline: 2px solid var(--md-sys-color-focus-ring);
+  outline-offset: 2px;
+}
+
 /* Accessibility: Reduced motion support */
 @media (prefers-reduced-motion: reduce) {
   :root {
@@ -49,9 +87,9 @@
   }
 
   *, *::before, *::after {
-    animation-duration: 0.01ms !important;
+    animation-duration: 0.001ms !important;
     animation-iteration-count: 1 !important;
-    transition-duration: 0.01ms !important;
+    transition-duration: 0.001ms !important;
     scroll-behavior: auto !important;
   }
 }

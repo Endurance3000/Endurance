@@ -42,7 +42,7 @@ export const App: React.FC = () => {
       case 'songs':
         return <Songs />;
       case 'favorites':
-        return <Favorites />;
+        return <Favorites onBrowseSongs={() => setCurrentPage('songs')} />;
       case 'settings':
         return <SettingsPage systemInfo={systemInfo} />;
       default:
