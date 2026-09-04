@@ -1,8 +1,9 @@
 import React from 'react';
-import { Heart, Music2, Play, MoreHorizontal } from 'lucide-react';
+import { Heart, Music2, Play, Pause, MoreHorizontal } from 'lucide-react';
 import { EmptyState } from '../components/Common/EmptyState';
 import { IconButton } from '../components/Common/IconButton';
 import { TrackArtwork } from '../components/Library/TrackArtwork';
+import { usePlayback } from '../state/PlaybackContext';
 import { formatDuration } from '../utils/formatters';
 import { Track } from '../types';
 import './Pages.css';
@@ -19,6 +20,7 @@ export const Favorites: React.FC<FavoritesProps> = ({
   onBrowseSongs,
 }) => {
   const favoriteTracks = tracks.filter((t) => t.is_favorite);
+  const { currentTrack, isPlaying, playTrack, togglePlay } = usePlayback();
 
   return (
     <div className="page-container motion-fade-in">
@@ -52,24 +54,47 @@ export const Favorites: React.FC<FavoritesProps> = ({
           </div>
 
           <div className="songs-list" role="list">
-            {favoriteTracks.map((track, idx) => (
-              <div
-                key={track.id}
-                className="song-row"
-                role="listitem"
-                tabIndex={0}
-              >
-                <div className="col-index">
-                  <span className="index-number">{idx + 1}</span>
-                  <button
-                    type="button"
-                    className="index-play-btn"
-                    aria-label={`Play ${track.title}`}
-                    title={`Play ${track.title}`}
-                  >
-                    <Play size={14} fill="currentColor" />
-                  </button>
-                </div>
+            {favoriteTracks.map((track, idx) => {
+              const isCurrentTrack = currentTrack?.id === track.id;
+              const isRowPlaying = isCurrentTrack && isPlaying;
+              const handleSelectTrack = () => {
+                if (isCurrentTrack) {
+                  togglePlay();
+                } else {
+                  playTrack(track, favoriteTracks);
+                }
+              };
+
+              return (
+                <div
+                  key={track.id}
+                  className={`song-row ${isCurrentTrack ? 'song-row-active' : ''}`}
+                  role="listitem"
+                  tabIndex={0}
+                  onClick={handleSelectTrack}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') handleSelectTrack();
+                  }}
+                >
+                  <div className="col-index">
+                    <span className="index-number">{idx + 1}</span>
+                    <button
+                      type="button"
+                      className="index-play-btn"
+                      aria-label={isRowPlaying ? `Pause ${track.title}` : `Play ${track.title}`}
+                      title={isRowPlaying ? `Pause ${track.title}` : `Play ${track.title}`}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleSelectTrack();
+                      }}
+                    >
+                      {isRowPlaying ? (
+                        <Pause size={14} fill="currentColor" />
+                      ) : (
+                        <Play size={14} fill="currentColor" />
+                      )}
+                    </button>
+                  </div>
 
                 <div className="col-title">
                   <TrackArtwork
@@ -114,7 +139,8 @@ export const Favorites: React.FC<FavoritesProps> = ({
                   />
                 </div>
               </div>
-            ))}
+            );
+          })}
           </div>
         </>
       )}

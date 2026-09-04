@@ -1,31 +1,134 @@
-import React, { useState } from 'react';
-import { Play, Pause, SkipBack, SkipForward, Shuffle, Repeat, Volume2, VolumeX, Music2 } from 'lucide-react';
+import React, { useState, useRef } from 'react';
+import { Play, Pause, SkipBack, SkipForward, Shuffle, Repeat, Volume2, Volume1, VolumeX, AlertCircle, Loader2 } from 'lucide-react';
 import { IconButton } from '../Common/IconButton';
+import { TrackArtwork } from '../Library/TrackArtwork';
+import { usePlayback } from '../../state/PlaybackContext';
+import { formatDuration } from '../../utils/formatters';
 import './PlayerBar.css';
 
 export const PlayerBar: React.FC = () => {
-  const [isPlaying, setIsPlaying] = useState(false);
-  const [isShuffle, setIsShuffle] = useState(false);
-  const [repeatMode, setRepeatMode] = useState<'off' | 'all' | 'one'>('off');
-  const [volume, setVolume] = useState(75);
-  const [isMuted, setIsMuted] = useState(false);
+  const {
+    currentTrack,
+    isPlaying,
+    currentTime,
+    duration,
+    volume,
+    isMuted,
+    shuffleEnabled,
+    repeatMode,
+    playbackError,
+    isLoading,
+    togglePlay,
+    seek,
+    nextTrack,
+    prevTrack,
+    setVolume,
+    toggleMute,
+    toggleShuffle,
+    toggleRepeat,
+    clearError,
+  } = usePlayback();
 
-  const toggleRepeat = () => {
-    if (repeatMode === 'off') setRepeatMode('all');
-    else if (repeatMode === 'all') setRepeatMode('one');
-    else setRepeatMode('off');
+  // Local scrubbing state for fluid seekbar dragging
+  const [isScrubbing, setIsScrubbing] = useState(false);
+  const [scrubTime, setScrubTime] = useState(0);
+  const timelineTrackRef = useRef<HTMLDivElement>(null);
+  const volumeTrackRef = useRef<HTMLDivElement>(null);
+
+  // Calculate seek percentage
+  const displayTime = isScrubbing ? scrubTime : currentTime;
+  const progressPercent = duration > 0 ? Math.min(100, Math.max(0, (displayTime / duration) * 100)) : 0;
+  const remainingTime = duration > displayTime ? duration - displayTime : 0;
+
+  // Timeline scrub handling with window listeners for pointer capture
+  const handleTimelinePointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
+    if (!timelineTrackRef.current || duration <= 0) return;
+    const rect = timelineTrackRef.current.getBoundingClientRect();
+    const calculateTime = (clientX: number) => {
+      const ratio = Math.max(0, Math.min(1, (clientX - rect.left) / rect.width));
+      return ratio * duration;
+    };
+
+    const initialTime = calculateTime(e.clientX);
+    setIsScrubbing(true);
+    setScrubTime(initialTime);
+
+    const onPointerMove = (moveEv: PointerEvent) => {
+      setScrubTime(calculateTime(moveEv.clientX));
+    };
+
+    const onPointerUp = (upEv: PointerEvent) => {
+      const finalTime = calculateTime(upEv.clientX);
+      seek(finalTime);
+      setIsScrubbing(false);
+      window.removeEventListener('pointermove', onPointerMove);
+      window.removeEventListener('pointerup', onPointerUp);
+    };
+
+    window.addEventListener('pointermove', onPointerMove);
+    window.addEventListener('pointerup', onPointerUp);
   };
+
+  // Volume scrub handling
+  const handleVolumePointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
+    if (!volumeTrackRef.current) return;
+    const rect = volumeTrackRef.current.getBoundingClientRect();
+    const calculateVolume = (clientX: number) => {
+      const ratio = Math.max(0, Math.min(1, (clientX - rect.left) / rect.width));
+      return ratio;
+    };
+
+    setVolume(calculateVolume(e.clientX));
+
+    const onPointerMove = (moveEv: PointerEvent) => {
+      setVolume(calculateVolume(moveEv.clientX));
+    };
+
+    const onPointerUp = () => {
+      window.removeEventListener('pointermove', onPointerMove);
+      window.removeEventListener('pointerup', onPointerUp);
+    };
+
+    window.addEventListener('pointermove', onPointerMove);
+    window.addEventListener('pointerup', onPointerUp);
+  };
+
+  // Determine volume icon based on level and mute state
+  const getVolumeIcon = () => {
+    if (isMuted || volume === 0) return <VolumeX size={18} />;
+    if (volume < 0.5) return <Volume1 size={18} />;
+    return <Volume2 size={18} />;
+  };
+
+  const hasTrack = currentTrack !== null;
 
   return (
     <footer className="player-bar" aria-label="Audio Player Controls">
-      {/* Left: Track Information Preview */}
+      {/* Left: Track Information Preview & Artwork */}
       <div className="player-track-info">
-        <div className="player-artwork-box" aria-hidden="true">
-          <Music2 size={24} className="player-artwork-icon" />
-        </div>
+        <TrackArtwork
+          artworkHash={currentTrack?.artwork_hash}
+          alt={currentTrack?.title || 'No track selected'}
+          size="md"
+        />
         <div className="player-metadata">
-          <span className="player-track-title">No Track Selected</span>
-          <span className="player-track-artist">Endurance Offline Player</span>
+          <span className="player-track-title truncate">
+            {currentTrack ? currentTrack.title : 'No Track Selected'}
+          </span>
+          <span className="player-track-artist truncate">
+            {currentTrack ? currentTrack.artist : 'Endurance Offline Player'}
+          </span>
+          {playbackError && (
+            <div
+              className="player-error-badge"
+              role="alert"
+              title={`${playbackError} (Click to dismiss)`}
+              onClick={clearError}
+            >
+              <AlertCircle size={12} />
+              <span className="truncate">{playbackError}</span>
+            </div>
+          )}
         </div>
       </div>
 
@@ -34,10 +137,10 @@ export const PlayerBar: React.FC = () => {
         <div className="player-buttons">
           <IconButton
             icon={<Shuffle size={17} />}
-            aria-label="Shuffle"
-            tooltip="Shuffle (Off)"
-            selected={isShuffle}
-            onClick={() => setIsShuffle(!isShuffle)}
+            aria-label={`Shuffle ${shuffleEnabled ? 'On' : 'Off'}`}
+            tooltip={`Shuffle (${shuffleEnabled ? 'On' : 'Off'})`}
+            selected={shuffleEnabled}
+            onClick={toggleShuffle}
             size="sm"
           />
 
@@ -46,16 +149,21 @@ export const PlayerBar: React.FC = () => {
             aria-label="Previous track"
             tooltip="Previous"
             size="sm"
+            onClick={prevTrack}
+            disabled={!hasTrack}
           />
 
           <button
             type="button"
             className="player-play-btn"
-            onClick={() => setIsPlaying(!isPlaying)}
-            aria-label={isPlaying ? "Pause" : "Play"}
-            title={isPlaying ? "Pause" : "Play"}
+            onClick={togglePlay}
+            disabled={!hasTrack && !isLoading}
+            aria-label={isLoading ? 'Loading audio' : isPlaying ? 'Pause' : 'Play'}
+            title={isLoading ? 'Loading audio' : isPlaying ? 'Pause' : 'Play'}
           >
-            {isPlaying ? (
+            {isLoading ? (
+              <Loader2 size={20} className="spin-animation" />
+            ) : isPlaying ? (
               <Pause size={20} fill="currentColor" />
             ) : (
               <Play size={20} fill="currentColor" style={{ marginLeft: 2 }} />
@@ -67,26 +175,52 @@ export const PlayerBar: React.FC = () => {
             aria-label="Next track"
             tooltip="Next"
             size="sm"
+            onClick={nextTrack}
+            disabled={!hasTrack}
           />
 
-          <IconButton
-            icon={<Repeat size={17} />}
-            aria-label="Repeat"
-            tooltip={`Repeat (${repeatMode})`}
-            selected={repeatMode !== 'off'}
-            onClick={toggleRepeat}
-            size="sm"
-          />
+          <div className="player-repeat-btn-wrap">
+            <IconButton
+              icon={<Repeat size={17} />}
+              aria-label={`Repeat mode: ${repeatMode}`}
+              tooltip={`Repeat (${repeatMode.toUpperCase()})`}
+              selected={repeatMode !== 'off'}
+              onClick={toggleRepeat}
+              size="sm"
+            />
+            {repeatMode === 'one' && <span className="player-repeat-one-badge">1</span>}
+          </div>
         </div>
 
         <div className="player-timeline" role="group" aria-label="Seek Bar">
-          <span className="timeline-time">0:00</span>
-          <div className="timeline-track" tabIndex={0} role="slider" aria-valuenow={0} aria-valuemin={0} aria-valuemax={100} aria-label="Playback Progress">
-            <div className="timeline-progress" style={{ width: '0%' }}>
+          <span className="timeline-time">{formatDuration(displayTime)}</span>
+          <div
+            ref={timelineTrackRef}
+            className="timeline-track"
+            tabIndex={0}
+            role="slider"
+            aria-valuenow={Math.round(displayTime)}
+            aria-valuemin={0}
+            aria-valuemax={Math.round(duration)}
+            aria-label="Playback Position"
+            onPointerDown={handleTimelinePointerDown}
+            onKeyDown={(e) => {
+              if (e.key === 'ArrowLeft') {
+                e.preventDefault();
+                seek(Math.max(0, currentTime - 5));
+              } else if (e.key === 'ArrowRight') {
+                e.preventDefault();
+                seek(Math.min(duration, currentTime + 5));
+              }
+            }}
+          >
+            <div className="timeline-progress" style={{ width: `${progressPercent}%` }}>
               <div className="timeline-thumb" />
             </div>
           </div>
-          <span className="timeline-time">-0:00</span>
+          <span className="timeline-time">
+            {duration > 0 ? `-${formatDuration(remainingTime)}` : '0:00'}
+          </span>
         </div>
       </div>
 
@@ -94,30 +228,35 @@ export const PlayerBar: React.FC = () => {
       <div className="player-extras">
         <div className="player-volume-control">
           <IconButton
-            icon={isMuted || volume === 0 ? <VolumeX size={18} /> : <Volume2 size={18} />}
-            aria-label={isMuted ? "Unmute" : "Mute"}
-            onClick={() => setIsMuted(!isMuted)}
+            icon={getVolumeIcon()}
+            aria-label={isMuted ? 'Unmute' : 'Mute'}
+            tooltip={isMuted ? 'Unmute' : 'Mute'}
+            onClick={toggleMute}
             size="sm"
           />
           <div
+            ref={volumeTrackRef}
             className="volume-slider-track"
             tabIndex={0}
             role="slider"
-            aria-valuenow={isMuted ? 0 : volume}
+            aria-valuenow={isMuted ? 0 : Math.round(volume * 100)}
             aria-valuemin={0}
             aria-valuemax={100}
             aria-label="Volume"
-            onClick={(e) => {
-              const rect = e.currentTarget.getBoundingClientRect();
-              const clickX = e.clientX - rect.left;
-              const newVol = Math.round((clickX / rect.width) * 100);
-              setVolume(Math.max(0, Math.min(100, newVol)));
-              setIsMuted(false);
+            onPointerDown={handleVolumePointerDown}
+            onKeyDown={(e) => {
+              if (e.key === 'ArrowLeft' || e.key === 'ArrowDown') {
+                e.preventDefault();
+                setVolume(Math.max(0, volume - 0.05));
+              } else if (e.key === 'ArrowRight' || e.key === 'ArrowUp') {
+                e.preventDefault();
+                setVolume(Math.min(1, volume + 0.05));
+              }
             }}
           >
             <div
               className="volume-slider-fill"
-              style={{ width: `${isMuted ? 0 : volume}%` }}
+              style={{ width: `${isMuted ? 0 : volume * 100}%` }}
             />
           </div>
         </div>

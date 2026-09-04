@@ -3,7 +3,8 @@ import { Button } from '../components/Common/Button';
 import { Card } from '../components/Common/Card';
 import { SectionHeader } from '../components/Common/SectionHeader';
 import { TrackArtwork } from '../components/Library/TrackArtwork';
-import { FolderPlus, Play, Sparkles, Music, ShieldCheck, Zap } from 'lucide-react';
+import { FolderPlus, Play, Pause, Sparkles, Music, ShieldCheck, Zap } from 'lucide-react';
+import { usePlayback } from '../state/PlaybackContext';
 import { Track, LibraryFolder } from '../types';
 import './Pages.css';
 
@@ -20,6 +21,7 @@ export const Home: React.FC<HomeProps> = ({
   onNavigateSongs,
   onAddFolder,
 }) => {
+  const { currentTrack, isPlaying, playTrack, togglePlay } = usePlayback();
   // Take up to 4 most recently added tracks for the quick access preview
   const recentTracks = [...tracks]
     .sort((a, b) => (parseInt(b.date_added, 10) || 0) - (parseInt(a.date_added, 10) || 0))
@@ -103,18 +105,42 @@ export const Home: React.FC<HomeProps> = ({
             }
           />
           <div className="demo-cards-grid">
-            {recentTracks.map((track) => (
-              <Card key={track.id} variant="elevated" interactive padding="sm" className="demo-album-card" onClick={onNavigateSongs}>
-                <div className="demo-album-artwork">
-                  <TrackArtwork artworkHash={track.artwork_hash} alt={track.title} size="lg" />
-                  <div className="demo-album-play-overlay">
-                    <Play size={20} fill="currentColor" />
+            {recentTracks.map((track) => {
+              const isCurrentTrack = currentTrack?.id === track.id;
+              const isCardPlaying = isCurrentTrack && isPlaying;
+              const handleCardClick = () => {
+                if (isCurrentTrack) {
+                  togglePlay();
+                } else {
+                  playTrack(track, tracks);
+                }
+              };
+
+              return (
+                <Card
+                  key={track.id}
+                  variant="elevated"
+                  interactive
+                  padding="sm"
+                  className="demo-album-card"
+                  onClick={handleCardClick}
+                  aria-label={`${isCardPlaying ? 'Pause' : 'Play'} ${track.title}`}
+                >
+                  <div className="demo-album-artwork">
+                    <TrackArtwork artworkHash={track.artwork_hash} alt={track.title} size="lg" />
+                    <div className="demo-album-play-overlay">
+                      {isCardPlaying ? (
+                        <Pause size={20} fill="currentColor" />
+                      ) : (
+                        <Play size={20} fill="currentColor" />
+                      )}
+                    </div>
                   </div>
-                </div>
-                <div className="demo-album-title truncate">{track.title}</div>
-                <div className="demo-album-artist truncate">{track.artist}</div>
-              </Card>
-            ))}
+                  <div className="demo-album-title truncate">{track.title}</div>
+                  <div className="demo-album-artist truncate">{track.artist}</div>
+                </Card>
+              );
+            })}
           </div>
         </>
       ) : (

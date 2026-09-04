@@ -205,6 +205,39 @@
   border-radius: var(--radius-full);
 }
 
+/* Error Badge & Repeat Indicator */
+.player-error-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  background: var(--md-sys-color-error-container);
+  color: var(--md-sys-color-on-error-container);
+  font-size: 0.6875rem;
+  font-family: var(--font-family-base);
+  padding: 2px 6px;
+  border-radius: var(--radius-xs);
+  margin-top: 2px;
+  max-width: 250px;
+  cursor: pointer;
+  animation: m3FadeIn var(--motion-duration-short-2) var(--motion-easing-standard);
+}
+
+.player-repeat-btn-wrap {
+  position: relative;
+  display: inline-flex;
+}
+
+.player-repeat-one-badge {
+  position: absolute;
+  top: 2px;
+  right: 2px;
+  font-size: 0.5625rem;
+  font-weight: 800;
+  font-family: var(--font-family-mono);
+  color: var(--md-sys-color-on-secondary-container);
+  pointer-events: none;
+}
+
 /* Responsive Player Bar */
 @media (max-width: 1024px) {
   .player-bar {
@@ -212,3 +245,4 @@
     padding: 0 var(--space-md);
   }
 }
+

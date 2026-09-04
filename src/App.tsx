@@ -8,6 +8,7 @@ import { Songs } from './pages/Songs';
 import { Favorites } from './pages/Favorites';
 import { SettingsPage } from './pages/SettingsPage';
 import { useLibrary } from './hooks/useLibrary';
+import { PlaybackProvider } from './state/PlaybackContext';
 import { NavigationPage, SystemInfo } from './types';
 import './App.css';
 
@@ -102,20 +103,22 @@ export const App: React.FC = () => {
   };
 
   return (
-    <div className="app-shell">
-      {/* Top Native-Behaving Custom Window Titlebar */}
-      <TitleBar />
+    <PlaybackProvider>
+      <div className="app-shell">
+        {/* Top Native-Behaving Custom Window Titlebar */}
+        <TitleBar />
 
-      {/* Main Body Layout: Sidebar + Page View */}
-      <div className="app-body">
-        <Sidebar currentPage={currentPage} onNavigate={setCurrentPage} />
-        <main className="app-content">
-          {renderPage()}
-        </main>
+        {/* Main Body Layout: Sidebar + Page View */}
+        <div className="app-body">
+          <Sidebar currentPage={currentPage} onNavigate={setCurrentPage} />
+          <main className="app-content">
+            {renderPage()}
+          </main>
+        </div>
+
+        {/* Bottom Audio Player Bar */}
+        <PlayerBar />
       </div>
-
-      {/* Bottom Audio Player Bar */}
-      <PlayerBar />
-    </div>
+    </PlaybackProvider>
   );
 };

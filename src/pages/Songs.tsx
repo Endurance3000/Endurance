@@ -1,11 +1,12 @@
 import React, { useState } from 'react';
-import { Music, FolderPlus, Heart, MoreHorizontal, Play, RefreshCw, Loader2 } from 'lucide-react';
+import { Music, FolderPlus, Heart, MoreHorizontal, Play, Pause, RefreshCw, Loader2 } from 'lucide-react';
 import { Button } from '../components/Common/Button';
 import { IconButton } from '../components/Common/IconButton';
 import { SearchField } from '../components/Common/SearchField';
 import { Chip } from '../components/Common/Chip';
 import { EmptyState } from '../components/Common/EmptyState';
 import { TrackArtwork } from '../components/Library/TrackArtwork';
+import { usePlayback } from '../state/PlaybackContext';
 import { formatDuration } from '../utils/formatters';
 import { Track, LibraryFolder, ScanProgressPayload } from '../types';
 import './Pages.css';
@@ -31,6 +32,7 @@ export const Songs: React.FC<SongsProps> = ({
 }) => {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedFilter, setSelectedFilter] = useState<'all' | 'recent' | 'favorites'>('all');
+  const { currentTrack, isPlaying, playTrack, togglePlay } = usePlayback();
 
   const filteredTracks = tracks.filter((track) => {
     if (selectedFilter === 'favorites' && !track.is_favorite) return false;
@@ -154,27 +156,47 @@ export const Songs: React.FC<SongsProps> = ({
           </div>
 
           <div className="songs-list" role="list">
-            {displayTracks.map((track, idx) => (
-              <div
-                key={track.id}
-                className="song-row"
-                role="listitem"
-                tabIndex={0}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter') console.log(`Selected track: ${track.title}`);
-                }}
-              >
-                <div className="col-index">
-                  <span className="index-number">{idx + 1}</span>
-                  <button
-                    type="button"
-                    className="index-play-btn"
-                    aria-label={`Select ${track.title}`}
-                    title={`Select ${track.title}`}
-                  >
-                    <Play size={14} fill="currentColor" />
-                  </button>
-                </div>
+            {displayTracks.map((track, idx) => {
+              const isCurrentTrack = currentTrack?.id === track.id;
+              const isRowPlaying = isCurrentTrack && isPlaying;
+              const handleSelectTrack = () => {
+                if (isCurrentTrack) {
+                  togglePlay();
+                } else {
+                  playTrack(track, displayTracks);
+                }
+              };
+
+              return (
+                <div
+                  key={track.id}
+                  className={`song-row ${isCurrentTrack ? 'song-row-active' : ''}`}
+                  role="listitem"
+                  tabIndex={0}
+                  onClick={handleSelectTrack}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') handleSelectTrack();
+                  }}
+                >
+                  <div className="col-index">
+                    <span className="index-number">{idx + 1}</span>
+                    <button
+                      type="button"
+                      className="index-play-btn"
+                      aria-label={isRowPlaying ? `Pause ${track.title}` : `Play ${track.title}`}
+                      title={isRowPlaying ? `Pause ${track.title}` : `Play ${track.title}`}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleSelectTrack();
+                      }}
+                    >
+                      {isRowPlaying ? (
+                        <Pause size={14} fill="currentColor" />
+                      ) : (
+                        <Play size={14} fill="currentColor" />
+                      )}
+                    </button>
+                  </div>
 
                 <div className="col-title">
                   <TrackArtwork
@@ -217,9 +239,10 @@ export const Songs: React.FC<SongsProps> = ({
                     aria-label="More options"
                     size="sm"
                   />
+                  </div>
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
 
           {displayTracks.length === 0 && searchQuery && (
