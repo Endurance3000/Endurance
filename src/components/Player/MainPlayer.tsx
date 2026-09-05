@@ -94,7 +94,10 @@ export const MainPlayer: React.FC<MainPlayerProps> = ({ onClose }) => {
   }
 
   return (
-    <div className="main-player-overlay" role="region" aria-label="Now Playing Main View">
+    <div className="main-player-overlay m3-expressive-main-player" role="region" aria-label="Now Playing Main View">
+      {/* Dynamic Ambient Color Aura Glow */}
+      <div className="main-player-ambient-aura" aria-hidden="true" />
+
       {/* Top Bar with Collapse Action */}
       <header className="main-player-topbar">
         <button
@@ -104,7 +107,7 @@ export const MainPlayer: React.FC<MainPlayerProps> = ({ onClose }) => {
           aria-label="Collapse to Library"
           title="Collapse to Library (Esc)"
         >
-          <ChevronDown size={18} />
+          <ChevronDown size={18} className="collapse-icon" />
           <span>Collapse</span>
         </button>
       </header>
@@ -116,6 +119,7 @@ export const MainPlayer: React.FC<MainPlayerProps> = ({ onClose }) => {
           <div className={`main-player-artwork-wrap ${hasLyrics ? 'artwork-standard' : 'artwork-expanded'}`}>
             {artworkDataUri ? (
               <img
+                key={currentTrack.artwork_hash || currentTrack.id}
                 src={artworkDataUri}
                 alt={currentTrack.album || currentTrack.title}
                 className="main-player-artwork-img"
@@ -127,7 +131,7 @@ export const MainPlayer: React.FC<MainPlayerProps> = ({ onClose }) => {
 
           {/* Title and artist underneath artwork ONLY rendered when lyrics ARE available (plain or synced) */}
           {hasLyrics && (
-            <div className="main-player-meta-left motion-fade-in">
+            <div className="main-player-meta-left motion-fade-in" key={currentTrack.id}>
               <h1 className="main-player-title-left">{currentTrack.title}</h1>
               <h2 className="main-player-artist-left">{currentTrack.artist}</h2>
               {currentTrack.album && (
@@ -139,7 +143,7 @@ export const MainPlayer: React.FC<MainPlayerProps> = ({ onClose }) => {
 
         {/* RIGHT COLUMN: 3 Mutually Exclusive States */}
         <section className={`main-player-right ${hasLyrics ? 'has-lyrics' : 'no-lyrics'}`} aria-label="Lyrics and Details">
-          {/* STATE 3: Synchronized LRC Lyrics with click-to-seek, emphasis, and smooth scroll */}
+          {/* STATE 3: Synchronized LRC Lyrics with click-to-seek, dynamic accent emphasis, and smooth scroll */}
           {isSyncedLyrics && (
             <div className="lyrics-scroll-container" ref={scrollContainerRef}>
               {lyricsData.lines.map((line, idx) => {
@@ -175,9 +179,9 @@ export const MainPlayer: React.FC<MainPlayerProps> = ({ onClose }) => {
             </div>
           )}
 
-          {/* STATE 1: No Lyrics File Available (Prominent Title + Artist Showcase on right) */}
+          {/* STATE 1: No Lyrics File Available (Hero Title + Artist Showcase on right) */}
           {isNoLyrics && (
-            <div className="no-lyrics-fallback motion-fade-in">
+            <div className="no-lyrics-fallback motion-fade-in" key={currentTrack.id}>
               <div className="no-lyrics-title">{currentTrack.title}</div>
               <div className="no-lyrics-artist">{currentTrack.artist}</div>
               {currentTrack.album && (

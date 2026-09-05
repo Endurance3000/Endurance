@@ -1,46 +1,66 @@
-.player-bar {
+/* ==========================================================================
+   MATERIAL 3 EXPRESSIVE PLAYER BAR (Pixel-Inspired Desktop Music Player)
+   ========================================================================== */
+
+.player-bar.m3-expressive-player-bar {
   height: var(--player-bar-height);
   background: var(--md-sys-color-surface-container);
   border-top: 1px solid var(--md-sys-color-outline-variant);
   display: grid;
-  grid-template-columns: 280px 1fr 280px;
+  grid-template-columns: 300px 1fr 300px;
   align-items: center;
   padding: 0 var(--space-xl);
   user-select: none;
   z-index: 100;
   flex-shrink: 0;
+  box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.15);
+  transition: background-color var(--motion-duration-medium-2) var(--motion-easing-standard),
+              border-color var(--motion-duration-medium-2) var(--motion-easing-standard);
 }
 
-/* Left: Track Info */
+/* ==========================================================================
+   LEFT: TRACK INFO & ARTWORK
+   ========================================================================== */
+
 .player-track-info {
   display: flex;
   align-items: center;
   gap: var(--space-md);
   min-width: 0;
+  cursor: pointer;
+  padding: var(--space-2xs) var(--space-xs);
+  border-radius: var(--radius-lg);
+  transition: background-color var(--motion-duration-short-2) var(--motion-easing-standard);
 }
 
-.player-artwork-box {
+.player-track-info:hover {
+  background-color: var(--md-sys-color-surface-container-high);
+}
+
+.player-artwork-container {
+  flex-shrink: 0;
+  position: relative;
+}
+
+.player-bar-artwork {
   width: 52px;
   height: 52px;
-  border-radius: var(--radius-md);
-  background: var(--md-sys-color-surface-container-high);
-  border: 1px solid var(--md-sys-color-outline-variant);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex-shrink: 0;
+  border-radius: var(--radius-md) !important;
   box-shadow: var(--elevation-1);
+  transition: transform var(--motion-duration-short-2) var(--motion-easing-emphasized-decelerate),
+              box-shadow var(--motion-duration-short-2) var(--motion-easing-standard);
 }
 
-.player-artwork-icon {
-  color: var(--md-sys-color-primary);
-  opacity: 0.85;
+.player-track-info:hover .player-bar-artwork {
+  transform: scale(1.04);
+  box-shadow: var(--elevation-2);
 }
 
 .player-metadata {
   display: flex;
   flex-direction: column;
   min-width: 0;
+  overflow: hidden;
 }
 
 .player-track-title {
@@ -51,6 +71,12 @@
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+  letter-spacing: -0.01em;
+  transition: color var(--motion-duration-short-2) var(--motion-easing-standard);
+}
+
+.player-track-info:hover .player-track-title {
+  color: var(--md-sys-color-primary);
 }
 
 .player-track-artist {
@@ -63,33 +89,67 @@
   margin-top: 2px;
 }
 
-/* Center: Controls & Seekbar */
+/* ==========================================================================
+   CENTER: CONTROLS ISLAND & SINE-WAVE SEEKBAR
+   ========================================================================== */
+
 .player-center-controls {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: var(--space-xs);
-  max-width: 540px;
+  gap: 2px;
+  max-width: 600px;
   margin: 0 auto;
   width: 100%;
 }
 
-.player-buttons {
+/* Material 3 Expressive Tonal Controls Island */
+.player-controls-island {
   display: flex;
   align-items: center;
   gap: var(--space-md);
+  padding: 2px var(--space-md);
+  border-radius: var(--radius-full);
+  background: var(--md-sys-color-surface-container-high);
+  border: 1px solid var(--md-sys-color-outline-subtle);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12);
+  transition: background-color var(--motion-duration-medium-1) var(--motion-easing-standard),
+              box-shadow var(--motion-duration-medium-1) var(--motion-easing-standard);
 }
 
 /* Shuffle Button 2-State Colors */
 .player-shuffle-btn {
   color: #ffffff !important;
+  transition: color var(--motion-duration-short-2) var(--motion-easing-standard),
+              background-color var(--motion-duration-short-2) var(--motion-easing-standard) !important;
 }
 
+.player-shuffle-btn.active,
 .player-shuffle-btn.selected {
   color: var(--md-sys-color-primary) !important;
-  background: var(--md-sys-color-primary-container);
+  background: var(--md-sys-color-primary-container) !important;
 }
 
+/* Repeat Button Active State */
+.player-repeat-btn.active,
+.player-repeat-btn.selected {
+  color: var(--md-sys-color-primary) !important;
+  background: var(--md-sys-color-primary-container) !important;
+}
+
+.player-control-icon-btn {
+  transition: transform var(--motion-duration-short-2) var(--motion-easing-emphasized-decelerate) !important;
+}
+
+.player-control-icon-btn:hover:not(:disabled) {
+  transform: scale(1.08);
+}
+
+.player-control-icon-btn:active:not(:disabled) {
+  transform: scale(0.92);
+}
+
+/* Main Play/Pause Primary Expressive Button */
 .player-play-btn {
   width: 44px;
   height: 44px;
@@ -101,24 +161,39 @@
   align-items: center;
   justify-content: center;
   cursor: pointer;
-  box-shadow: var(--elevation-1);
-  outline: none;
-  transition: transform var(--motion-duration-short-2) var(--motion-easing-standard-decelerate),
-              background-color var(--motion-duration-short-2) var(--motion-easing-standard),
-              box-shadow var(--motion-duration-short-2) var(--motion-easing-standard);
-}
-
-.player-play-btn:hover {
-  filter: brightness(1.12);
   box-shadow: var(--elevation-2);
+  outline: none;
+  position: relative;
+  overflow: hidden;
+  transition: transform var(--motion-duration-short-2) var(--motion-easing-emphasized-decelerate),
+              background-color var(--motion-duration-short-2) var(--motion-easing-standard),
+              box-shadow var(--motion-duration-short-2) var(--motion-easing-standard),
+              filter var(--motion-duration-short-2) var(--motion-easing-standard);
 }
 
-.player-play-btn:active {
-  transform: scale(0.93);
+.player-play-btn:hover:not(:disabled) {
+  filter: brightness(1.12);
+  transform: scale(1.06);
+  box-shadow: var(--elevation-3);
 }
 
-/* Seekbar Timeline */
-.player-timeline {
+.player-play-btn:active:not(:disabled) {
+  transform: scale(0.92);
+}
+
+.player-play-btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.play-icon-transition {
+  transition: transform var(--motion-duration-short-2) var(--motion-easing-emphasized-decelerate),
+              opacity var(--motion-duration-short-2) var(--motion-easing-standard);
+}
+
+/* Timeline & Sine Wave Container */
+.player-timeline-cluster {
   display: flex;
   align-items: center;
   gap: var(--space-sm);
@@ -128,71 +203,64 @@
 .timeline-time {
   font-family: var(--font-family-mono);
   font-size: 0.6875rem;
+  font-weight: 500;
   color: var(--md-sys-color-on-surface-variant);
-  width: 38px;
+  width: 40px;
   text-align: center;
+  font-variant-numeric: tabular-nums;
 }
 
-.timeline-track {
-  position: relative;
+.timeline-time-left {
+  text-align: right;
+}
+
+.timeline-time-right {
+  text-align: left;
+}
+
+.timeline-wave-wrapper {
   flex: 1;
-  height: 4px;
-  background: var(--md-sys-color-surface-container-highest);
-  border-radius: var(--radius-full);
-  cursor: pointer;
-  outline: none;
-  transition: height var(--motion-duration-short-2) var(--motion-easing-standard);
+  min-width: 0;
+  display: flex;
+  align-items: center;
 }
 
-.timeline-track:hover,
-.timeline-track:focus-visible {
-  height: 6px;
-}
+/* ==========================================================================
+   RIGHT: VOLUME & EXTRAS
+   ========================================================================== */
 
-.timeline-progress {
-  position: absolute;
-  left: 0;
-  top: 0;
-  bottom: 0;
-  background: var(--md-sys-color-primary);
-  border-radius: var(--radius-full);
-}
-
-.timeline-thumb {
-  position: absolute;
-  right: -5px;
-  top: 50%;
-  transform: translateY(-50%) scale(0);
-  width: 12px;
-  height: 12px;
-  border-radius: var(--radius-full);
-  background: var(--md-sys-color-primary);
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.4);
-  transition: transform var(--motion-duration-short-2) var(--motion-easing-standard-decelerate);
-}
-
-.timeline-track:hover .timeline-thumb,
-.timeline-track:focus-visible .timeline-thumb {
-  transform: translateY(-50%) scale(1);
-}
-
-/* Right: Volume Extras */
 .player-extras {
   display: flex;
   justify-content: flex-end;
   align-items: center;
+  gap: var(--space-xs);
+}
+
+.player-extra-btn {
+  transition: transform var(--motion-duration-short-2) var(--motion-easing-emphasized-decelerate) !important;
+}
+
+.player-extra-btn:hover:not(:disabled) {
+  transform: scale(1.08);
+}
+
+.player-extra-btn:active:not(:disabled) {
+  transform: scale(0.92);
 }
 
 .player-volume-control {
   display: flex;
   align-items: center;
-  gap: var(--space-xs);
-  color: var(--md-sys-color-on-surface-variant);
+  gap: 2px;
+  background: var(--md-sys-color-surface-container-high);
+  padding: 2px 10px 2px 4px;
+  border-radius: var(--radius-full);
+  border: 1px solid var(--md-sys-color-outline-subtle);
 }
 
 .volume-slider-track {
-  width: 88px;
-  height: 4px;
+  width: 80px;
+  height: 6px;
   background: var(--md-sys-color-surface-container-highest);
   border-radius: var(--radius-full);
   position: relative;
@@ -203,7 +271,7 @@
 
 .volume-slider-track:hover,
 .volume-slider-track:focus-visible {
-  height: 6px;
+  height: 8px;
 }
 
 .volume-slider-fill {
@@ -213,9 +281,33 @@
   bottom: 0;
   background: var(--md-sys-color-primary);
   border-radius: var(--radius-full);
+  pointer-events: none;
+  transition: background-color var(--motion-duration-medium-1) var(--motion-easing-standard);
 }
 
-/* Error Badge & Repeat Indicator */
+.volume-slider-thumb {
+  position: absolute;
+  top: 50%;
+  transform: translate(-50%, -50%) scale(0);
+  width: 12px;
+  height: 12px;
+  border-radius: var(--radius-full);
+  background: var(--md-sys-color-primary);
+  border: 2px solid var(--md-sys-color-surface);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.4);
+  pointer-events: none;
+  transition: transform var(--motion-duration-short-2) var(--motion-easing-emphasized-decelerate);
+}
+
+.volume-slider-track:hover .volume-slider-thumb,
+.volume-slider-track:focus-visible .volume-slider-thumb {
+  transform: translate(-50%, -50%) scale(1);
+}
+
+/* ==========================================================================
+   BADGES & REPEAT INDICATOR
+   ========================================================================== */
+
 .player-error-badge {
   display: inline-flex;
   align-items: center;
@@ -244,15 +336,30 @@
   font-size: 0.5625rem;
   font-weight: 800;
   font-family: var(--font-family-mono);
-  color: var(--md-sys-color-on-secondary-container);
+  color: var(--md-sys-color-primary);
   pointer-events: none;
 }
 
-/* Responsive Player Bar */
-@media (max-width: 1024px) {
-  .player-bar {
-    grid-template-columns: 220px 1fr 180px;
+/* ==========================================================================
+   RESPONSIVE BREAKPOINTS
+   ========================================================================== */
+
+@media (max-width: 1080px) {
+  .player-bar.m3-expressive-player-bar {
+    grid-template-columns: 240px 1fr 220px;
     padding: 0 var(--space-md);
+  }
+  .volume-slider-track {
+    width: 60px;
   }
 }
 
+@media (max-width: 860px) {
+  .player-bar.m3-expressive-player-bar {
+    grid-template-columns: 180px 1fr 160px;
+    padding: 0 var(--space-sm);
+  }
+  .volume-slider-track {
+    width: 50px;
+  }
+}
