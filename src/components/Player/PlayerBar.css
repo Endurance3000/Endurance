@@ -119,7 +119,7 @@
 
 /* Shuffle Button 2-State Colors */
 .player-shuffle-btn {
-  color: #ffffff !important;
+  color: var(--md-sys-color-on-surface) !important;
   transition: color var(--motion-duration-short-2) var(--motion-easing-standard),
               background-color var(--motion-duration-short-2) var(--motion-easing-standard) !important;
 }

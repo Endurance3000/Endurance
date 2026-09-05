@@ -42,18 +42,20 @@ describe('Dynamic Color & Palette Generation Tests', () => {
     assert.ok(palette.surfaceContainer.startsWith('rgb('));
     assert.ok(palette.surfaceContainerHighest.startsWith('rgb('));
     assert.ok(palette.outline.startsWith('rgb('));
-    assert.strictEqual(palette.onSurface, '#f8fafc');
-    assert.ok(palette.onPrimary === '#ffffff' || palette.onPrimary === '#030712');
+    assert.strictEqual(palette.onSurface.toLowerCase(), '#fffbe9');
+    const onPriLower = palette.onPrimary.toLowerCase();
+    assert.ok(onPriLower === '#ffffff' || onPriLower === '#2a1d16' || onPriLower === '#fffbe9' || onPriLower === '#151820');
   });
 
   test('MaterialPaletteGenerator creates valid light tonal palette', () => {
     const generator = new MaterialPaletteGenerator();
-    const seed: RGBColor = { r: 30, g: 64, b: 175 };
+    const seed: RGBColor = { r: 120, g: 91, b: 72 };
 
     const palette = generator.generatePalette(seed, false);
     assert.ok(palette.primary.startsWith('rgb('));
-    assert.strictEqual(palette.onPrimary, '#ffffff');
-    assert.strictEqual(palette.onSurface, '#090d16');
+    const lightOnPriLower = palette.onPrimary.toLowerCase();
+    assert.ok(lightOnPriLower === '#ffffff' || lightOnPriLower === '#2d1a10');
+    assert.strictEqual(palette.onSurface.toLowerCase(), '#211a16');
     assert.ok(palette.background.startsWith('rgb('));
   });
 });

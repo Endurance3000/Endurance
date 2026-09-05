@@ -5,50 +5,51 @@
 
 :root {
   /* ==========================================================================
-     COLOR SYSTEM (Semantic Dark Tonal Palette)
+     COLOR SYSTEM (Semantic Warm Espresso & Beige Material 3 Palette)
      ========================================================================== */
 
-  /* Surface Container Hierarchy (Tonal elevation replaces heavy drop shadows) */
-  --md-sys-color-background: #090d13;
-  --md-sys-color-on-background: #e2e8f0;
+  /* Surface Container Hierarchy (Warm Espresso / Dark Charcoal) */
+  --md-sys-color-background: #171411;
+  --md-sys-color-on-background: #FFFBE9;
 
-  --md-sys-color-surface: #0d1219;
-  --md-sys-color-surface-dim: #080c12;
-  --md-sys-color-surface-bright: #1c2432;
+  --md-sys-color-surface: #1E1916;
+  --md-sys-color-surface-dim: #14110E;
+  --md-sys-color-surface-bright: #2C231E;
   
-  --md-sys-color-surface-container-lowest: #05080c;
-  --md-sys-color-surface-container-low: #0f1520;
-  --md-sys-color-surface-container: #141b27;
-  --md-sys-color-surface-container-high: #1b2332;
-  --md-sys-color-surface-container-highest: #232d3f;
+  --md-sys-color-surface-container-lowest: #110E0B;
+  --md-sys-color-surface-container-low: #1B1613;
+  --md-sys-color-surface-container: #211B17;
+  --md-sys-color-surface-container-high: #2A211C;
+  --md-sys-color-surface-container-highest: #342920;
 
   /* On-Surface Text & Content */
-  --md-sys-color-on-surface: #e2e8f0;
-  --md-sys-color-on-surface-variant: #94a3b8;
-  --md-sys-color-surface-variant: #1e2838;
+  --md-sys-color-on-surface: #FFFBE9;
+  --md-sys-color-on-surface-variant: #D8C7B8;
+  --md-sys-color-surface-variant: #2A211C;
+  --md-sys-color-text-muted: #AA9A8D;
 
   /* Outlines & Borders */
-  --md-sys-color-outline: #334155;
-  --md-sys-color-outline-variant: #1e293b;
-  --md-sys-color-outline-subtle: rgba(255, 255, 255, 0.06);
+  --md-sys-color-outline: #8F7968;
+  --md-sys-color-outline-variant: #4A3C33;
+  --md-sys-color-outline-subtle: rgba(255, 251, 233, 0.08);
 
-  /* Primary Role (Sky Cyan / Pixel-inspired vibrant accent) */
-  --md-sys-color-primary: #7dd3fc;
-  --md-sys-color-on-primary: #082f49;
-  --md-sys-color-primary-container: #0c4a6e;
-  --md-sys-color-on-primary-container: #e0f2fe;
+  /* Primary Role (#CEAB93 Main Warm Beige Accent) */
+  --md-sys-color-primary: #CEAB93;
+  --md-sys-color-on-primary: #2A1D16;
+  --md-sys-color-primary-container: #5A4235;
+  --md-sys-color-on-primary-container: #FFEBDD;
 
-  /* Secondary Role (Soft Indigo / Lavender) */
-  --md-sys-color-secondary: #93c5fd;
-  --md-sys-color-on-secondary: #172554;
-  --md-sys-color-secondary-container: #1e3a8a;
-  --md-sys-color-on-secondary-container: #dbeafe;
+  /* Secondary Role (#AD8B73 Muted Warm Taupe) */
+  --md-sys-color-secondary: #AD8B73;
+  --md-sys-color-on-secondary: #271A13;
+  --md-sys-color-secondary-container: #49362B;
+  --md-sys-color-on-secondary-container: #F3DCCB;
 
-  /* Tertiary Role (Coral Rose / Warm Expressive) */
-  --md-sys-color-tertiary: #f472b6;
-  --md-sys-color-on-tertiary: #500724;
-  --md-sys-color-tertiary-container: #831843;
-  --md-sys-color-on-tertiary-container: #fce7f3;
+  /* Tertiary Role (#E3CAA5 Light Sand Highlight) */
+  --md-sys-color-tertiary: #E3CAA5;
+  --md-sys-color-on-tertiary: #302316;
+  --md-sys-color-tertiary-container: #5A4933;
+  --md-sys-color-on-tertiary-container: #FFECCB;
 
   /* Functional Status Roles */
   --md-sys-color-error: #f87171;
@@ -67,7 +68,7 @@
   --md-sys-color-on-success-container: #d1fae5;
 
   /* Focus Indicator Ring */
-  --md-sys-color-focus-ring: #38bdf8;
+  --md-sys-color-focus-ring: #CEAB93;
 
   /* ==========================================================================
      SPACING SYSTEM (4px Grid)

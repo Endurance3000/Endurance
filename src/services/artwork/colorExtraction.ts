@@ -34,40 +34,40 @@ export class MaterialPaletteGenerator implements IPaletteGenerator {
     const lum = getLuminance(seedColor);
 
     if (isDark) {
-      // 1. Surfaces & Containers - Noticeably influenced by seed color (~16-32% tint)
-      const background = blendRGB({ r: 7, g: 10, b: 15 }, seedColor, 0.16);
-      const surfaceDim = blendRGB({ r: 6, g: 9, b: 14 }, seedColor, 0.14);
-      const surface = blendRGB({ r: 10, g: 14, b: 20 }, seedColor, 0.18);
-      const surfaceBright = blendRGB({ r: 24, g: 30, b: 40 }, seedColor, 0.22);
-      const surfaceContainerLowest = blendRGB({ r: 5, g: 7, b: 11 }, seedColor, 0.12);
-      const surfaceContainerLow = blendRGB({ r: 12, g: 17, b: 24 }, seedColor, 0.20);
-      const surfaceContainer = blendRGB({ r: 16, g: 22, b: 32 }, seedColor, 0.24);
-      const surfaceContainerHigh = blendRGB({ r: 22, g: 29, b: 40 }, seedColor, 0.28);
-      const surfaceContainerHighest = blendRGB({ r: 28, g: 36, b: 48 }, seedColor, 0.32);
+      // 1. Surfaces & Containers - Grounded in warm espresso base (#171411 / #1E1916 / #211B17) with gentle tint
+      const background = blendRGB({ r: 23, g: 20, b: 17 }, seedColor, 0.05);
+      const surfaceDim = blendRGB({ r: 20, g: 17, b: 14 }, seedColor, 0.05);
+      const surface = blendRGB({ r: 30, g: 25, b: 22 }, seedColor, 0.06);
+      const surfaceBright = blendRGB({ r: 44, g: 35, b: 30 }, seedColor, 0.08);
+      const surfaceContainerLowest = blendRGB({ r: 17, g: 14, b: 11 }, seedColor, 0.04);
+      const surfaceContainerLow = blendRGB({ r: 27, g: 22, b: 19 }, seedColor, 0.06);
+      const surfaceContainer = blendRGB({ r: 33, g: 27, b: 23 }, seedColor, 0.08);
+      const surfaceContainerHigh = blendRGB({ r: 42, g: 33, b: 28 }, seedColor, 0.10);
+      const surfaceContainerHighest = blendRGB({ r: 52, g: 41, b: 32 }, seedColor, 0.12);
 
-      // 2. Primary Accent - Bright and punchy for dark background
+      // 2. Primary Accent - Bright and punchy for warm dark background
       let primaryRgb = seedColor;
       if (lum < 0.25) {
-        primaryRgb = blendRGB(seedColor, { r: 255, g: 255, b: 255 }, 0.42);
+        primaryRgb = blendRGB(seedColor, { r: 255, g: 251, b: 233 }, 0.45);
       } else if (lum > 0.75) {
-        primaryRgb = blendRGB(seedColor, { r: 0, g: 0, b: 0 }, 0.25);
+        primaryRgb = blendRGB(seedColor, { r: 42, g: 29, b: 22 }, 0.25);
       }
 
       // 3. Contrast-Protected OnPrimary
       const primaryLum = getLuminance(primaryRgb);
-      const onPrimary = primaryLum > 0.45 ? '#030712' : '#ffffff';
+      const onPrimary = primaryLum > 0.45 ? '#2A1D16' : '#FFFBE9';
 
-      // 4. PrimaryContainer & OnPrimaryContainer (Tonal step 30 vs tone 90)
-      const primaryContainerRgb = blendRGB({ r: 14, g: 20, b: 30 }, seedColor, 0.38);
-      const onPrimaryContainerRgb = blendRGB(seedColor, { r: 255, g: 255, b: 255 }, 0.82);
+      // 4. PrimaryContainer & OnPrimaryContainer
+      const primaryContainerRgb = blendRGB({ r: 90, g: 66, b: 53 }, seedColor, 0.38);
+      const onPrimaryContainerRgb = blendRGB(seedColor, { r: 255, g: 235, b: 221 }, 0.82);
 
       // 5. Secondary & SecondaryContainer
-      const secondaryRgb = blendRGB(seedColor, { r: 147, g: 197, b: 253 }, 0.45);
-      const secondaryContainerRgb = blendRGB({ r: 16, g: 24, b: 36 }, seedColor, 0.26);
+      const secondaryRgb = blendRGB(seedColor, { r: 173, g: 139, b: 115 }, 0.45);
+      const secondaryContainerRgb = blendRGB({ r: 73, g: 54, b: 43 }, seedColor, 0.26);
 
       // 6. Outlines
-      const outlineRgb = blendRGB({ r: 71, g: 85, b: 105 }, seedColor, 0.25);
-      const outlineVariantRgb = blendRGB({ r: 30, g: 41, b: 59 }, seedColor, 0.25);
+      const outlineRgb = blendRGB({ r: 143, g: 121, b: 104 }, seedColor, 0.18);
+      const outlineVariantRgb = blendRGB({ r: 74, g: 60, b: 51 }, seedColor, 0.18);
 
       return {
         background: toRgbStr(background),
@@ -85,43 +85,43 @@ export class MaterialPaletteGenerator implements IPaletteGenerator {
         onPrimaryContainer: toRgbStr(onPrimaryContainerRgb),
         secondary: toRgbStr(secondaryRgb),
         secondaryContainer: toRgbStr(secondaryContainerRgb),
-        onSurface: '#f8fafc',
-        onSurfaceVariant: '#cbd5e1',
+        onSurface: '#FFFBE9',
+        onSurfaceVariant: '#D8C7B8',
         outline: toRgbStr(outlineRgb),
         outlineVariant: toRgbStr(outlineVariantRgb),
       };
     } else {
-      // Light Mode Surfaces & Containers
-      const background = blendRGB({ r: 248, g: 250, b: 252 }, seedColor, 0.10);
-      const surfaceDim = blendRGB({ r: 226, g: 232, b: 240 }, seedColor, 0.14);
-      const surface = blendRGB({ r: 255, g: 255, b: 255 }, seedColor, 0.08);
-      const surfaceBright = blendRGB({ r: 255, g: 255, b: 255 }, seedColor, 0.05);
+      // Light Mode Surfaces & Containers - Warm Cream Base
+      const background = blendRGB({ r: 255, g: 249, b: 242 }, seedColor, 0.08);
+      const surfaceDim = blendRGB({ r: 239, g: 228, b: 218 }, seedColor, 0.10);
+      const surface = blendRGB({ r: 255, g: 249, b: 242 }, seedColor, 0.06);
+      const surfaceBright = blendRGB({ r: 255, g: 253, b: 249 }, seedColor, 0.04);
       const surfaceContainerLowest = blendRGB({ r: 255, g: 255, b: 255 }, seedColor, 0.04);
-      const surfaceContainerLow = blendRGB({ r: 243, g: 246, b: 250 }, seedColor, 0.14);
-      const surfaceContainer = blendRGB({ r: 238, g: 242, b: 248 }, seedColor, 0.18);
-      const surfaceContainerHigh = blendRGB({ r: 232, g: 238, b: 244 }, seedColor, 0.24);
-      const surfaceContainerHighest = blendRGB({ r: 224, g: 231, b: 239 }, seedColor, 0.30);
+      const surfaceContainerLow = blendRGB({ r: 255, g: 247, b: 240 }, seedColor, 0.10);
+      const surfaceContainer = blendRGB({ r: 247, g: 238, b: 230 }, seedColor, 0.14);
+      const surfaceContainerHigh = blendRGB({ r: 241, g: 229, b: 219 }, seedColor, 0.18);
+      const surfaceContainerHighest = blendRGB({ r: 234, g: 219, b: 207 }, seedColor, 0.22);
 
       // Primary Accent - Ensure dark enough on light surface
       let primaryRgb = seedColor;
       if (lum > 0.40) {
-        primaryRgb = blendRGB(seedColor, { r: 0, g: 0, b: 0 }, 0.48);
+        primaryRgb = blendRGB(seedColor, { r: 45, g: 26, b: 16 }, 0.48);
       } else if (lum < 0.15) {
-        primaryRgb = blendRGB(seedColor, { r: 255, g: 255, b: 255 }, 0.25);
+        primaryRgb = blendRGB(seedColor, { r: 255, g: 245, b: 235 }, 0.25);
       }
 
       const primaryLum = getLuminance(primaryRgb);
-      const onPrimary = primaryLum > 0.5 ? '#030712' : '#ffffff';
+      const onPrimary = primaryLum > 0.45 ? '#2D1A10' : '#FFFFFF';
 
       // PrimaryContainer (pastel tone 90) & OnPrimaryContainer (deep tone 10)
-      const primaryContainerRgb = blendRGB(seedColor, { r: 255, g: 255, b: 255 }, 0.82);
-      const onPrimaryContainerRgb = blendRGB(seedColor, { r: 0, g: 0, b: 0 }, 0.80);
+      const primaryContainerRgb = blendRGB(seedColor, { r: 242, g: 216, b: 198 }, 0.75);
+      const onPrimaryContainerRgb = blendRGB(seedColor, { r: 45, g: 26, b: 16 }, 0.80);
 
-      const secondaryRgb = blendRGB(seedColor, { r: 37, g: 99, b: 235 }, 0.45);
-      const secondaryContainerRgb = blendRGB(seedColor, { r: 255, g: 255, b: 255 }, 0.88);
+      const secondaryRgb = blendRGB(seedColor, { r: 118, g: 91, b: 72 }, 0.45);
+      const secondaryContainerRgb = blendRGB(seedColor, { r: 240, g: 216, b: 200 }, 0.80);
 
-      const outlineRgb = blendRGB({ r: 148, g: 163, b: 184 }, seedColor, 0.25);
-      const outlineVariantRgb = blendRGB({ r: 203, g: 213, b: 225 }, seedColor, 0.25);
+      const outlineRgb = blendRGB({ r: 141, g: 119, b: 103 }, seedColor, 0.20);
+      const outlineVariantRgb = blendRGB({ r: 210, g: 192, b: 178 }, seedColor, 0.20);
 
       return {
         background: toRgbStr(background),
@@ -139,8 +139,8 @@ export class MaterialPaletteGenerator implements IPaletteGenerator {
         onPrimaryContainer: toRgbStr(onPrimaryContainerRgb),
         secondary: toRgbStr(secondaryRgb),
         secondaryContainer: toRgbStr(secondaryContainerRgb),
-        onSurface: '#090d16',
-        onSurfaceVariant: '#334155',
+        onSurface: '#211A16',
+        onSurfaceVariant: '#5F5148',
         outline: toRgbStr(outlineRgb),
         outlineVariant: toRgbStr(outlineVariantRgb),
       };

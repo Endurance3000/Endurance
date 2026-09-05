@@ -28,7 +28,7 @@
 
 /* Unplayed straight horizontal bar */
 .wave-unplayed-track {
-  stroke: var(--md-sys-color-surface-container-highest);
+  stroke: var(--md-sys-color-outline-variant);
   stroke-width: 4px;
   stroke-linecap: round;
   transition: stroke var(--motion-duration-short-2) var(--motion-easing-standard);
@@ -36,7 +36,7 @@
 
 .m3-expressive-wave-slider:hover .wave-unplayed-track,
 .m3-expressive-wave-slider:focus-visible .wave-unplayed-track {
-  stroke: var(--md-sys-color-outline-variant);
+  stroke: var(--md-sys-color-outline);
 }
 
 /* Played portion: organic animated sine-wave */
@@ -52,7 +52,7 @@
 
 /* Playhead Thumb */
 .wave-thumb {
-  fill: var(--md-sys-color-primary);
+  fill: var(--md-sys-color-on-background);
   stroke: var(--md-sys-color-surface);
   stroke-width: 2px;
   filter: drop-shadow(0 2px 5px rgba(0, 0, 0, 0.4));
