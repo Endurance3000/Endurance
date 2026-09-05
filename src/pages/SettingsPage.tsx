@@ -34,6 +34,8 @@ interface SettingsPageProps {
 
 type SettingsCategory = 'appearance' | 'playback' | 'library' | 'lyrics' | 'audio' | 'shortcuts' | 'about';
 
+import { useTheme } from '../state/ThemeContext';
+
 export const SettingsPage: React.FC<SettingsPageProps> = ({
   systemInfo,
   folders,
@@ -44,9 +46,9 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({
   onRescan,
 }) => {
   const [activeCategory, setActiveCategory] = useState<SettingsCategory>('library');
+  const { theme, setTheme, dynamicColorEnabled, setDynamicColorEnabled } = useTheme();
 
   // Interactive toggle states
-  const [dynamicColor, setDynamicColor] = useState(true);
   const [highContrast, setHighContrast] = useState(false);
   const [gaplessPlayback, setGaplessPlayback] = useState(true);
   const [showLyricsOnRight, setShowLyricsOnRight] = useState(true);
@@ -178,24 +180,42 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({
             <div className="settings-row">
               <div>
                 <div className="setting-label">Theme Mode</div>
-                <div className="setting-sublabel">Endurance defaults to an expressive dark palette tailored for desktop audio</div>
+                <div className="setting-sublabel">Choose between Dark, Light, or automatic System theme matching Windows</div>
               </div>
-              <div className="theme-toggle-group">
-                <span className="setting-badge setting-badge-active">Dark (Default)</span>
-                <span className="setting-badge">Light</span>
-                <span className="setting-badge">System</span>
+              <div className="theme-toggle-group" role="group" aria-label="Theme Mode Selection">
+                <button
+                  type="button"
+                  className={`setting-badge ${theme === 'dark' ? 'setting-badge-active' : ''}`}
+                  onClick={() => setTheme('dark')}
+                >
+                  Dark
+                </button>
+                <button
+                  type="button"
+                  className={`setting-badge ${theme === 'light' ? 'setting-badge-active' : ''}`}
+                  onClick={() => setTheme('light')}
+                >
+                  Light
+                </button>
+                <button
+                  type="button"
+                  className={`setting-badge ${theme === 'system' ? 'setting-badge-active' : ''}`}
+                  onClick={() => setTheme('system')}
+                >
+                  System
+                </button>
               </div>
             </div>
 
             <div className="settings-row">
               <div>
                 <div className="setting-label">Dynamic Album Color Palette</div>
-                <div className="setting-sublabel">Extract tonal accents from the current playing album artwork (Phase 7)</div>
+                <div className="setting-sublabel">Extract harmonious tonal accents from the active playing album artwork</div>
               </div>
               <button
                 type="button"
-                className={`m3-switch ${dynamicColor ? 'active' : ''}`}
-                onClick={() => setDynamicColor(!dynamicColor)}
+                className={`m3-switch ${dynamicColorEnabled ? 'active' : ''}`}
+                onClick={() => setDynamicColorEnabled(!dynamicColorEnabled)}
                 aria-label="Toggle Dynamic Album Color Palette"
               >
                 <span className="m3-switch-thumb" />

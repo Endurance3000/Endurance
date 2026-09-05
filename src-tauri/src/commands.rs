@@ -1,7 +1,9 @@
 use crate::artwork::ArtworkCache;
 use crate::db::Database;
-use crate::models::{LibraryFolder, ScanSummary, Track};
+use crate::lyrics::find_and_read_lrc;
+use crate::models::{HistoryItem, LibraryFolder, ScanSummary, Track};
 use crate::scanner::LibraryScanner;
+use std::collections::HashMap;
 use tauri::{AppHandle, State};
 
 pub struct AppState {
@@ -89,3 +91,34 @@ pub fn toggle_track_favorite(track_id: String, state: State<AppState>) -> Result
 pub fn get_track_artwork(artwork_hash: String, state: State<AppState>) -> Result<Option<String>, String> {
     Ok(state.artwork_cache.get_data_uri(&artwork_hash))
 }
+
+#[tauri::command]
+pub fn get_track_lyrics(track_file_path: String) -> Result<Option<String>, String> {
+    Ok(find_and_read_lrc(&track_file_path))
+}
+
+#[tauri::command]
+pub fn record_playback_history(
+    track_id: String,
+    duration_played: f64,
+    completed: bool,
+    state: State<AppState>,
+) -> Result<(), String> {
+    state.db.record_playback_history(&track_id, duration_played, completed)
+}
+
+#[tauri::command]
+pub fn get_playback_history(limit: Option<usize>, state: State<AppState>) -> Result<Vec<HistoryItem>, String> {
+    state.db.get_playback_history(limit.unwrap_or(50))
+}
+
+#[tauri::command]
+pub fn get_user_preferences(state: State<AppState>) -> Result<HashMap<String, String>, String> {
+    state.db.get_user_preferences()
+}
+
+#[tauri::command]
+pub fn set_user_preference(key: String, value: String, state: State<AppState>) -> Result<(), String> {
+    state.db.set_user_preference(&key, &value)
+}
+

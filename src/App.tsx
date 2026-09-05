@@ -9,12 +9,15 @@ import { Favorites } from './pages/Favorites';
 import { SettingsPage } from './pages/SettingsPage';
 import { useLibrary } from './hooks/useLibrary';
 import { PlaybackProvider } from './state/PlaybackContext';
+import { ThemeProvider } from './state/ThemeContext';
+import { MainPlayer } from './components/Player/MainPlayer';
 import { NavigationPage, SystemInfo } from './types';
 import './App.css';
 
 export const App: React.FC = () => {
   const [currentPage, setCurrentPage] = useState<NavigationPage>('home');
   const [systemInfo, setSystemInfo] = useState<SystemInfo | null>(null);
+  const [isMainPlayerOpen, setIsMainPlayerOpen] = useState<boolean>(false);
 
   const {
     tracks,
@@ -103,22 +106,35 @@ export const App: React.FC = () => {
   };
 
   return (
-    <PlaybackProvider>
-      <div className="app-shell">
-        {/* Top Native-Behaving Custom Window Titlebar */}
-        <TitleBar />
+    <ThemeProvider>
+      <PlaybackProvider>
+        <div className="app-shell">
+          {/* Top Native-Behaving Custom Window Titlebar */}
+          <TitleBar />
 
-        {/* Main Body Layout: Sidebar + Page View */}
-        <div className="app-body">
-          <Sidebar currentPage={currentPage} onNavigate={setCurrentPage} />
-          <main className="app-content">
-            {renderPage()}
-          </main>
+          {/* Main Body Layout: Sidebar + Page View */}
+          <div className="app-body">
+            <Sidebar currentPage={currentPage} onNavigate={(p) => {
+              setCurrentPage(p);
+              setIsMainPlayerOpen(false);
+            }} />
+            <main className="app-content">
+              {renderPage()}
+            </main>
+          </div>
+
+          {/* Main Player Full View Overlay (Artwork Left, Lyrics Right) */}
+          {isMainPlayerOpen && (
+            <MainPlayer onClose={() => setIsMainPlayerOpen(false)} />
+          )}
+
+          {/* Bottom Audio Player Bar */}
+          <PlayerBar
+            onToggleExpand={() => setIsMainPlayerOpen(!isMainPlayerOpen)}
+            isExpanded={isMainPlayerOpen}
+          />
         </div>
-
-        {/* Bottom Audio Player Bar */}
-        <PlayerBar />
-      </div>
-    </PlaybackProvider>
+      </PlaybackProvider>
+    </ThemeProvider>
   );
 };

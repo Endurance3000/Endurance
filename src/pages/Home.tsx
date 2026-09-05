@@ -1,11 +1,12 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Button } from '../components/Common/Button';
 import { Card } from '../components/Common/Card';
 import { SectionHeader } from '../components/Common/SectionHeader';
 import { TrackArtwork } from '../components/Library/TrackArtwork';
 import { FolderPlus, Play, Pause, Sparkles, Music, ShieldCheck, Zap } from 'lucide-react';
 import { usePlayback } from '../state/PlaybackContext';
-import { Track, LibraryFolder } from '../types';
+import { historyService } from '../services/history/historyService';
+import { Track, LibraryFolder, HistoryItem } from '../types';
 import './Pages.css';
 
 interface HomeProps {
@@ -22,6 +23,25 @@ export const Home: React.FC<HomeProps> = ({
   onAddFolder,
 }) => {
   const { currentTrack, isPlaying, playTrack, togglePlay } = usePlayback();
+  const [historyItems, setHistoryItems] = useState<HistoryItem[]>([]);
+
+  useEffect(() => {
+    const unsub = historyService.subscribe(setHistoryItems);
+    historyService.getHistory(20);
+    return unsub;
+  }, []);
+
+  // Deduplicate history items so unique tracks appear in "Recently Played"
+  const recentHistoryTracks: Track[] = [];
+  const seenIds = new Set<string>();
+  for (const item of historyItems) {
+    if (!seenIds.has(item.track.id)) {
+      seenIds.add(item.track.id);
+      recentHistoryTracks.push(item.track);
+      if (recentHistoryTracks.length >= 4) break;
+    }
+  }
+
   // Take up to 4 most recently added tracks for the quick access preview
   const recentTracks = [...tracks]
     .sort((a, b) => (parseInt(b.date_added, 10) || 0) - (parseInt(a.date_added, 10) || 0))
@@ -91,6 +111,54 @@ export const Home: React.FC<HomeProps> = ({
           <p className="glance-hint">Fast rescan caching via file size & modification time</p>
         </Card>
       </div>
+
+      {/* Recently Played Section (if history recorded) */}
+      {recentHistoryTracks.length > 0 && (
+        <>
+          <SectionHeader
+            title="Recently Played"
+            subtitle="Pick up where you left off"
+          />
+          <div className="demo-cards-grid" style={{ marginBottom: 'var(--space-3xl)' }}>
+            {recentHistoryTracks.map((track) => {
+              const isCurrentTrack = currentTrack?.id === track.id;
+              const isCardPlaying = isCurrentTrack && isPlaying;
+              const handleCardClick = () => {
+                if (isCurrentTrack) {
+                  togglePlay();
+                } else {
+                  playTrack(track, recentHistoryTracks);
+                }
+              };
+
+              return (
+                <Card
+                  key={`hist_${track.id}`}
+                  variant="elevated"
+                  interactive
+                  padding="sm"
+                  className="demo-album-card"
+                  onClick={handleCardClick}
+                  aria-label={`${isCardPlaying ? 'Pause' : 'Play'} ${track.title}`}
+                >
+                  <div className="demo-album-artwork">
+                    <TrackArtwork artworkHash={track.artwork_hash} alt={track.title} size="lg" />
+                    <div className="demo-album-play-overlay">
+                      {isCardPlaying ? (
+                        <Pause size={20} fill="currentColor" />
+                      ) : (
+                        <Play size={20} fill="currentColor" />
+                      )}
+                    </div>
+                  </div>
+                  <div className="demo-album-title truncate">{track.title}</div>
+                  <div className="demo-album-artist truncate">{track.artist}</div>
+                </Card>
+              );
+            })}
+          </div>
+        </>
+      )}
 
       {/* Recently Added Section */}
       {recentTracks.length > 0 ? (

@@ -1,0 +1,47 @@
+/**
+ * Material 3 Expressive Light Theme Tokens for Endurance
+ */
+
+[data-theme='light'] {
+  --md-sys-color-background: #f8fafc;
+  --md-sys-color-on-background: #0f172a;
+
+  --md-sys-color-surface: #f1f5f9;
+  --md-sys-color-surface-dim: #e2e8f0;
+  --md-sys-color-surface-bright: #ffffff;
+
+  --md-sys-color-surface-container-lowest: #ffffff;
+  --md-sys-color-surface-container-low: #f8fafc;
+  --md-sys-color-surface-container: #f1f5f9;
+  --md-sys-color-surface-container-high: #e2e8f0;
+  --md-sys-color-surface-container-highest: #cbd5e1;
+
+  --md-sys-color-on-surface: #0f172a;
+  --md-sys-color-on-surface-variant: #475569;
+  --md-sys-color-surface-variant: #e2e8f0;
+
+  --md-sys-color-outline: #94a3b8;
+  --md-sys-color-outline-variant: #e2e8f0;
+  --md-sys-color-outline-subtle: rgba(0, 0, 0, 0.08);
+
+  --md-sys-color-primary: #0284c7;
+  --md-sys-color-on-primary: #ffffff;
+  --md-sys-color-primary-container: #e0f2fe;
+  --md-sys-color-on-primary-container: #0369a1;
+
+  --md-sys-color-secondary: #2563eb;
+  --md-sys-color-on-secondary: #ffffff;
+  --md-sys-color-secondary-container: #dbeafe;
+  --md-sys-color-on-secondary-container: #1d4ed8;
+
+  --md-sys-color-tertiary: #db2777;
+  --md-sys-color-on-tertiary: #ffffff;
+  --md-sys-color-tertiary-container: #fce7f3;
+  --md-sys-color-on-tertiary-container: #be185d;
+
+  --md-sys-color-focus-ring: #0284c7;
+
+  --elevation-1: 0 1px 3px rgba(0, 0, 0, 0.1), 0 1px 2px rgba(0, 0, 0, 0.06);
+  --elevation-2: 0 4px 12px rgba(0, 0, 0, 0.12), 0 2px 4px rgba(0, 0, 0, 0.06);
+  --elevation-3: 0 8px 24px rgba(0, 0, 0, 0.16), 0 4px 8px rgba(0, 0, 0, 0.08);
+}

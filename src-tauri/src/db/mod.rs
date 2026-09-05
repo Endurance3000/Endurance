@@ -1,6 +1,6 @@
 pub mod migrations;
 
-use crate::models::{LibraryFolder, Track};
+use crate::models::{HistoryItem, LibraryFolder, Track};
 use rusqlite::{params, Connection, Result};
 use std::collections::HashMap;
 use std::path::Path;
@@ -288,5 +288,122 @@ impl Database {
         .map_err(|e| e.to_string())?;
 
         Ok(new_state == 1)
+    }
+
+    pub fn record_playback_history(
+        &self,
+        track_id: &str,
+        duration_played: f64,
+        completed: bool,
+    ) -> Result<(), String> {
+        let conn = self.conn.lock().map_err(|e| e.to_string())?;
+        let now = std::time::SystemTime::now()
+            .duration_since(std::time::UNIX_EPOCH)
+            .unwrap_or_default()
+            .as_secs()
+            .to_string();
+
+        conn.execute(
+            "INSERT INTO playback_history (track_id, played_at, duration_played, completed) VALUES (?1, ?2, ?3, ?4)",
+            params![track_id, now, duration_played, if completed { 1 } else { 0 }],
+        )
+        .map_err(|e| e.to_string())?;
+
+        Ok(())
+    }
+
+    pub fn get_playback_history(&self, limit: usize) -> Result<Vec<HistoryItem>, String> {
+        let conn = self.conn.lock().map_err(|e| e.to_string())?;
+        let mut stmt = conn
+            .prepare(
+                r#"
+                SELECT h.id, h.played_at, h.duration_played, h.completed,
+                       t.id, t.file_path, t.file_name, t.file_size, t.modified_time,
+                       t.title, t.artist, t.album, t.album_artist, t.genre, t.year,
+                       t.track_number, t.disc_number, t.duration, t.artwork_hash,
+                       t.is_favorite, t.is_available, t.date_added, t.last_scanned
+                FROM playback_history h
+                JOIN tracks t ON h.track_id = t.id
+                ORDER BY h.id DESC
+                LIMIT ?1
+                "#,
+            )
+            .map_err(|e| e.to_string())?;
+
+        let rows = stmt
+            .query_map(params![limit as i64], |row| {
+                Ok(HistoryItem {
+                    id: row.get(0)?,
+                    played_at: row.get(1)?,
+                    duration_played: row.get(2)?,
+                    completed: row.get::<_, i32>(3)? == 1,
+                    track: Track {
+                        id: row.get(4)?,
+                        file_path: row.get(5)?,
+                        file_name: row.get(6)?,
+                        file_size: row.get::<_, i64>(7)? as u64,
+                        modified_time: row.get::<_, i64>(8)? as u64,
+                        title: row.get(9)?,
+                        artist: row.get(10)?,
+                        album: row.get(11)?,
+                        album_artist: row.get(12)?,
+                        genre: row.get(13)?,
+                        year: row.get(14)?,
+                        track_number: row.get(15)?,
+                        disc_number: row.get(16)?,
+                        duration: row.get(17)?,
+                        artwork_hash: row.get(18)?,
+                        is_favorite: row.get::<_, i32>(19)? == 1,
+                        is_available: row.get::<_, i32>(20)? == 1,
+                        date_added: row.get(21)?,
+                        last_scanned: row.get(22)?,
+                    },
+                })
+            })
+            .map_err(|e| e.to_string())?;
+
+        let mut items = Vec::new();
+        for r in rows {
+            items.push(r.map_err(|e| e.to_string())?);
+        }
+        Ok(items)
+    }
+
+    pub fn set_user_preference(&self, key: &str, value: &str) -> Result<(), String> {
+        let conn = self.conn.lock().map_err(|e| e.to_string())?;
+        let now = std::time::SystemTime::now()
+            .duration_since(std::time::UNIX_EPOCH)
+            .unwrap_or_default()
+            .as_secs()
+            .to_string();
+
+        conn.execute(
+            r#"
+            INSERT INTO user_preferences (key, value, updated_at) VALUES (?1, ?2, ?3)
+            ON CONFLICT(key) DO UPDATE SET value = excluded.value, updated_at = excluded.updated_at
+            "#,
+            params![key, value, now],
+        )
+        .map_err(|e| e.to_string())?;
+
+        Ok(())
+    }
+
+    pub fn get_user_preferences(&self) -> Result<HashMap<String, String>, String> {
+        let conn = self.conn.lock().map_err(|e| e.to_string())?;
+        let mut stmt = conn
+            .prepare("SELECT key, value FROM user_preferences")
+            .map_err(|e| e.to_string())?;
+
+        let rows = stmt
+            .query_map([], |row| Ok((row.get::<_, String>(0)?, row.get::<_, String>(1)?)))
+            .map_err(|e| e.to_string())?;
+
+        let mut map = HashMap::new();
+        for r in rows {
+            let (k, v) = r.map_err(|e| e.to_string())?;
+            map.insert(k, v);
+        }
+        Ok(map)
     }
 }

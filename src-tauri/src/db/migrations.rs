@@ -49,6 +49,31 @@ pub const MIGRATIONS: &[Migration] = &[
             CREATE INDEX IF NOT EXISTS idx_tracks_available ON tracks(is_available);
         "#,
     },
+    Migration {
+        version: 2,
+        name: "002_playback_history_and_preferences",
+        sql: r#"
+            -- Persistent playback history
+            CREATE TABLE IF NOT EXISTS playback_history (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                track_id TEXT NOT NULL,
+                played_at TEXT NOT NULL,
+                duration_played REAL NOT NULL DEFAULT 0.0,
+                completed INTEGER NOT NULL DEFAULT 0,
+                FOREIGN KEY (track_id) REFERENCES tracks(id) ON DELETE CASCADE
+            );
+
+            CREATE INDEX IF NOT EXISTS idx_history_played_at ON playback_history(played_at DESC);
+            CREATE INDEX IF NOT EXISTS idx_history_track_id ON playback_history(track_id);
+
+            -- Persistent user key-value preferences
+            CREATE TABLE IF NOT EXISTS user_preferences (
+                key TEXT PRIMARY KEY NOT NULL,
+                value TEXT NOT NULL,
+                updated_at TEXT NOT NULL
+            );
+        "#,
+    },
 ];
 
 pub fn run_migrations(conn: &mut Connection) -> Result<()> {

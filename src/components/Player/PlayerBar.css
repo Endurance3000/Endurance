@@ -99,7 +99,7 @@
 }
 
 .player-play-btn:hover {
-  background: #bae6fd;
+  filter: brightness(1.12);
   box-shadow: var(--elevation-2);
 }
 

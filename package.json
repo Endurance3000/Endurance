@@ -7,7 +7,7 @@
     "dev": "vite",
     "build": "tsc && vite build",
     "preview": "vite preview",
-    "test": "npx tsx --test src/services/audio/__tests__/*.test.ts",
+    "test": "npx tsx --test src/**/__tests__/*.test.ts",
     "tauri": "tauri"
   },
   "dependencies": {

@@ -16,16 +16,25 @@ export interface HSLColor {
 }
 
 export interface MaterialTonalPalette {
+  background: string;
+  surface: string;
+  surfaceDim: string;
+  surfaceBright: string;
+  surfaceContainerLowest: string;
+  surfaceContainerLow: string;
+  surfaceContainer: string;
+  surfaceContainerHigh: string;
+  surfaceContainerHighest: string;
   primary: string;
   onPrimary: string;
   primaryContainer: string;
   onPrimaryContainer: string;
+  secondary: string;
   secondaryContainer: string;
-  surface: string;
-  surfaceContainer: string;
-  surfaceContainerHigh: string;
   onSurface: string;
   onSurfaceVariant: string;
+  outline: string;
+  outlineVariant: string;
 }
 
 export interface ExtractedArtworkColors {
@@ -44,12 +53,12 @@ export interface IColorExtractor {
  * Interface for generating Material-inspired tonal palettes from raw colors
  */
 export interface IPaletteGenerator {
-  generatePalette(seedColor: RGBColor): MaterialTonalPalette;
+  generatePalette(seedColor: RGBColor, isDark?: boolean): MaterialTonalPalette;
 }
 
 /**
  * High-level service combining extraction and palette generation
  */
 export interface IDynamicColorService {
-  getArtworkPalette(imageSource: string): Promise<ExtractedArtworkColors>;
+  getArtworkPalette(imageSource: string, isDark?: boolean): Promise<ExtractedArtworkColors>;
 }

@@ -1,6 +1,7 @@
 pub mod artwork;
 pub mod commands;
 pub mod db;
+pub mod lyrics;
 pub mod metadata;
 pub mod models;
 pub mod scanner;
@@ -61,7 +62,12 @@ pub fn run() {
             commands::scan_library,
             commands::get_tracks,
             commands::toggle_track_favorite,
-            commands::get_track_artwork
+            commands::get_track_artwork,
+            commands::get_track_lyrics,
+            commands::record_playback_history,
+            commands::get_playback_history,
+            commands::get_user_preferences,
+            commands::set_user_preference
         ])
         .run(tauri::generate_context!())
         .expect("error while running endurance application");

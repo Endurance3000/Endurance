@@ -1,12 +1,17 @@
 import React, { useState, useRef } from 'react';
-import { Play, Pause, SkipBack, SkipForward, Shuffle, Repeat, Volume2, Volume1, VolumeX, AlertCircle, Loader2 } from 'lucide-react';
+import { Play, Pause, SkipBack, SkipForward, Shuffle, Repeat, Volume2, Volume1, VolumeX, AlertCircle, Loader2, FileText } from 'lucide-react';
 import { IconButton } from '../Common/IconButton';
 import { TrackArtwork } from '../Library/TrackArtwork';
 import { usePlayback } from '../../state/PlaybackContext';
 import { formatDuration } from '../../utils/formatters';
 import './PlayerBar.css';
 
-export const PlayerBar: React.FC = () => {
+interface PlayerBarProps {
+  onToggleExpand?: () => void;
+  isExpanded?: boolean;
+}
+
+export const PlayerBar: React.FC<PlayerBarProps> = ({ onToggleExpand, isExpanded }) => {
   const {
     currentTrack,
     isPlaying,
@@ -105,7 +110,17 @@ export const PlayerBar: React.FC = () => {
   return (
     <footer className="player-bar" aria-label="Audio Player Controls">
       {/* Left: Track Information Preview & Artwork */}
-      <div className="player-track-info">
+      <div
+        className="player-track-info"
+        onClick={onToggleExpand}
+        role="button"
+        tabIndex={0}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter') onToggleExpand?.();
+        }}
+        title="Toggle Now Playing & Synchronized Lyrics"
+        style={{ cursor: 'pointer' }}
+      >
         <TrackArtwork
           artworkHash={currentTrack?.artwork_hash}
           alt={currentTrack?.title || 'No track selected'}
@@ -224,8 +239,17 @@ export const PlayerBar: React.FC = () => {
         </div>
       </div>
 
-      {/* Right: Volume Controls */}
+      {/* Right: Volume & Extras */}
       <div className="player-extras">
+        <IconButton
+          icon={<FileText size={18} />}
+          aria-label="Synchronized Lyrics & Now Playing"
+          tooltip={isExpanded ? "Collapse View (Esc)" : "Synchronized Lyrics"}
+          selected={isExpanded}
+          onClick={onToggleExpand}
+          size="sm"
+          disabled={!hasTrack}
+        />
         <div className="player-volume-control">
           <IconButton
             icon={getVolumeIcon()}

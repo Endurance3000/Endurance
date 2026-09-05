@@ -3,10 +3,15 @@ import { Track } from '../types';
 import { RepeatMode, PlaybackContextType } from '../services/audio/playbackTypes';
 import { audioEngine } from '../services/audio/AudioEngine';
 import { generateShuffleOrder, getNextTrack, getPreviousTrack } from '../services/audio/shuffleHelper';
+import { historyService } from '../services/history/historyService';
+import { preferencesService } from '../services/preferences/preferencesService';
+import { useTheme } from './ThemeContext';
 
 const PlaybackContext = createContext<PlaybackContextType | null>(null);
 
 export const PlaybackProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const { applyTrackArtworkColors } = useTheme();
+
   const [currentTrack, setCurrentTrack] = useState<Track | null>(null);
   const [isPlaying, setIsPlaying] = useState<boolean>(false);
   const [currentTime, setCurrentTime] = useState<number>(0);
@@ -21,6 +26,9 @@ export const PlaybackProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   const [originalQueue, setOriginalQueue] = useState<Track[]>([]);
   const [playbackQueue, setPlaybackQueue] = useState<Track[]>([]);
   const [currentIndex, setCurrentIndex] = useState<number>(-1);
+
+  // Guard to record playback history only once per track session
+  const hasRecordedHistoryRef = useRef<boolean>(false);
 
   // Refs for callbacks to prevent stale state in audio event listeners
   const stateRef = useRef({
@@ -65,6 +73,37 @@ export const PlaybackProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     currentIndex,
   ]);
 
+  // Load saved preferences on startup
+  useEffect(() => {
+    preferencesService.loadAll().then((prefs) => {
+      const savedVol = prefs.get('volume');
+      if (savedVol !== undefined && savedVol !== '') {
+        const parsed = parseFloat(savedVol);
+        if (!isNaN(parsed) && parsed >= 0 && parsed <= 1) {
+          setVolumeState(parsed);
+          audioEngine.setVolume(parsed);
+        }
+      }
+
+      const savedMuted = prefs.get('muted');
+      if (savedMuted !== undefined && savedMuted !== '') {
+        const isM = savedMuted === 'true';
+        setIsMuted(isM);
+        audioEngine.setMuted(isM);
+      }
+
+      const savedRepeat = prefs.get('repeat') as RepeatMode;
+      if (savedRepeat === 'off' || savedRepeat === 'all' || savedRepeat === 'one') {
+        setRepeatMode(savedRepeat);
+      }
+
+      const savedShuffle = prefs.get('shuffle');
+      if (savedShuffle !== undefined && savedShuffle !== '') {
+        setShuffleEnabled(savedShuffle === 'true');
+      }
+    });
+  }, []);
+
   // Connect AudioEngine callbacks
   useEffect(() => {
     audioEngine.setVolume(volume);
@@ -80,6 +119,17 @@ export const PlaybackProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       },
       onTimeUpdate: (time) => {
         setCurrentTime(time);
+
+        // Check meaningful playback threshold for history (>15 seconds or >30% duration)
+        const track = stateRef.current.currentTrack;
+        const dur = stateRef.current.duration;
+        if (track && !hasRecordedHistoryRef.current) {
+          const thresholdReached = time >= 15.0 || (dur > 0 && time / dur >= 0.3);
+          if (thresholdReached) {
+            hasRecordedHistoryRef.current = true;
+            historyService.recordHistory(track.id, time, false);
+          }
+        }
       },
       onDurationChange: (dur) => {
         setDuration(dur);
@@ -94,6 +144,11 @@ export const PlaybackProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         setPlaybackError(err);
       },
       onEnded: () => {
+        // Record completed play in history
+        const track = stateRef.current.currentTrack;
+        if (track) {
+          historyService.recordHistory(track.id, stateRef.current.duration, true);
+        }
         handleTrackEnded();
       },
     });
@@ -104,37 +159,44 @@ export const PlaybackProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     };
   }, []);
 
-  const playTrack = useCallback(async (track: Track, newQueue?: Track[]) => {
-    setPlaybackError(null);
-    let targetQueue = stateRef.current.playbackQueue;
-    let targetOriginal = stateRef.current.originalQueue;
+  const playTrack = useCallback(
+    async (track: Track, newQueue?: Track[]) => {
+      setPlaybackError(null);
+      hasRecordedHistoryRef.current = false;
+      let targetQueue = stateRef.current.playbackQueue;
+      let targetOriginal = stateRef.current.originalQueue;
 
-    if (newQueue && newQueue.length > 0) {
-      targetOriginal = newQueue;
-      if (stateRef.current.shuffleEnabled) {
-        targetQueue = generateShuffleOrder(newQueue, track.id);
-      } else {
-        targetQueue = [...newQueue];
+      if (newQueue && newQueue.length > 0) {
+        targetOriginal = newQueue;
+        if (stateRef.current.shuffleEnabled) {
+          targetQueue = generateShuffleOrder(newQueue, track.id);
+        } else {
+          targetQueue = [...newQueue];
+        }
+        setOriginalQueue(targetOriginal);
+        setPlaybackQueue(targetQueue);
+      } else if (targetQueue.length === 0) {
+        targetOriginal = [track];
+        targetQueue = [track];
+        setOriginalQueue(targetOriginal);
+        setPlaybackQueue(targetQueue);
       }
-      setOriginalQueue(targetOriginal);
-      setPlaybackQueue(targetQueue);
-    } else if (targetQueue.length === 0) {
-      targetOriginal = [track];
-      targetQueue = [track];
-      setOriginalQueue(targetOriginal);
-      setPlaybackQueue(targetQueue);
-    }
 
-    const idx = targetQueue.findIndex((t) => t.id === track.id);
-    const resolvedIndex = idx !== -1 ? idx : 0;
+      const idx = targetQueue.findIndex((t) => t.id === track.id);
+      const resolvedIndex = idx !== -1 ? idx : 0;
 
-    setCurrentIndex(resolvedIndex);
-    setCurrentTrack(track);
-    setCurrentTime(0);
-    setDuration(track.duration || 0);
+      setCurrentIndex(resolvedIndex);
+      setCurrentTrack(track);
+      setCurrentTime(0);
+      setDuration(track.duration || 0);
 
-    await audioEngine.loadAndPlay(track.file_path);
-  }, []);
+      // Trigger dynamic color adaptation based on new artwork
+      applyTrackArtworkColors(track);
+
+      await audioEngine.loadAndPlay(track.file_path);
+    },
+    [applyTrackArtworkColors]
+  );
 
   const togglePlay = useCallback(async () => {
     if (stateRef.current.isPlaying) {
@@ -171,10 +233,12 @@ export const PlaybackProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         seek(0);
         await audioEngine.play();
       } else {
+        hasRecordedHistoryRef.current = false;
         setCurrentIndex(nextResult.index);
         setCurrentTrack(nextResult.track);
         setCurrentTime(0);
         setDuration(nextResult.track.duration || 0);
+        applyTrackArtworkColors(nextResult.track);
         await audioEngine.loadAndPlay(nextResult.track.file_path);
       }
     } else {
@@ -183,7 +247,7 @@ export const PlaybackProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       setIsPlaying(false);
       setCurrentTime(0);
     }
-  }, [seek]);
+  }, [seek, applyTrackArtworkColors]);
 
   const prevTrack = useCallback(async () => {
     const { playbackQueue: queue, currentIndex: idx, currentTime: time, repeatMode: mode } = stateRef.current;
@@ -194,14 +258,16 @@ export const PlaybackProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         seek(0);
         await audioEngine.play();
       } else {
+        hasRecordedHistoryRef.current = false;
         setCurrentIndex(prevResult.index);
         setCurrentTrack(prevResult.track);
         setCurrentTime(0);
         setDuration(prevResult.track.duration || 0);
+        applyTrackArtworkColors(prevResult.track);
         await audioEngine.loadAndPlay(prevResult.track.file_path);
       }
     }
-  }, [seek]);
+  }, [seek, applyTrackArtworkColors]);
 
   const handleTrackEnded = useCallback(async () => {
     const { playbackQueue: queue, currentIndex: idx, repeatMode: mode } = stateRef.current;
@@ -212,10 +278,12 @@ export const PlaybackProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         seek(0);
         await audioEngine.play();
       } else {
+        hasRecordedHistoryRef.current = false;
         setCurrentIndex(nextResult.index);
         setCurrentTrack(nextResult.track);
         setCurrentTime(0);
         setDuration(nextResult.track.duration || 0);
+        applyTrackArtworkColors(nextResult.track);
         await audioEngine.loadAndPlay(nextResult.track.file_path);
       }
     } else {
@@ -224,7 +292,7 @@ export const PlaybackProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       setIsPlaying(false);
       setCurrentTime(0);
     }
-  }, [seek]);
+  }, [seek, applyTrackArtworkColors]);
 
   const setVolume = useCallback((newVol: number) => {
     // Normalize to 0.0 - 1.0 if passed as 0 - 100
@@ -233,10 +301,12 @@ export const PlaybackProvider: React.FC<{ children: React.ReactNode }> = ({ chil
 
     audioEngine.setVolume(clamped);
     setVolumeState(clamped);
+    preferencesService.set('volume', clamped.toFixed(3));
 
     if (stateRef.current.isMuted && clamped > 0) {
       audioEngine.setMuted(false);
       setIsMuted(false);
+      preferencesService.set('muted', 'false');
     }
   }, []);
 
@@ -244,11 +314,13 @@ export const PlaybackProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     const newMuted = !stateRef.current.isMuted;
     audioEngine.setMuted(newMuted);
     setIsMuted(newMuted);
+    preferencesService.set('muted', newMuted ? 'true' : 'false');
   }, []);
 
   const toggleShuffle = useCallback(() => {
     const nextShuffle = !stateRef.current.shuffleEnabled;
     setShuffleEnabled(nextShuffle);
+    preferencesService.set('shuffle', nextShuffle ? 'true' : 'false');
 
     const { originalQueue: orig, currentTrack: curr } = stateRef.current;
 
@@ -269,9 +341,13 @@ export const PlaybackProvider: React.FC<{ children: React.ReactNode }> = ({ chil
 
   const toggleRepeat = useCallback(() => {
     setRepeatMode((prev) => {
-      if (prev === 'off') return 'all';
-      if (prev === 'all') return 'one';
-      return 'off';
+      let next: RepeatMode;
+      if (prev === 'off') next = 'all';
+      else if (prev === 'all') next = 'one';
+      else next = 'off';
+
+      preferencesService.set('repeat', next);
+      return next;
     });
   }, []);
 

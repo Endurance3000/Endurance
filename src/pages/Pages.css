@@ -493,16 +493,29 @@
 .setting-badge {
   font-size: 0.75rem;
   font-weight: 600;
-  padding: 4px 10px;
+  padding: 6px 14px;
   border-radius: var(--radius-full);
   background: var(--md-sys-color-surface-container-highest);
   color: var(--md-sys-color-on-surface);
   white-space: nowrap;
+  border: 1px solid transparent;
+}
+
+button.setting-badge {
+  cursor: pointer;
+  transition: all var(--motion-duration-short-2) var(--motion-easing-standard);
+  font-family: inherit;
+}
+
+button.setting-badge:hover {
+  background: var(--md-sys-color-surface-container-high);
+  border-color: var(--md-sys-color-outline-variant);
 }
 
 .setting-badge-active {
-  background: var(--md-sys-color-primary-container);
-  color: var(--md-sys-color-on-primary-container);
+  background: var(--md-sys-color-primary-container) !important;
+  color: var(--md-sys-color-on-primary-container) !important;
+  border-color: var(--md-sys-color-primary) !important;
 }
 
 .setting-badge-success {

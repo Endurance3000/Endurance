@@ -56,4 +56,12 @@ export interface ScanProgressPayload {
   total_discovered: number;
 }
 
+export interface HistoryItem {
+  id: number;
+  track: Track;
+  played_at: string;
+  duration_played: number;
+  completed: boolean;
+}
+
 export type NavigationPage = 'home' | 'songs' | 'favorites' | 'settings';

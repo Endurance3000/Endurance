@@ -2,6 +2,7 @@
 mod tests {
     use crate::artwork::ArtworkCache;
     use crate::db::Database;
+    use crate::lyrics::find_and_read_lrc;
     use crate::models::Track;
     use crate::scanner::{generate_track_id, is_supported_audio, LibraryScanner};
     use std::path::Path;
@@ -131,5 +132,98 @@ mod tests {
             // Cleanup
             let _ = std::fs::remove_dir_all(&temp_dir);
         }
+    }
+
+    #[test]
+    fn test_playback_history_and_preferences() {
+        let temp_dir = std::env::temp_dir().join(format!("endurance_p5_test_{}", std::process::id()));
+        let db_path = temp_dir.join("p5_test.db");
+        let db = Database::new(&db_path).expect("Create test db with migrations");
+
+        // 1. Upsert a test track
+        let track = Track {
+            id: generate_track_id("C:/Music/track_history.mp3"),
+            file_path: "C:/Music/track_history.mp3".to_string(),
+            file_name: "track_history.mp3".to_string(),
+            file_size: 2048,
+            modified_time: 12345678,
+            title: "History Track".to_string(),
+            artist: "History Artist".to_string(),
+            album: "History Album".to_string(),
+            album_artist: None,
+            genre: None,
+            year: Some(2026),
+            track_number: Some(1),
+            disc_number: Some(1),
+            duration: 210.0,
+            artwork_hash: None,
+            is_favorite: false,
+            is_available: true,
+            date_added: "12345678".to_string(),
+            last_scanned: "12345678".to_string(),
+        };
+        db.upsert_track(&track).expect("Upsert track");
+
+        // 2. Record history
+        db.record_playback_history(&track.id, 45.0, false).expect("Record history 1");
+        db.record_playback_history(&track.id, 210.0, true).expect("Record history 2");
+
+        let history = db.get_playback_history(10).expect("Get history");
+        assert_eq!(history.len(), 2);
+        assert_eq!(history[0].track.title, "History Track");
+        assert!(history[0].completed);
+        assert_eq!(history[0].duration_played, 210.0);
+        assert!(!history[1].completed);
+        assert_eq!(history[1].duration_played, 45.0);
+
+        // 3. User Preferences
+        db.set_user_preference("theme", "dark").expect("Set theme");
+        db.set_user_preference("volume", "0.85").expect("Set volume");
+
+        let prefs = db.get_user_preferences().expect("Get preferences");
+        assert_eq!(prefs.get("theme").map(String::as_str), Some("dark"));
+        assert_eq!(prefs.get("volume").map(String::as_str), Some("0.85"));
+
+        // Update preference
+        db.set_user_preference("theme", "light").expect("Update theme");
+        let updated_prefs = db.get_user_preferences().expect("Get updated preferences");
+        assert_eq!(updated_prefs.get("theme").map(String::as_str), Some("light"));
+
+        // Cleanup
+        let _ = std::fs::remove_dir_all(&temp_dir);
+    }
+
+    #[test]
+    fn test_lrc_lyrics_discovery() {
+        let temp_dir = std::env::temp_dir().join(format!("endurance_lrc_test_{}", std::process::id()));
+        std::fs::create_dir_all(&temp_dir).expect("Create temp dir");
+
+        let audio_path = temp_dir.join("acoustic_melody.mp3");
+        let lrc_path = temp_dir.join("acoustic_melody.lrc");
+
+        // Write dummy audio and LRC
+        std::fs::write(&audio_path, b"dummy audio").expect("Write audio");
+        let lrc_content = "[00:12.50]Strumming the chords\n[00:16.80]A gentle whisper in the wind\n";
+        std::fs::write(&lrc_path, lrc_content.as_bytes()).expect("Write lrc");
+
+        let found = find_and_read_lrc(&audio_path.to_string_lossy());
+        assert_eq!(found, Some(lrc_content.to_string()));
+
+        // Case insensitivity test
+        let upper_audio = temp_dir.join("UPPERCASE_SONG.M4A");
+        let lower_lrc = temp_dir.join("uppercase_song.LRC");
+        std::fs::write(&upper_audio, b"dummy").expect("Write audio");
+        std::fs::write(&lower_lrc, b"[00:05.00]Uppercase test\n").expect("Write lrc");
+
+        let found_case = find_and_read_lrc(&upper_audio.to_string_lossy());
+        assert_eq!(found_case, Some("[00:05.00]Uppercase test\n".to_string()));
+
+        // Missing LRC test
+        let no_lrc_audio = temp_dir.join("lonely_song.mp3");
+        std::fs::write(&no_lrc_audio, b"dummy").expect("Write audio");
+        assert_eq!(find_and_read_lrc(&no_lrc_audio.to_string_lossy()), None);
+
+        // Cleanup
+        let _ = std::fs::remove_dir_all(&temp_dir);
     }
 }

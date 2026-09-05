@@ -1,5 +1,6 @@
 /* Material 3 Expressive Foundations */
 @import './themes/tokens.css';
+@import './themes/lightTokens.css';
 @import './themes/typography.css';
 @import './animations/motion.css';
 
@@ -20,6 +21,8 @@ html, body {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   text-rendering: optimizeLegibility;
+  transition: background-color var(--motion-duration-medium-2) var(--motion-easing-standard),
+              color var(--motion-duration-medium-2) var(--motion-easing-standard);
 }
 
 #root {
