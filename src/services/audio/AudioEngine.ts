@@ -114,6 +114,7 @@ export class AudioEngine {
     try {
       await this.audio.play();
     } catch (err: unknown) {
+      this.callbacks.onLoadingChange?.(false);
       // If error wasn't already caught by 'error' event listener
       const errorMsg = err instanceof Error ? err.message : 'Playback failed to start';
       // AbortError can occur when user rapidly changes tracks before play() resolves
@@ -132,6 +133,7 @@ export class AudioEngine {
     try {
       await this.audio.play();
     } catch (err: unknown) {
+      this.callbacks.onLoadingChange?.(false);
       if (err instanceof Error && err.name === 'AbortError') return;
       const errorMsg = err instanceof Error ? err.message : 'Failed to resume audio';
       this.callbacks.onError?.(errorMsg);
@@ -184,11 +186,13 @@ export class AudioEngine {
   public stop(): void {
     this.audio.pause();
     this.audio.currentTime = 0;
+    this.currentSourcePath = null;
   }
 
   public destroy(): void {
     this.audio.pause();
     this.audio.src = '';
+    this.currentSourcePath = null;
   }
 }
 

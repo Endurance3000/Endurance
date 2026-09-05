@@ -43,7 +43,7 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   const [theme, setThemeState] = useState<AppTheme>('dark');
   const [dynamicColorEnabled, setDynamicColorState] = useState<boolean>(true);
   const [systemIsDark, setSystemIsDark] = useState<boolean>(true);
-  const [activeTrack, setActiveTrack] = useState<Track | null>(null);
+  const activeTrackRef = React.useRef<Track | null>(null);
 
   // Detect system preference
   useEffect(() => {
@@ -85,7 +85,7 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
   const applyTrackArtworkColors = useCallback(
     async (track: Track | null) => {
-      setActiveTrack(track);
+      activeTrackRef.current = track;
       if (typeof document === 'undefined') return;
 
       if (!dynamicColorEnabled || !track || !track.artwork_hash) {
@@ -135,8 +135,10 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   useEffect(() => {
     if (typeof document === 'undefined') return;
     document.documentElement.setAttribute('data-theme', resolvedTheme);
-    applyTrackArtworkColors(activeTrack);
-  }, [resolvedTheme, dynamicColorEnabled, applyTrackArtworkColors, activeTrack]);
+    if (activeTrackRef.current) {
+      applyTrackArtworkColors(activeTrackRef.current);
+    }
+  }, [resolvedTheme, applyTrackArtworkColors]);
 
   const setTheme = (newTheme: AppTheme) => {
     setThemeState(newTheme);
@@ -149,7 +151,7 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     if (!enabled) {
       clearDynamicStyles();
     } else {
-      applyTrackArtworkColors(activeTrack);
+      applyTrackArtworkColors(activeTrackRef.current);
     }
   };
 

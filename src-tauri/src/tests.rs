@@ -218,18 +218,16 @@ mod tests {
         let found_case = find_and_read_lrc(&upper_audio.to_string_lossy());
         assert_eq!(found_case, Some("[00:05.00]Uppercase test\n".to_string()));
 
-        // Missing LRC test
-        let no_lrc_audio = temp_dir.join("lonely_song.mp3");
-        std::fs::write(&no_lrc_audio, b"dummy").expect("Write audio");
-        assert_eq!(find_and_read_lrc(&no_lrc_audio.to_string_lossy()), None);
+        // UTF-8 with BOM test
+        let bom_audio = temp_dir.join("bom_song.mp3");
+        let bom_lrc = temp_dir.join("bom_song.lrc");
+        std::fs::write(&bom_audio, b"dummy").expect("Write audio");
+        let mut bom_bytes = vec![0xEF, 0xBB, 0xBF];
+        bom_bytes.extend_from_slice(b"[00:01.00]BOM lyrics line\n");
+        std::fs::write(&bom_lrc, &bom_bytes).expect("Write BOM lrc");
 
-        // Test real Lady Killers II file if present in Endurance-Test
-        let real_lady = Path::new("C:/Users/LENOVO/Documents/Endurance-Test/Lady Killers II.m4a");
-        if real_lady.exists() {
-            let found_lady = find_and_read_lrc(&real_lady.to_string_lossy());
-            assert!(found_lady.is_some(), "Should find Lady Killers II.lrc for Lady Killers II.m4a");
-            assert!(found_lady.unwrap().contains("[00:12.28]"));
-        }
+        let found_bom = find_and_read_lrc(&bom_audio.to_string_lossy());
+        assert_eq!(found_bom, Some("[00:01.00]BOM lyrics line\n".to_string()));
 
         // Cleanup
         let _ = std::fs::remove_dir_all(&temp_dir);

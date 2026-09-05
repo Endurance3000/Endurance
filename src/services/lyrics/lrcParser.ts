@@ -19,14 +19,16 @@ export function parseLrc(lrcContent: string | null | undefined): ParsedLyrics {
     return { type: 'none' };
   }
 
-  const trimmed = lrcContent.trim();
+  // Strip UTF-8 BOM if present
+  const cleaned = lrcContent.replace(/^\uFEFF/, '');
+  const trimmed = cleaned.trim();
   if (!trimmed) {
     return { type: 'none' };
   }
 
   // Pre-scan for global offset tag: [offset:+/-ms]
   let offsetSeconds = 0;
-  const offsetMatch = lrcContent.match(/\[offset:\s*([+-]?\d+)\s*\]/i);
+  const offsetMatch = cleaned.match(/\[offset:\s*([+-]?\d+)\s*\]/i);
   if (offsetMatch) {
     const ms = parseInt(offsetMatch[1], 10);
     if (!isNaN(ms)) {
@@ -34,7 +36,7 @@ export function parseLrc(lrcContent: string | null | undefined): ParsedLyrics {
     }
   }
 
-  const rawLines = lrcContent.split(/\r?\n/);
+  const rawLines = cleaned.split(/\r?\n/);
   const syncedLines: LyricLine[] = [];
   const plainLines: string[] = [];
 

@@ -21,12 +21,14 @@ export const MainPlayer: React.FC<MainPlayerProps> = ({ onClose }) => {
   // Load lyrics when current track changes
   useEffect(() => {
     let isMounted = true;
+    setLyricsData({ type: 'none' }); // Immediately clear previous song's lyrics
+
     if (!currentTrack) {
-      setLyricsData({ type: 'none' });
       return;
     }
 
-    lyricsService.getLyrics(currentTrack.file_path, true).then((loaded) => {
+    const filePath = currentTrack.file_path;
+    lyricsService.getLyrics(filePath, true).then((loaded) => {
       if (isMounted) {
         setLyricsData(loaded);
       }
@@ -35,17 +37,19 @@ export const MainPlayer: React.FC<MainPlayerProps> = ({ onClose }) => {
     return () => {
       isMounted = false;
     };
-  }, [currentTrack]);
+  }, [currentTrack?.id]);
 
   // Load high-res artwork data URI
   useEffect(() => {
     let isMounted = true;
+    setArtworkDataUri(null); // Immediately clear previous artwork
+
     if (!currentTrack?.artwork_hash) {
-      setArtworkDataUri(null);
       return;
     }
 
-    libraryService.getTrackArtwork(currentTrack.artwork_hash).then((uri) => {
+    const hash = currentTrack.artwork_hash;
+    libraryService.getTrackArtwork(hash).then((uri) => {
       if (isMounted) {
         setArtworkDataUri(uri);
       }
@@ -54,7 +58,7 @@ export const MainPlayer: React.FC<MainPlayerProps> = ({ onClose }) => {
     return () => {
       isMounted = false;
     };
-  }, [currentTrack]);
+  }, [currentTrack?.artwork_hash]);
 
   const isNoLyrics = lyricsData.type === 'none';
   const isPlainLyrics = lyricsData.type === 'plain';

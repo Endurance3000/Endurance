@@ -43,9 +43,10 @@ export const PlayerBar: React.FC<PlayerBarProps> = ({ onToggleExpand, isExpanded
   const volumeTrackRef = useRef<HTMLDivElement>(null);
 
   // Calculate seek percentage
-  const displayTime = isScrubbing ? scrubTime : currentTime;
+  const displayTime = isScrubbing
+    ? (duration > 0 ? Math.min(duration, Math.max(0, scrubTime)) : Math.max(0, scrubTime))
+    : (duration > 0 ? Math.min(duration, Math.max(0, currentTime)) : Math.max(0, currentTime));
   const progressPercent = duration > 0 ? Math.min(100, Math.max(0, (displayTime / duration) * 100)) : 0;
-  const remainingTime = duration > displayTime ? duration - displayTime : 0;
 
   // Timeline scrub handling with window listeners for pointer capture
   const handleTimelinePointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
@@ -237,7 +238,7 @@ export const PlayerBar: React.FC<PlayerBarProps> = ({ onToggleExpand, isExpanded
             </div>
           </div>
           <span className="timeline-time">
-            {duration > 0 ? `-${formatDuration(remainingTime)}` : '0:00'}
+            {duration > 0 ? formatDuration(duration) : '0:00'}
           </span>
         </div>
       </div>
