@@ -37,13 +37,56 @@
   margin: var(--space-xs) 0 0 0;
 }
 
+.songs-header-top {
+  margin-bottom: var(--space-md);
+}
+
+.songs-search-action-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-md);
+  margin-bottom: var(--space-md);
+  flex-wrap: wrap;
+}
+
+.songs-search-wrapper {
+  flex: 1;
+  min-width: 240px;
+  max-width: 460px;
+}
+
 .chips-bar {
   display: flex;
   align-items: center;
   gap: var(--space-sm);
-  margin-top: var(--space-lg);
   overflow-x: auto;
   padding-bottom: var(--space-2xs);
+}
+
+.songs-filter-sort-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-md);
+  flex-wrap: wrap;
+  margin-top: var(--space-sm);
+}
+
+.song-row-unavailable {
+  opacity: 0.55;
+}
+
+.unavailable-badge {
+  font-size: 0.6875rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  padding: 2px 6px;
+  border-radius: var(--radius-xs);
+  background-color: var(--md-sys-color-error-container);
+  color: var(--md-sys-color-on-error-container);
+  margin-left: var(--space-xs);
 }
 
 /* ==========================================================================
@@ -216,6 +259,19 @@
 .demo-album-card:hover .demo-album-play-overlay {
   opacity: 1;
   transform: scale(1);
+}
+
+.demo-album-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-xs);
+  width: 100%;
+}
+
+.demo-album-meta-wrap {
+  flex: 1;
+  min-width: 0;
 }
 
 .demo-album-title {

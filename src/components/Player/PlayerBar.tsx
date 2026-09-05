@@ -1,5 +1,5 @@
 import React, { useState, useRef } from 'react';
-import { Play, Pause, SkipBack, SkipForward, Shuffle, Repeat, Volume2, Volume1, VolumeX, AlertCircle, Loader2, FileText } from 'lucide-react';
+import { Play, Pause, SkipBack, SkipForward, Shuffle, Repeat, Volume2, Volume1, VolumeX, AlertCircle, Loader2, FileText, ListMusic } from 'lucide-react';
 import { IconButton } from '../Common/IconButton';
 import { TrackArtwork } from '../Library/TrackArtwork';
 import { usePlayback } from '../../state/PlaybackContext';
@@ -32,6 +32,8 @@ export const PlayerBar: React.FC<PlayerBarProps> = ({ onToggleExpand, isExpanded
     toggleShuffle,
     toggleRepeat,
     clearError,
+    isQueueOpen,
+    toggleQueue,
   } = usePlayback();
 
   // Local scrubbing state for fluid seekbar dragging
@@ -241,6 +243,14 @@ export const PlayerBar: React.FC<PlayerBarProps> = ({ onToggleExpand, isExpanded
 
       {/* Right: Volume & Extras */}
       <div className="player-extras">
+        <IconButton
+          icon={<ListMusic size={18} />}
+          aria-label="Play Queue"
+          tooltip={isQueueOpen ? "Close Queue" : "Play Queue"}
+          selected={isQueueOpen}
+          onClick={toggleQueue}
+          size="sm"
+        />
         <IconButton
           icon={<FileText size={18} />}
           aria-label="Synchronized Lyrics & Now Playing"

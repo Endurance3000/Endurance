@@ -1,0 +1,122 @@
+/**
+ * Material 3 Expressive Sort Menu Styles
+ */
+
+.sort-menu-container {
+  position: relative;
+  display: inline-flex;
+}
+
+.sort-menu-trigger {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-xs);
+  height: 36px;
+  padding: 0 var(--space-md);
+  border-radius: var(--radius-full);
+  background-color: var(--md-sys-color-surface-container-high);
+  color: var(--md-sys-color-on-surface);
+  border: 1px solid var(--md-sys-color-outline-variant);
+  font-family: var(--font-family-base);
+  font-size: 0.8125rem;
+  font-weight: 500;
+  cursor: pointer;
+  user-select: none;
+  transition: all var(--motion-duration-short-2) var(--motion-easing-standard);
+  outline: none;
+}
+
+.sort-menu-trigger:hover {
+  background-color: var(--md-sys-color-surface-container-highest);
+  border-color: var(--md-sys-color-outline);
+}
+
+.sort-menu-trigger:focus-visible {
+  border-color: var(--md-sys-color-primary);
+  box-shadow: 0 0 0 2px var(--md-sys-color-primary-container);
+}
+
+.sort-menu-trigger.is-open {
+  background-color: var(--md-sys-color-surface-container-highest);
+  border-color: var(--md-sys-color-primary);
+}
+
+.sort-trigger-icon {
+  color: var(--md-sys-color-primary);
+  display: flex;
+  align-items: center;
+}
+
+.sort-trigger-caret {
+  color: var(--md-sys-color-on-surface-variant);
+  display: flex;
+  align-items: center;
+  transition: transform var(--motion-duration-short-2) var(--motion-easing-standard);
+}
+
+.sort-menu-trigger.is-open .sort-trigger-caret {
+  transform: rotate(180deg);
+}
+
+.sort-menu-popover {
+  position: fixed;
+  z-index: 9999;
+  min-width: 190px;
+  background-color: var(--md-sys-color-surface-container-highest);
+  border: 1px solid var(--md-sys-color-outline-subtle);
+  border-radius: var(--radius-md);
+  box-shadow: var(--elevation-3);
+  padding: 4px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  animation: sortMenuScaleIn var(--motion-duration-short-2) var(--motion-easing-emphasized-decelerate);
+}
+
+@keyframes sortMenuScaleIn {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.sort-menu-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 12px;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  border: none;
+  color: var(--md-sys-color-on-surface);
+  font-size: 0.8125rem;
+  font-weight: 500;
+  text-align: left;
+  cursor: pointer;
+  width: 100%;
+  transition: background-color var(--motion-duration-short-1) var(--motion-easing-standard),
+              color var(--motion-duration-short-1) var(--motion-easing-standard);
+  outline: none;
+}
+
+.sort-menu-item:hover,
+.sort-menu-item:focus-visible {
+  background-color: var(--md-sys-color-surface-variant);
+  color: var(--md-sys-color-primary);
+}
+
+.sort-menu-item.selected {
+  color: var(--md-sys-color-primary);
+  font-weight: 600;
+  background-color: var(--md-sys-color-primary-container-subtle, rgba(56, 189, 248, 0.08));
+}
+
+.sort-check-icon {
+  color: var(--md-sys-color-primary);
+  display: flex;
+  align-items: center;
+}

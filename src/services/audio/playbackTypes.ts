@@ -18,8 +18,20 @@ export interface PlaybackState {
 export interface PlaybackContextType extends PlaybackState {
   originalQueue: Track[];
   playbackQueue: Track[];
+  queue: Track[];
   currentIndex: number;
   playTrack: (track: Track, newQueue?: Track[]) => Promise<void>;
+  playTrackPreservingQueue: (track: Track) => Promise<void>;
+  addToQueue: (tracks: Track | Track[]) => void;
+  playNext: (track: Track) => void;
+  removeFromQueue: (index: number) => void;
+  reorderQueue: (fromIndex: number, toIndex: number) => void;
+  clearQueue: () => void;
+  clearUpcomingQueue: () => void;
+  playQueueItem: (index: number) => Promise<void>;
+  isQueueOpen: boolean;
+  toggleQueue: () => void;
+  setIsQueueOpen: (open: boolean) => void;
   togglePlay: () => Promise<void>;
   pause: () => void;
   resume: () => Promise<void>;

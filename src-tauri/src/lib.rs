@@ -67,7 +67,8 @@ pub fn run() {
             commands::record_playback_history,
             commands::get_playback_history,
             commands::get_user_preferences,
-            commands::set_user_preference
+            commands::set_user_preference,
+            commands::show_in_folder
         ])
         .run(tauri::generate_context!())
         .expect("error while running endurance application");

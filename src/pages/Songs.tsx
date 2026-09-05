@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Music, FolderPlus, Heart, MoreHorizontal, Play, Pause, RefreshCw, Loader2 } from 'lucide-react';
 import { Button } from '../components/Common/Button';
 import { IconButton } from '../components/Common/IconButton';
@@ -6,7 +6,10 @@ import { SearchField } from '../components/Common/SearchField';
 import { Chip } from '../components/Common/Chip';
 import { EmptyState } from '../components/Common/EmptyState';
 import { TrackArtwork } from '../components/Library/TrackArtwork';
+import { SongActionMenu } from '../components/Common/SongActionMenu';
+import { SortMenu, SortOption, VALID_SORT_OPTIONS } from '../components/Library/SortMenu';
 import { usePlayback } from '../state/PlaybackContext';
+import { preferencesService } from '../services/preferences/preferencesService';
 import { formatDuration } from '../utils/formatters';
 import { Track, LibraryFolder, ScanProgressPayload } from '../types';
 import './Pages.css';
@@ -32,8 +35,39 @@ export const Songs: React.FC<SongsProps> = ({
 }) => {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedFilter, setSelectedFilter] = useState<'all' | 'recent' | 'favorites'>('all');
+  const [selectedSort, setSelectedSort] = useState<SortOption>('title-asc');
+  const [menuTrack, setMenuTrack] = useState<Track | null>(null);
+  const [menuPosition, setMenuPosition] = useState<{ x: number; y: number }>({ x: 0, y: 0 });
+
   const { currentTrack, isPlaying, playTrack, togglePlay } = usePlayback();
 
+  // Load persisted view preferences on mount with fallback
+  useEffect(() => {
+    preferencesService.loadAll().then((prefs) => {
+      const savedFilter = prefs.get('songs_filter');
+      if (savedFilter === 'all' || savedFilter === 'recent' || savedFilter === 'favorites') {
+        setSelectedFilter(savedFilter);
+      }
+      const savedSort = prefs.get('songs_sort');
+      if (savedSort && (VALID_SORT_OPTIONS as string[]).includes(savedSort)) {
+        setSelectedSort(savedSort as SortOption);
+      } else {
+        setSelectedSort('title-asc');
+      }
+    });
+  }, []);
+
+  const handleFilterChange = (filter: 'all' | 'recent' | 'favorites') => {
+    setSelectedFilter(filter);
+    preferencesService.set('songs_filter', filter);
+  };
+
+  const handleSortChange = (sort: SortOption) => {
+    setSelectedSort(sort);
+    preferencesService.set('songs_sort', sort);
+  };
+
+  // 1. Search and category filter
   const filteredTracks = tracks.filter((track) => {
     if (selectedFilter === 'favorites' && !track.is_favorite) return false;
     if (searchQuery.trim() === '') return true;
@@ -45,61 +79,83 @@ export const Songs: React.FC<SongsProps> = ({
     );
   });
 
-  // Sort by date added if "Recently Added" filter is chosen
-  const displayTracks = selectedFilter === 'recent'
-    ? [...filteredTracks].sort((a, b) => (parseInt(b.date_added, 10) || 0) - (parseInt(a.date_added, 10) || 0))
-    : filteredTracks;
+  // 2. Sort order (only Title A-Z, Title Z-A, Recently Added, Oldest Added)
+  const displayTracks = [...filteredTracks].sort((a, b) => {
+    const activeSort = selectedFilter === 'recent' && selectedSort === 'title-asc' ? 'date-desc' : selectedSort;
+
+    switch (activeSort) {
+      case 'title-asc':
+        return a.title.localeCompare(b.title, undefined, { sensitivity: 'base' });
+      case 'title-desc':
+        return b.title.localeCompare(a.title, undefined, { sensitivity: 'base' });
+      case 'date-desc':
+        return (parseInt(b.date_added, 10) || 0) - (parseInt(a.date_added, 10) || 0);
+      case 'date-asc':
+        return (parseInt(a.date_added, 10) || 0) - (parseInt(b.date_added, 10) || 0);
+      default:
+        return a.title.localeCompare(b.title, undefined, { sensitivity: 'base' });
+    }
+  });
 
   return (
     <div className="page-container motion-fade-in">
       <header className="page-header">
-        <div className="header-row">
-          <div>
-            <h1 className="page-title">Songs</h1>
-            <p className="page-subtitle">
-              {tracks.length === 1 ? '1 track' : `${tracks.length} tracks`} in your local offline library
-            </p>
-          </div>
-          <div className="header-actions">
+        <div className="songs-header-top">
+          <h1 className="page-title">Songs</h1>
+          <p className="page-subtitle">
+            {tracks.length === 1 ? '1 track' : `${tracks.length} tracks`} in your local offline library
+          </p>
+        </div>
+
+        {/* Tier 1: Search field & Rescan library button */}
+        <div className="songs-search-action-row">
+          <div className="songs-search-wrapper">
             <SearchField
               value={searchQuery}
               onChange={setSearchQuery}
               placeholder="Search songs, artists, albums..."
             />
-            <Button
-              variant="tonal"
-              size="md"
-              icon={isScanning ? <Loader2 size={16} className="spin-animation" /> : <RefreshCw size={16} />}
-              onClick={onRescan}
-              disabled={isScanning || folders.length === 0}
-              title="Rescan configured folders for new or changed music"
-            >
-              {isScanning ? 'Scanning...' : 'Rescan'}
-            </Button>
           </div>
+          <Button
+            variant="tonal"
+            size="md"
+            icon={isScanning ? <Loader2 size={16} className="spin-animation" /> : <RefreshCw size={16} />}
+            onClick={onRescan}
+            disabled={isScanning || folders.length === 0}
+            title="Rescan configured folders for new or changed music"
+          >
+            {isScanning ? 'Scanning...' : 'Rescan'}
+          </Button>
         </div>
 
-        {/* Filter Chips Bar */}
-        <div className="chips-bar">
-          <Chip
-            selected={selectedFilter === 'all'}
-            onClick={() => setSelectedFilter('all')}
-          >
-            All Tracks ({tracks.length})
-          </Chip>
-          <Chip
-            selected={selectedFilter === 'recent'}
-            onClick={() => setSelectedFilter('recent')}
-          >
-            Recently Added
-          </Chip>
-          <Chip
-            selected={selectedFilter === 'favorites'}
-            onClick={() => setSelectedFilter('favorites')}
-            icon={<Heart size={14} fill={selectedFilter === 'favorites' ? 'currentColor' : 'none'} />}
-          >
-            Favorites ({tracks.filter((t) => t.is_favorite).length})
-          </Chip>
+        {/* Tier 2: Filter Chips & Material 3 Sort Popover */}
+        <div className="songs-filter-sort-row">
+          <div className="chips-bar">
+            <Chip
+              selected={selectedFilter === 'all'}
+              onClick={() => handleFilterChange('all')}
+            >
+              All Tracks ({tracks.length})
+            </Chip>
+            <Chip
+              selected={selectedFilter === 'recent'}
+              onClick={() => handleFilterChange('recent')}
+            >
+              Recently Added
+            </Chip>
+            <Chip
+              selected={selectedFilter === 'favorites'}
+              onClick={() => handleFilterChange('favorites')}
+              icon={<Heart size={14} fill={selectedFilter === 'favorites' ? 'currentColor' : 'none'} />}
+            >
+              Favorites ({tracks.filter((t) => t.is_favorite).length})
+            </Chip>
+          </div>
+
+          <SortMenu
+            value={selectedSort}
+            onChange={handleSortChange}
+          />
         </div>
       </header>
 
@@ -159,6 +215,8 @@ export const Songs: React.FC<SongsProps> = ({
             {displayTracks.map((track, idx) => {
               const isCurrentTrack = currentTrack?.id === track.id;
               const isRowPlaying = isCurrentTrack && isPlaying;
+              const isMissing = track.is_available === false;
+
               const handleSelectTrack = () => {
                 if (isCurrentTrack) {
                   togglePlay();
@@ -167,15 +225,30 @@ export const Songs: React.FC<SongsProps> = ({
                 }
               };
 
+              const handleOpenMenu = (e: React.MouseEvent) => {
+                e.preventDefault();
+                e.stopPropagation();
+                const rect = e.currentTarget.getBoundingClientRect();
+                setMenuPosition({ x: rect.right, y: rect.bottom + 4 });
+                setMenuTrack(track);
+              };
+
               return (
                 <div
                   key={track.id}
-                  className={`song-row ${isCurrentTrack ? 'song-row-active' : ''}`}
+                  className={`song-row ${isCurrentTrack ? 'song-row-active' : ''} ${
+                    isMissing ? 'song-row-unavailable' : ''
+                  }`}
                   role="listitem"
                   tabIndex={0}
                   onClick={handleSelectTrack}
                   onKeyDown={(e) => {
                     if (e.key === 'Enter') handleSelectTrack();
+                  }}
+                  onContextMenu={(e) => {
+                    e.preventDefault();
+                    setMenuPosition({ x: e.clientX, y: e.clientY });
+                    setMenuTrack(track);
                   }}
                 >
                   <div className="col-index">
@@ -198,47 +271,55 @@ export const Songs: React.FC<SongsProps> = ({
                     </button>
                   </div>
 
-                <div className="col-title">
-                  <TrackArtwork
-                    artworkHash={track.artwork_hash}
-                    alt={track.album || track.title}
-                    size="sm"
-                  />
-                  <div className="song-title-group">
-                    <span className="song-row-title truncate">{track.title}</span>
-                    <span className="song-row-artist truncate">{track.artist}</span>
+                  <div className="col-title">
+                    <TrackArtwork
+                      artworkHash={track.artwork_hash}
+                      alt={track.album || track.title}
+                      size="sm"
+                    />
+                    <div className="song-title-group">
+                      <div style={{ display: 'flex', alignItems: 'center' }}>
+                        <span className="song-row-title truncate">{track.title}</span>
+                        {isMissing && <span className="unavailable-badge">Missing</span>}
+                      </div>
+                      <span className="song-row-artist truncate">{track.artist}</span>
+                    </div>
                   </div>
-                </div>
 
-                <div className="col-album">
-                  <span className="song-row-album truncate">{track.album}</span>
-                </div>
+                  <div className="col-album">
+                    <span className="song-row-album truncate">{track.album}</span>
+                  </div>
 
-                <div className="col-duration">
-                  <span className="song-row-time">{formatDuration(track.duration)}</span>
-                </div>
+                  <div className="col-duration">
+                    <span className="song-row-time">{formatDuration(track.duration)}</span>
+                  </div>
 
-                <div className="col-actions">
-                  <IconButton
-                    icon={
-                      <Heart
-                        size={16}
-                        fill={track.is_favorite ? 'currentColor' : 'none'}
-                        color={track.is_favorite ? 'var(--md-sys-color-tertiary)' : 'currentColor'}
-                      />
-                    }
-                    aria-label={track.is_favorite ? 'Remove from favorites' : 'Add to favorites'}
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      onToggleFavorite(track.id);
-                    }}
-                    size="sm"
-                  />
-                  <IconButton
-                    icon={<MoreHorizontal size={16} />}
-                    aria-label="More options"
-                    size="sm"
-                  />
+                  <div
+                    className="col-actions"
+                    onClick={(e) => e.stopPropagation()}
+                    onMouseDown={(e) => e.stopPropagation()}
+                  >
+                    <IconButton
+                      icon={
+                        <Heart
+                          size={16}
+                          fill={track.is_favorite ? 'currentColor' : 'none'}
+                          color={track.is_favorite ? 'var(--md-sys-color-tertiary)' : 'currentColor'}
+                        />
+                      }
+                      aria-label={track.is_favorite ? 'Remove from favorites' : 'Add to favorites'}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onToggleFavorite(track.id);
+                      }}
+                      size="sm"
+                    />
+                    <IconButton
+                      icon={<MoreHorizontal size={16} />}
+                      aria-label="More options"
+                      size="sm"
+                      onClick={handleOpenMenu}
+                    />
                   </div>
                 </div>
               );
@@ -255,6 +336,16 @@ export const Songs: React.FC<SongsProps> = ({
             />
           )}
         </>
+      )}
+
+      {/* Contextual Song Action Menu */}
+      {menuTrack && (
+        <SongActionMenu
+          track={menuTrack}
+          isOpen={true}
+          onClose={() => setMenuTrack(null)}
+          position={menuPosition}
+        />
       )}
     </div>
   );

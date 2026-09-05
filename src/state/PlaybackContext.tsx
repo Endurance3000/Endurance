@@ -2,7 +2,18 @@ import React, { createContext, useContext, useState, useEffect, useRef, useCallb
 import { Track } from '../types';
 import { RepeatMode, PlaybackContextType } from '../services/audio/playbackTypes';
 import { audioEngine } from '../services/audio/AudioEngine';
-import { generateShuffleOrder, getNextTrack, getPreviousTrack } from '../services/audio/shuffleHelper';
+import { generateShuffleOrder } from '../services/audio/shuffleHelper';
+import {
+  addToQueueHelper,
+  playNextHelper,
+  playTrackPreservingQueue as playTrackPreservingQueueHelper,
+  removeFromQueueHelper,
+  reorderQueueHelper,
+  clearQueueHelper,
+  clearUpcomingHelper,
+  getNextQueueTrack,
+  getPreviousQueueTrack,
+} from '../services/audio/queueHelper';
 import { historyService } from '../services/history/historyService';
 import { preferencesService } from '../services/preferences/preferencesService';
 import { useTheme } from './ThemeContext';
@@ -26,6 +37,7 @@ export const PlaybackProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   const [originalQueue, setOriginalQueue] = useState<Track[]>([]);
   const [playbackQueue, setPlaybackQueue] = useState<Track[]>([]);
   const [currentIndex, setCurrentIndex] = useState<number>(-1);
+  const [isQueueOpen, setIsQueueOpen] = useState<boolean>(false);
 
   // Guard to record playback history only once per track session
   const hasRecordedHistoryRef = useRef<boolean>(false);
@@ -225,8 +237,8 @@ export const PlaybackProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   }, []);
 
   const nextTrack = useCallback(async () => {
-    const { playbackQueue: queue, currentIndex: idx, repeatMode: mode } = stateRef.current;
-    const nextResult = getNextTrack(queue, idx, mode, false);
+    const { playbackQueue: queue, currentIndex: idx, repeatMode: mode, shuffleEnabled: shuffle } = stateRef.current;
+    const nextResult = getNextQueueTrack(queue, idx, mode, shuffle, false);
 
     if (nextResult) {
       if (nextResult.shouldLoopCurrent) {
@@ -251,7 +263,7 @@ export const PlaybackProvider: React.FC<{ children: React.ReactNode }> = ({ chil
 
   const prevTrack = useCallback(async () => {
     const { playbackQueue: queue, currentIndex: idx, currentTime: time, repeatMode: mode } = stateRef.current;
-    const prevResult = getPreviousTrack(queue, idx, time, mode);
+    const prevResult = getPreviousQueueTrack(queue, idx, time, mode);
 
     if (prevResult) {
       if (prevResult.shouldRestart) {
@@ -270,8 +282,8 @@ export const PlaybackProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   }, [seek, applyTrackArtworkColors]);
 
   const handleTrackEnded = useCallback(async () => {
-    const { playbackQueue: queue, currentIndex: idx, repeatMode: mode } = stateRef.current;
-    const nextResult = getNextTrack(queue, idx, mode, true);
+    const { playbackQueue: queue, currentIndex: idx, repeatMode: mode, shuffleEnabled: shuffle } = stateRef.current;
+    const nextResult = getNextQueueTrack(queue, idx, mode, shuffle, true);
 
     if (nextResult) {
       if (nextResult.shouldLoopCurrent) {
@@ -293,6 +305,87 @@ export const PlaybackProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       setCurrentTime(0);
     }
   }, [seek, applyTrackArtworkColors]);
+
+  // Queue Operations
+  const addToQueue = useCallback((tracks: Track | Track[]) => {
+    const { playbackQueue: currentQ, currentIndex: currentIdx } = stateRef.current;
+    const result = addToQueueHelper(currentQ, currentIdx, tracks);
+    setPlaybackQueue(result.queue);
+    setOriginalQueue(result.queue);
+    setCurrentIndex(result.currentIndex);
+  }, []);
+
+  const playNext = useCallback((track: Track) => {
+    const { playbackQueue: currentQ, currentIndex: currentIdx } = stateRef.current;
+    const result = playNextHelper(currentQ, currentIdx, track);
+    setPlaybackQueue(result.queue);
+    setOriginalQueue(result.queue);
+    setCurrentIndex(result.currentIndex);
+  }, []);
+
+  const removeFromQueue = useCallback((index: number) => {
+    const { playbackQueue: currentQ, currentIndex: currentIdx } = stateRef.current;
+    const result = removeFromQueueHelper(currentQ, currentIdx, index);
+    setPlaybackQueue(result.queue);
+    setOriginalQueue(result.queue);
+    setCurrentIndex(result.currentIndex);
+  }, []);
+
+  const reorderQueue = useCallback((fromIndex: number, toIndex: number) => {
+    const { playbackQueue: currentQ, currentIndex: currentIdx } = stateRef.current;
+    const result = reorderQueueHelper(currentQ, currentIdx, fromIndex, toIndex);
+    setPlaybackQueue(result.queue);
+    setOriginalQueue(result.queue);
+    setCurrentIndex(result.currentIndex);
+  }, []);
+
+  const clearQueue = useCallback(() => {
+    const { playbackQueue: currentQ, currentIndex: currentIdx } = stateRef.current;
+    const result = clearQueueHelper(currentQ, currentIdx);
+    setPlaybackQueue(result.queue);
+    setOriginalQueue(result.queue);
+    setCurrentIndex(result.currentIndex);
+  }, []);
+
+  const clearUpcomingQueue = useCallback(() => {
+    const { playbackQueue: currentQ, currentIndex: currentIdx } = stateRef.current;
+    const result = clearUpcomingHelper(currentQ, currentIdx);
+    setPlaybackQueue(result.queue);
+    setOriginalQueue(result.queue);
+  }, []);
+
+  const playQueueItem = useCallback(async (index: number) => {
+    const { playbackQueue: queue } = stateRef.current;
+    if (index < 0 || index >= queue.length) return;
+    const track = queue[index];
+    setPlaybackError(null);
+    hasRecordedHistoryRef.current = false;
+    setCurrentIndex(index);
+    setCurrentTrack(track);
+    setCurrentTime(0);
+    setDuration(track.duration || 0);
+    applyTrackArtworkColors(track);
+    await audioEngine.loadAndPlay(track.file_path);
+  }, [applyTrackArtworkColors]);
+
+  const playTrackPreservingQueue = useCallback(async (track: Track) => {
+    const { playbackQueue: currentQ, currentIndex: currentIdx } = stateRef.current;
+    const result = playTrackPreservingQueueHelper(currentQ, currentIdx, track);
+    setPlaybackQueue(result.queue);
+    setOriginalQueue(result.queue);
+    setCurrentIndex(result.currentIndex);
+    setCurrentTrack(track);
+    setPlaybackError(null);
+    hasRecordedHistoryRef.current = false;
+    setCurrentTime(0);
+    setDuration(track.duration || 0);
+    applyTrackArtworkColors(track);
+    await audioEngine.loadAndPlay(track.file_path);
+  }, [applyTrackArtworkColors]);
+
+  const toggleQueue = useCallback(() => {
+    setIsQueueOpen((prev) => !prev);
+  }, []);
 
   const setVolume = useCallback((newVol: number) => {
     // Normalize to 0.0 - 1.0 if passed as 0 - 100
@@ -321,22 +414,6 @@ export const PlaybackProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     const nextShuffle = !stateRef.current.shuffleEnabled;
     setShuffleEnabled(nextShuffle);
     preferencesService.set('shuffle', nextShuffle ? 'true' : 'false');
-
-    const { originalQueue: orig, currentTrack: curr } = stateRef.current;
-
-    if (nextShuffle) {
-      // Shuffle upcoming order while preserving current track
-      const shuffled = generateShuffleOrder(orig, curr?.id);
-      setPlaybackQueue(shuffled);
-      setCurrentIndex(curr ? 0 : -1);
-    } else {
-      // Restore predictable library order
-      setPlaybackQueue(orig);
-      if (curr) {
-        const foundIdx = orig.findIndex((t) => t.id === curr.id);
-        setCurrentIndex(foundIdx !== -1 ? foundIdx : 0);
-      }
-    }
   }, []);
 
   const toggleRepeat = useCallback(() => {
@@ -415,8 +492,20 @@ export const PlaybackProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         isLoading,
         originalQueue,
         playbackQueue,
+        queue: playbackQueue,
         currentIndex,
         playTrack,
+        playTrackPreservingQueue,
+        addToQueue,
+        playNext,
+        removeFromQueue,
+        reorderQueue,
+        clearQueue,
+        clearUpcomingQueue,
+        playQueueItem,
+        isQueueOpen,
+        toggleQueue,
+        setIsQueueOpen,
         togglePlay,
         pause,
         resume,

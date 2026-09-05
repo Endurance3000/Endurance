@@ -11,6 +11,7 @@ import { useLibrary } from './hooks/useLibrary';
 import { PlaybackProvider } from './state/PlaybackContext';
 import { ThemeProvider } from './state/ThemeContext';
 import { MainPlayer } from './components/Player/MainPlayer';
+import { QueueDrawer } from './components/Queue/QueueDrawer';
 import { NavigationPage, SystemInfo } from './types';
 import './App.css';
 
@@ -127,6 +128,9 @@ export const App: React.FC = () => {
           {isMainPlayerOpen && (
             <MainPlayer onClose={() => setIsMainPlayerOpen(false)} />
           )}
+
+          {/* Queue Slide-over Drawer */}
+          <QueueDrawer />
 
           {/* Bottom Audio Player Bar */}
           <PlayerBar

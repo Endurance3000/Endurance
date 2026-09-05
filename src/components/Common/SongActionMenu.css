@@ -1,0 +1,77 @@
+/**
+ * Material 3 Song Context Menu Styles
+ */
+
+.song-menu-anchor {
+  position: relative;
+  display: inline-flex;
+}
+
+.song-action-menu {
+  position: fixed;
+  z-index: 9999;
+  min-width: 190px;
+  background-color: var(--md-sys-color-surface-container-highest);
+  border: 1px solid var(--md-sys-color-outline-subtle);
+  border-radius: var(--radius-md);
+  box-shadow: var(--elevation-3);
+  padding: 4px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  animation: menuScaleIn var(--motion-duration-short-2) var(--motion-easing-emphasized-decelerate);
+}
+
+@keyframes menuScaleIn {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.song-menu-item {
+  display: flex;
+  align-items: center;
+  gap: var(--space-md);
+  padding: 8px 12px;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  border: none;
+  color: var(--md-sys-color-on-surface);
+  font-size: 0.8125rem;
+  font-weight: 500;
+  text-align: left;
+  cursor: pointer;
+  width: 100%;
+  transition: background-color var(--motion-duration-short-1) var(--motion-easing-standard),
+              color var(--motion-duration-short-1) var(--motion-easing-standard);
+}
+
+.song-menu-item:hover,
+.song-menu-item:focus-visible {
+  background-color: var(--md-sys-color-surface-variant);
+  color: var(--md-sys-color-primary);
+  outline: none;
+}
+
+.song-menu-item-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--md-sys-color-on-surface-variant);
+  flex-shrink: 0;
+}
+
+.song-menu-item:hover .song-menu-item-icon {
+  color: var(--md-sys-color-primary);
+}
+
+.song-menu-divider {
+  height: 1px;
+  background-color: var(--md-sys-color-outline-subtle);
+  margin: 4px 0;
+}

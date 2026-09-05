@@ -122,3 +122,27 @@ pub fn set_user_preference(key: String, value: String, state: State<AppState>) -
     state.db.set_user_preference(&key, &value)
 }
 
+#[tauri::command]
+pub fn show_in_folder(file_path: String) -> Result<(), String> {
+    let path = std::path::Path::new(&file_path);
+    if !path.exists() {
+        return Err(format!("File does not exist: {}", file_path));
+    }
+
+    #[cfg(target_os = "windows")]
+    {
+        std::process::Command::new("explorer")
+            .arg(format!("/select,{}", file_path))
+            .spawn()
+            .map_err(|e| format!("Failed to open Explorer: {}", e))?;
+        Ok(())
+    }
+
+    #[cfg(not(target_os = "windows"))]
+    {
+        let parent = path.parent().unwrap_or(path);
+        open::that(parent).map_err(|e| format!("Failed to open directory: {}", e))?;
+        Ok(())
+    }
+}
+

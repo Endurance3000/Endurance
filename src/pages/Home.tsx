@@ -1,11 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { Button } from '../components/Common/Button';
+import { IconButton } from '../components/Common/IconButton';
 import { Card } from '../components/Common/Card';
 import { SectionHeader } from '../components/Common/SectionHeader';
 import { TrackArtwork } from '../components/Library/TrackArtwork';
-import { FolderPlus, Play, Pause, Sparkles, Music, ShieldCheck, Zap } from 'lucide-react';
+import { FolderPlus, Play, Pause, Sparkles, Music, ShieldCheck, Zap, MoreHorizontal } from 'lucide-react';
 import { usePlayback } from '../state/PlaybackContext';
 import { historyService } from '../services/history/historyService';
+import { SongActionMenu } from '../components/Common/SongActionMenu';
 import { Track, LibraryFolder, HistoryItem } from '../types';
 import './Pages.css';
 
@@ -24,6 +26,8 @@ export const Home: React.FC<HomeProps> = ({
 }) => {
   const { currentTrack, isPlaying, playTrack, togglePlay } = usePlayback();
   const [historyItems, setHistoryItems] = useState<HistoryItem[]>([]);
+  const [menuTrack, setMenuTrack] = useState<Track | null>(null);
+  const [menuPosition, setMenuPosition] = useState<{ x: number; y: number }>({ x: 0, y: 0 });
 
   useEffect(() => {
     const unsub = historyService.subscribe(setHistoryItems);
@@ -139,6 +143,11 @@ export const Home: React.FC<HomeProps> = ({
                   padding="sm"
                   className="demo-album-card"
                   onClick={handleCardClick}
+                  onContextMenu={(e) => {
+                    e.preventDefault();
+                    setMenuPosition({ x: e.clientX, y: e.clientY });
+                    setMenuTrack(track);
+                  }}
                   aria-label={`${isCardPlaying ? 'Pause' : 'Play'} ${track.title}`}
                 >
                   <div className="demo-album-artwork">
@@ -151,8 +160,23 @@ export const Home: React.FC<HomeProps> = ({
                       )}
                     </div>
                   </div>
-                  <div className="demo-album-title truncate">{track.title}</div>
-                  <div className="demo-album-artist truncate">{track.artist}</div>
+                  <div className="demo-album-card-header">
+                    <div className="demo-album-meta-wrap">
+                      <div className="demo-album-title truncate">{track.title}</div>
+                      <div className="demo-album-artist truncate">{track.artist}</div>
+                    </div>
+                    <IconButton
+                      icon={<MoreHorizontal size={14} />}
+                      aria-label="More options"
+                      size="sm"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        const rect = e.currentTarget.getBoundingClientRect();
+                        setMenuPosition({ x: rect.right, y: rect.bottom + 4 });
+                        setMenuTrack(track);
+                      }}
+                    />
+                  </div>
                 </Card>
               );
             })}
@@ -192,6 +216,11 @@ export const Home: React.FC<HomeProps> = ({
                   padding="sm"
                   className="demo-album-card"
                   onClick={handleCardClick}
+                  onContextMenu={(e) => {
+                    e.preventDefault();
+                    setMenuPosition({ x: e.clientX, y: e.clientY });
+                    setMenuTrack(track);
+                  }}
                   aria-label={`${isCardPlaying ? 'Pause' : 'Play'} ${track.title}`}
                 >
                   <div className="demo-album-artwork">
@@ -204,8 +233,23 @@ export const Home: React.FC<HomeProps> = ({
                       )}
                     </div>
                   </div>
-                  <div className="demo-album-title truncate">{track.title}</div>
-                  <div className="demo-album-artist truncate">{track.artist}</div>
+                  <div className="demo-album-card-header">
+                    <div className="demo-album-meta-wrap">
+                      <div className="demo-album-title truncate">{track.title}</div>
+                      <div className="demo-album-artist truncate">{track.artist}</div>
+                    </div>
+                    <IconButton
+                      icon={<MoreHorizontal size={14} />}
+                      aria-label="More options"
+                      size="sm"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        const rect = e.currentTarget.getBoundingClientRect();
+                        setMenuPosition({ x: rect.right, y: rect.bottom + 4 });
+                        setMenuTrack(track);
+                      }}
+                    />
+                  </div>
                 </Card>
               );
             })}
@@ -228,6 +272,16 @@ export const Home: React.FC<HomeProps> = ({
             </Button>
           </Card>
         </>
+      )}
+
+      {/* Contextual Song Action Menu */}
+      {menuTrack && (
+        <SongActionMenu
+          track={menuTrack}
+          isOpen={true}
+          onClose={() => setMenuTrack(null)}
+          position={menuPosition}
+        />
       )}
     </div>
   );
