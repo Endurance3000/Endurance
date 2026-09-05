@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { libraryService } from '../services/library/libraryService';
+import { lyricsService } from '../services/lyrics/lyricsService';
 import { Track, LibraryFolder, ScanProgressPayload, ScanSummary } from '../types';
 
 export function useLibrary() {
@@ -85,6 +86,7 @@ export function useLibrary() {
   const rescan = async () => {
     setIsScanning(true);
     setScanProgress(null);
+    lyricsService.clearCache();
     try {
       const summary = await libraryService.scanLibrary();
       setLastSummary(summary);

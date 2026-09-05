@@ -26,7 +26,7 @@ export const MainPlayer: React.FC<MainPlayerProps> = ({ onClose }) => {
       return;
     }
 
-    lyricsService.getLyrics(currentTrack.file_path).then((loaded) => {
+    lyricsService.getLyrics(currentTrack.file_path, true).then((loaded) => {
       if (isMounted) {
         setLyricsData(loaded);
       }

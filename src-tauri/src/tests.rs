@@ -223,6 +223,14 @@ mod tests {
         std::fs::write(&no_lrc_audio, b"dummy").expect("Write audio");
         assert_eq!(find_and_read_lrc(&no_lrc_audio.to_string_lossy()), None);
 
+        // Test real Lady Killers II file if present in Endurance-Test
+        let real_lady = Path::new("C:/Users/LENOVO/Documents/Endurance-Test/Lady Killers II.m4a");
+        if real_lady.exists() {
+            let found_lady = find_and_read_lrc(&real_lady.to_string_lossy());
+            assert!(found_lady.is_some(), "Should find Lady Killers II.lrc for Lady Killers II.m4a");
+            assert!(found_lady.unwrap().contains("[00:12.28]"));
+        }
+
         // Cleanup
         let _ = std::fs::remove_dir_all(&temp_dir);
     }

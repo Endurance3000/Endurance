@@ -9,11 +9,14 @@ class LyricsService {
    * Returns a 3-state ParsedLyrics structure ('none' | 'plain' | 'synced').
    * Caches results in memory to avoid repeated filesystem reads.
    */
-  async getLyrics(trackFilePath: string): Promise<ParsedLyrics> {
+  async getLyrics(trackFilePath: string, bypassCache: boolean = false): Promise<ParsedLyrics> {
     if (!trackFilePath) return { type: 'none' };
 
-    if (this.cache.has(trackFilePath)) {
-      return this.cache.get(trackFilePath)!;
+    if (!bypassCache && this.cache.has(trackFilePath)) {
+      const cached = this.cache.get(trackFilePath)!;
+      if (cached.type !== 'none') {
+        return cached;
+      }
     }
 
     try {
@@ -22,13 +25,15 @@ class LyricsService {
       });
 
       const parsed = parseLrc(lrcContent);
-      this.cache.set(trackFilePath, parsed);
+      if (parsed.type !== 'none') {
+        this.cache.set(trackFilePath, parsed);
+      } else {
+        this.cache.delete(trackFilePath);
+      }
       return parsed;
     } catch (err) {
       console.warn('Failed to load track lyrics:', err);
-      const fallback: ParsedLyrics = { type: 'none' };
-      this.cache.set(trackFilePath, fallback);
-      return fallback;
+      return { type: 'none' };
     }
   }
 
