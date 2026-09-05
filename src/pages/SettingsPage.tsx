@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Palette,
   PlaySquare,
@@ -20,6 +20,8 @@ import { Button } from '../components/Common/Button';
 import { IconButton } from '../components/Common/IconButton';
 import { formatDate } from '../utils/formatters';
 import { SystemInfo, LibraryFolder } from '../types';
+import { useTheme } from '../state/ThemeContext';
+import { preferencesService } from '../services/preferences/preferencesService';
 import './Pages.css';
 
 interface SettingsPageProps {
@@ -34,8 +36,6 @@ interface SettingsPageProps {
 
 type SettingsCategory = 'appearance' | 'playback' | 'library' | 'lyrics' | 'audio' | 'shortcuts' | 'about';
 
-import { useTheme } from '../state/ThemeContext';
-
 export const SettingsPage: React.FC<SettingsPageProps> = ({
   systemInfo,
   folders,
@@ -46,13 +46,44 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({
   onRescan,
 }) => {
   const [activeCategory, setActiveCategory] = useState<SettingsCategory>('library');
-  const { theme, setTheme, dynamicColorEnabled, setDynamicColorEnabled } = useTheme();
+  const { theme, setTheme, dynamicColorEnabled, setDynamicColorEnabled, highContrast, setHighContrast } = useTheme();
 
-  // Interactive toggle states
-  const [highContrast, setHighContrast] = useState(false);
-  const [gaplessPlayback, setGaplessPlayback] = useState(true);
-  const [showLyricsOnRight, setShowLyricsOnRight] = useState(true);
-  const [hardwareAcceleration, setHardwareAcceleration] = useState(true);
+  // Interactive toggle states with local persistence
+  const [gaplessPlayback, setGaplessPlaybackState] = useState(true);
+  const [showLyricsOnRight, setShowLyricsOnRightState] = useState(true);
+  const [hardwareAcceleration, setHardwareAccelerationState] = useState(true);
+
+  useEffect(() => {
+    preferencesService.loadAll().then((prefs) => {
+      const savedGapless = prefs.get('gapless_playback');
+      if (savedGapless !== undefined && savedGapless !== '') {
+        setGaplessPlaybackState(savedGapless === 'true');
+      }
+      const savedLyricsRight = prefs.get('show_lyrics_right');
+      if (savedLyricsRight !== undefined && savedLyricsRight !== '') {
+        setShowLyricsOnRightState(savedLyricsRight === 'true');
+      }
+      const savedHw = prefs.get('hardware_acceleration');
+      if (savedHw !== undefined && savedHw !== '') {
+        setHardwareAccelerationState(savedHw === 'true');
+      }
+    });
+  }, []);
+
+  const setGaplessPlayback = (val: boolean) => {
+    setGaplessPlaybackState(val);
+    preferencesService.set('gapless_playback', val ? 'true' : 'false');
+  };
+
+  const setShowLyricsOnRight = (val: boolean) => {
+    setShowLyricsOnRightState(val);
+    preferencesService.set('show_lyrics_right', val ? 'true' : 'false');
+  };
+
+  const setHardwareAcceleration = (val: boolean) => {
+    setHardwareAccelerationState(val);
+    preferencesService.set('hardware_acceleration', val ? 'true' : 'false');
+  };
 
   const categories = [
     { id: 'library', label: 'Library', icon: <FolderCog size={16} /> },

@@ -73,7 +73,7 @@
 
 .m3-btn-tonal:hover:not(:disabled) {
   background: var(--md-sys-color-surface-container-highest);
-  color: #ffffff;
+  color: var(--md-sys-color-on-surface);
 }
 
 /* Outlined Variant */

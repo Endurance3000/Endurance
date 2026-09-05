@@ -112,7 +112,7 @@
 .sort-menu-item.selected {
   color: var(--md-sys-color-primary);
   font-weight: 600;
-  background-color: var(--md-sys-color-primary-container-subtle, rgba(56, 189, 248, 0.08));
+  background-color: var(--md-sys-color-primary-container-subtle, rgba(206, 171, 147, 0.12));
 }
 
 .sort-check-icon {

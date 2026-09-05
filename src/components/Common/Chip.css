@@ -36,7 +36,7 @@
 }
 
 .m3-chip.selected:hover {
-  background: #0e5a84;
+  filter: brightness(1.1);
 }
 
 .m3-chip-icon {

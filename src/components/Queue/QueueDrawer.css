@@ -130,7 +130,7 @@
     var(--md-sys-color-surface-container-highest),
     var(--md-sys-color-surface-container-high)
   );
-  border: 1px solid rgba(125, 211, 252, 0.2);
+  border: 1px solid var(--md-sys-color-outline-variant);
   border-radius: var(--radius-lg);
   box-shadow: var(--elevation-1);
 }

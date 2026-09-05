@@ -110,3 +110,46 @@
   --sidebar-width: 230px;
   --player-bar-height: 84px;
 }
+
+/* ==========================================================================
+   HIGH CONTRAST MODE (Dark Theme Base)
+   Enhances readability and control distinction while preserving warm aesthetic
+   ========================================================================== */
+[data-high-contrast='true'] {
+  --md-sys-color-background: #0D0A08;
+  --md-sys-color-on-background: #FFFFFF;
+
+  --md-sys-color-surface: #15110E;
+  --md-sys-color-surface-dim: #0C0A08;
+  --md-sys-color-surface-bright: #261F1A;
+
+  --md-sys-color-surface-container-lowest: #0A0806;
+  --md-sys-color-surface-container-low: #140F0C;
+  --md-sys-color-surface-container: #1B1512;
+  --md-sys-color-surface-container-high: #231B16;
+  --md-sys-color-surface-container-highest: #2F241E;
+
+  --md-sys-color-on-surface: #FFFFFF;
+  --md-sys-color-on-surface-variant: #F5EAE0;
+  --md-sys-color-surface-variant: #281F19;
+  --md-sys-color-text-muted: #D8C7B8;
+
+  --md-sys-color-outline: #CEAB93;
+  --md-sys-color-outline-variant: #8F7968;
+  --md-sys-color-outline-subtle: rgba(255, 251, 233, 0.2);
+
+  --md-sys-color-primary: #E3CAA5;
+  --md-sys-color-on-primary: #1C130B;
+  --md-sys-color-primary-container: #705340;
+  --md-sys-color-on-primary-container: #FFFFFF;
+
+  --md-sys-color-secondary: #CEAB93;
+  --md-sys-color-on-secondary: #1E140C;
+  --md-sys-color-secondary-container: #5C4436;
+  --md-sys-color-on-secondary-container: #FFFFFF;
+
+  --md-sys-color-tertiary: #FFFBE9;
+  --md-sys-color-on-tertiary: #20170A;
+
+  --md-sys-color-focus-ring: #E3CAA5;
+}

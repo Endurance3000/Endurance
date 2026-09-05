@@ -10,8 +10,10 @@ export interface ThemeContextType {
   theme: AppTheme;
   resolvedTheme: 'dark' | 'light';
   dynamicColorEnabled: boolean;
+  highContrast: boolean;
   setTheme: (theme: AppTheme) => void;
   setDynamicColorEnabled: (enabled: boolean) => void;
+  setHighContrast: (enabled: boolean) => void;
   applyTrackArtworkColors: (track: Track | null) => Promise<void>;
 }
 
@@ -42,6 +44,7 @@ const DYNAMIC_CSS_VARS = [
 export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [theme, setThemeState] = useState<AppTheme>('dark');
   const [dynamicColorEnabled, setDynamicColorState] = useState<boolean>(true);
+  const [highContrast, setHighContrastState] = useState<boolean>(false);
   const [systemIsDark, setSystemIsDark] = useState<boolean>(true);
   const activeTrackRef = React.useRef<Track | null>(null);
 
@@ -69,6 +72,10 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       const savedDyn = prefs.get('dynamic_color');
       if (savedDyn !== undefined && savedDyn !== '') {
         setDynamicColorState(savedDyn === 'true');
+      }
+      const savedHc = prefs.get('high_contrast');
+      if (savedHc !== undefined && savedHc !== '') {
+        setHighContrastState(savedHc === 'true');
       }
     });
   }, []);
@@ -140,6 +147,12 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     }
   }, [resolvedTheme, applyTrackArtworkColors]);
 
+  // Apply high contrast attribute to HTML element
+  useEffect(() => {
+    if (typeof document === 'undefined') return;
+    document.documentElement.setAttribute('data-high-contrast', highContrast ? 'true' : 'false');
+  }, [highContrast]);
+
   const setTheme = (newTheme: AppTheme) => {
     setThemeState(newTheme);
     preferencesService.set('theme', newTheme);
@@ -155,14 +168,21 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     }
   };
 
+  const setHighContrast = (enabled: boolean) => {
+    setHighContrastState(enabled);
+    preferencesService.set('high_contrast', enabled ? 'true' : 'false');
+  };
+
   return (
     <ThemeContext.Provider
       value={{
         theme,
         resolvedTheme,
         dynamicColorEnabled,
+        highContrast,
         setTheme,
         setDynamicColorEnabled,
+        setHighContrast,
         applyTrackArtworkColors,
       }}
     >

@@ -16,7 +16,7 @@
 .m3-search-field:focus-within {
   background: var(--md-sys-color-surface-container-highest);
   border-color: var(--md-sys-color-primary);
-  box-shadow: 0 0 0 2px rgba(125, 211, 252, 0.2);
+  box-shadow: 0 0 0 2px rgba(206, 171, 147, 0.25);
 }
 
 .m3-search-icon {

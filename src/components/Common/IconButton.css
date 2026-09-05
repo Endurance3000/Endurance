@@ -61,7 +61,7 @@
 }
 
 .m3-icon-btn-filled:hover:not(:disabled) {
-  background: #bae6fd;
+  filter: brightness(1.12);
   box-shadow: var(--elevation-2);
 }
 
@@ -73,7 +73,7 @@
 
 .m3-icon-btn-tonal:hover:not(:disabled) {
   background: var(--md-sys-color-surface-container-highest);
-  color: #ffffff;
+  color: var(--md-sys-color-on-surface);
 }
 
 .m3-icon-btn-outlined {
