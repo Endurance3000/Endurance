@@ -158,6 +158,7 @@ export const PlayerBar: React.FC<PlayerBarProps> = ({ onToggleExpand, isExpanded
             tooltip={`Shuffle (${shuffleEnabled ? 'On' : 'Off'})`}
             selected={shuffleEnabled}
             onClick={toggleShuffle}
+            className="player-shuffle-btn"
             size="sm"
           />
 

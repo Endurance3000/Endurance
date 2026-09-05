@@ -2,23 +2,37 @@ import { Track } from '../../types';
 import { RepeatMode } from './playbackTypes';
 
 /**
+ * Shuffles an array using the unbiased Fisher-Yates (Knuth) algorithm.
+ * Returns a new array; does not mutate the input array.
+ */
+export function shuffleArray<T>(array: T[], rng: () => number = Math.random): T[] {
+  if (array.length <= 1) return [...array];
+  const result = [...array];
+  for (let i = result.length - 1; i > 0; i--) {
+    const j = Math.floor(rng() * (i + 1));
+    [result[i], result[j]] = [result[j], result[i]];
+  }
+  return result;
+}
+
+/**
  * Generates a shuffled copy of a track list using the Fisher-Yates algorithm.
  * If currentTrackId is specified, that track is placed first so that enabling
  * shuffle does not change or disrupt the currently playing song.
  */
-export function generateShuffleOrder(tracks: Track[], currentTrackId?: string): Track[] {
+export function generateShuffleOrder(
+  tracks: Track[],
+  currentTrackId?: string,
+  rng: () => number = Math.random
+): Track[] {
   if (tracks.length <= 1) return [...tracks];
 
   const currentTrack = currentTrackId ? tracks.find((t) => t.id === currentTrackId) : null;
   const remaining = currentTrack ? tracks.filter((t) => t.id !== currentTrackId) : [...tracks];
 
-  // Fisher-Yates shuffle
-  for (let i = remaining.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [remaining[i], remaining[j]] = [remaining[j], remaining[i]];
-  }
+  const shuffledRemaining = shuffleArray(remaining, rng);
 
-  return currentTrack ? [currentTrack, ...remaining] : remaining;
+  return currentTrack ? [currentTrack, ...shuffledRemaining] : shuffledRemaining;
 }
 
 export interface NextTrackResult {

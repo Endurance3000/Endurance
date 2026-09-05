@@ -11,6 +11,10 @@ import {
   reorderQueueHelper,
   clearQueueHelper,
   clearUpcomingHelper,
+  shuffleQueueHelper,
+  unshuffleQueueHelper,
+  sortTracksAlphabetical,
+  shuffleAllHelper,
   getNextQueueTrack,
   getPreviousQueueTrack,
 } from '../services/audio/queueHelper';
@@ -183,7 +187,7 @@ export const PlaybackProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         if (stateRef.current.shuffleEnabled) {
           targetQueue = generateShuffleOrder(newQueue, track.id);
         } else {
-          targetQueue = [...newQueue];
+          targetQueue = sortTracksAlphabetical(newQueue);
         }
         setOriginalQueue(targetOriginal);
         setPlaybackQueue(targetQueue);
@@ -410,11 +414,64 @@ export const PlaybackProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     preferencesService.set('muted', newMuted ? 'true' : 'false');
   }, []);
 
-  const toggleShuffle = useCallback(() => {
-    const nextShuffle = !stateRef.current.shuffleEnabled;
-    setShuffleEnabled(nextShuffle);
-    preferencesService.set('shuffle', nextShuffle ? 'true' : 'false');
+  const shuffleQueue = useCallback(() => {
+    const { playbackQueue: currentQ, currentIndex: currentIdx } = stateRef.current;
+    const result = shuffleQueueHelper(currentQ, currentIdx);
+    setPlaybackQueue(result.queue);
+    setOriginalQueue(result.queue);
+    setCurrentIndex(result.currentIndex);
+    setShuffleEnabled(true);
+    preferencesService.set('shuffle', 'true');
   }, []);
+
+  const toggleShuffle = useCallback(() => {
+    const {
+      playbackQueue: currentQ,
+      currentIndex: currentIdx,
+      shuffleEnabled: isShuffleOn,
+    } = stateRef.current;
+
+    if (isShuffleOn) {
+      // Turn Shuffle OFF -> rebuild normal alphabetical queue (A -> Z)
+      const result = unshuffleQueueHelper(currentQ, currentIdx);
+      setPlaybackQueue(result.queue);
+      setOriginalQueue(result.queue);
+      setCurrentIndex(result.currentIndex);
+      setShuffleEnabled(false);
+      preferencesService.set('shuffle', 'false');
+    } else {
+      // Turn Shuffle ON -> fresh randomized permutation with Fisher-Yates
+      const result = shuffleQueueHelper(currentQ, currentIdx);
+      setPlaybackQueue(result.queue);
+      setOriginalQueue(result.queue);
+      setCurrentIndex(result.currentIndex);
+      setShuffleEnabled(true);
+      preferencesService.set('shuffle', 'true');
+    }
+  }, []);
+
+  const shuffleAll = useCallback(
+    async (allTracks: Track[]) => {
+      if (!allTracks || allTracks.length === 0) return;
+      const { queue, firstTrack } = shuffleAllHelper(allTracks);
+      if (!firstTrack) return;
+
+      setShuffleEnabled(true);
+      preferencesService.set('shuffle', 'true');
+      setPlaybackQueue(queue);
+      setOriginalQueue(queue);
+      setCurrentIndex(0);
+      setCurrentTrack(firstTrack);
+      setPlaybackError(null);
+      hasRecordedHistoryRef.current = false;
+      setCurrentTime(0);
+      setDuration(firstTrack.duration || 0);
+
+      applyTrackArtworkColors(firstTrack);
+      await audioEngine.loadAndPlay(firstTrack.file_path);
+    },
+    [applyTrackArtworkColors]
+  );
 
   const toggleRepeat = useCallback(() => {
     setRepeatMode((prev) => {
@@ -503,6 +560,8 @@ export const PlaybackProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         clearQueue,
         clearUpcomingQueue,
         playQueueItem,
+        shuffleAll,
+        shuffleQueue,
         isQueueOpen,
         toggleQueue,
         setIsQueueOpen,

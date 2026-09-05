@@ -9,6 +9,10 @@ import {
   reorderQueueHelper,
   clearQueueHelper,
   clearUpcomingHelper,
+  shuffleQueueHelper,
+  unshuffleQueueHelper,
+  sortTracksAlphabetical,
+  shuffleAllHelper,
   getNextQueueTrack,
   getPreviousQueueTrack,
 } from '../services/audio/queueHelper';
@@ -336,14 +340,153 @@ describe('Queue System Logic Tests', () => {
     });
   });
 
-  describe('Shuffle with Queue', () => {
-    it('picks a random upcoming track in queue when shuffle is enabled', () => {
-      const queue = [trackA, trackB, trackC, trackD, trackE];
-      const next = getNextQueueTrack(queue, 0, 'off', true, false);
+  describe('Two-State Shuffle System Logic & Guarantees', () => {
+    it('Shuffle OFF queue is alphabetical (A -> Z)', () => {
+      const unordered = [trackD, trackA, trackE, trackB, trackC];
+      const alphabetical = sortTracksAlphabetical(unordered);
 
-      assert.ok(next);
-      assert.notEqual(next.index, 0); // Should pick another track
-      assert.ok(next.index >= 1 && next.index <= 4);
+      assert.deepEqual(
+        alphabetical.map((t) => t.id),
+        ['A', 'B', 'C', 'D', 'E']
+      );
+    });
+
+    it('Turning Shuffle ON randomizes the queue with no duplicates', () => {
+      const queue = [trackA, trackB, trackC, trackD, trackE];
+      const result = shuffleQueueHelper(queue, 0);
+
+      assert.equal(result.queue.length, 5);
+      assert.equal(result.currentIndex, 0);
+      assert.equal(result.queue[0].id, 'A');
+
+      const uniqueIds = new Set(result.queue.map((t) => t.id));
+      assert.equal(uniqueIds.size, 5);
+      for (const t of queue) {
+        assert.ok(uniqueIds.has(t.id));
+      }
+    });
+
+    it('Turning Shuffle OFF restores alphabetical order while preserving current track', () => {
+      // Shuffled queue with C currently playing at index 0:
+      // C -> E -> A -> D -> B
+      const shuffledQueue = [trackC, trackE, trackA, trackD, trackB];
+      const result = unshuffleQueueHelper(shuffledQueue, 0);
+
+      // Rebuilt queue must be A -> B -> C -> D -> E
+      assert.deepEqual(
+        result.queue.map((t) => t.id),
+        ['A', 'B', 'C', 'D', 'E']
+      );
+      // C is at index 2 in alphabetical list; currentIndex must point to C
+      assert.equal(result.currentIndex, 2);
+      assert.equal(result.queue[result.currentIndex].id, 'C');
+    });
+
+    it('Turning Shuffle ON again creates a fresh random permutation', () => {
+      const pool = [trackA, trackB, trackC, trackD, trackE];
+      const permutations = new Set<string>();
+
+      for (let i = 0; i < 20; i++) {
+        const { queue } = shuffleQueueHelper(pool, 0);
+        permutations.add(queue.map((t) => t.id).join(','));
+      }
+
+      assert.ok(permutations.size > 1);
+    });
+
+    it('Current playing track remains current and is not duplicated in upcoming queue', () => {
+      // Queue: A, B, C (idx 2 playing), D, E
+      const queue = [trackA, trackB, trackC, trackD, trackE];
+      const onResult = shuffleQueueHelper(queue, 2);
+
+      // Current track C is preserved as current
+      assert.equal(onResult.currentIndex, 0);
+      assert.equal(onResult.queue[0].id, 'C');
+
+      // Upcoming tracks (indices 1..4) do NOT contain C
+      const upcomingIds = onResult.queue.slice(1).map((t) => t.id);
+      assert.equal(upcomingIds.includes('C'), false);
+      assert.equal(upcomingIds.length, 4);
+
+      // Now toggle OFF:
+      const offResult = unshuffleQueueHelper(onResult.queue, 0);
+      assert.deepEqual(
+        offResult.queue.map((t) => t.id),
+        ['A', 'B', 'C', 'D', 'E']
+      );
+      assert.equal(offResult.currentIndex, 2);
+      assert.equal(offResult.queue[offResult.currentIndex].id, 'C');
+    });
+
+    it('Shuffle All creates a complete randomized queue from entire library', () => {
+      const allLibraryTracks = [trackA, trackB, trackC, trackD, trackE];
+      const { queue, firstTrack } = shuffleAllHelper(allLibraryTracks);
+
+      assert.equal(queue.length, 5);
+      assert.ok(firstTrack);
+      assert.equal(queue[0].id, firstTrack.id);
+
+      const uniqueIds = new Set(queue.map((t) => t.id));
+      assert.equal(uniqueIds.size, 5);
+    });
+
+    it('Shuffle All safely filters unavailable tracks while keeping available ones', () => {
+      const trackUnavailable = createDummyTrack('U', 'Unavailable Song');
+      trackUnavailable.is_available = false;
+
+      const library = [trackA, trackB, trackUnavailable, trackC];
+      const { queue } = shuffleAllHelper(library);
+
+      assert.equal(queue.length, 3);
+      assert.equal(queue.some((t) => t.id === 'U'), false);
+    });
+
+    it('handles edge cases gracefully: empty, 1 track, 2 tracks', () => {
+      // 0 tracks
+      const emptyResult = shuffleQueueHelper([], -1);
+      assert.equal(emptyResult.queue.length, 0);
+      const emptyOff = unshuffleQueueHelper([], -1);
+      assert.equal(emptyOff.queue.length, 0);
+
+      const emptyShuffleAll = shuffleAllHelper([]);
+      assert.equal(emptyShuffleAll.queue.length, 0);
+      assert.equal(emptyShuffleAll.firstTrack, null);
+
+      // 1 track
+      const single = [trackA];
+      const singleResult = shuffleQueueHelper(single, 0);
+      assert.equal(singleResult.queue.length, 1);
+      assert.equal(singleResult.queue[0].id, 'A');
+
+      const singleOff = unshuffleQueueHelper(single, 0);
+      assert.equal(singleOff.queue.length, 1);
+      assert.equal(singleOff.queue[0].id, 'A');
+
+      // 2 tracks
+      const pair = [trackB, trackA];
+      const pairOff = unshuffleQueueHelper(pair, 0);
+      assert.deepEqual(
+        pairOff.queue.map((t) => t.id),
+        ['A', 'B']
+      );
+      assert.equal(pairOff.currentIndex, 1); // B is at index 1 in A, B
+    });
+
+    it('plays through shuffled queue sequentially without repeating songs within the cycle', () => {
+      // A -> B -> C
+      const queue = [trackA, trackB, trackC];
+      const step1 = getNextQueueTrack(queue, 0, 'off', true, false);
+      assert.ok(step1);
+      assert.equal(step1.track.id, 'B');
+      assert.equal(step1.index, 1);
+
+      const step2 = getNextQueueTrack(queue, 1, 'off', true, false);
+      assert.ok(step2);
+      assert.equal(step2.track.id, 'C');
+      assert.equal(step2.index, 2);
+
+      const step3 = getNextQueueTrack(queue, 2, 'off', true, false);
+      assert.equal(step3, null); // cleanly finishes queue
     });
   });
 

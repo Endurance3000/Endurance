@@ -29,6 +29,8 @@ export interface PlaybackContextType extends PlaybackState {
   clearQueue: () => void;
   clearUpcomingQueue: () => void;
   playQueueItem: (index: number) => Promise<void>;
+  shuffleAll: (allTracks: Track[]) => Promise<void>;
+  shuffleQueue: () => void;
   isQueueOpen: boolean;
   toggleQueue: () => void;
   setIsQueueOpen: (open: boolean) => void;

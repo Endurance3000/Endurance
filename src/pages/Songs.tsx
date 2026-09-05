@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Music, FolderPlus, Heart, MoreHorizontal, Play, Pause, RefreshCw, Loader2 } from 'lucide-react';
+import { Music, FolderPlus, Heart, MoreHorizontal, Play, Pause, RefreshCw, Loader2, Shuffle } from 'lucide-react';
 import { Button } from '../components/Common/Button';
 import { IconButton } from '../components/Common/IconButton';
 import { SearchField } from '../components/Common/SearchField';
@@ -39,7 +39,7 @@ export const Songs: React.FC<SongsProps> = ({
   const [menuTrack, setMenuTrack] = useState<Track | null>(null);
   const [menuPosition, setMenuPosition] = useState<{ x: number; y: number }>({ x: 0, y: 0 });
 
-  const { currentTrack, isPlaying, playTrack, togglePlay } = usePlayback();
+  const { currentTrack, isPlaying, playTrack, togglePlay, shuffleAll } = usePlayback();
 
   // Load persisted view preferences on mount with fallback
   useEffect(() => {
@@ -107,7 +107,7 @@ export const Songs: React.FC<SongsProps> = ({
           </p>
         </div>
 
-        {/* Tier 1: Search field & Rescan library button */}
+        {/* Tier 1: Search field & Rescan + Shuffle All buttons */}
         <div className="songs-search-action-row">
           <div className="songs-search-wrapper">
             <SearchField
@@ -116,16 +116,28 @@ export const Songs: React.FC<SongsProps> = ({
               placeholder="Search songs, artists, albums..."
             />
           </div>
-          <Button
-            variant="tonal"
-            size="md"
-            icon={isScanning ? <Loader2 size={16} className="spin-animation" /> : <RefreshCw size={16} />}
-            onClick={onRescan}
-            disabled={isScanning || folders.length === 0}
-            title="Rescan configured folders for new or changed music"
-          >
-            {isScanning ? 'Scanning...' : 'Rescan'}
-          </Button>
+          <div className="songs-header-buttons">
+            <Button
+              variant="tonal"
+              size="md"
+              icon={isScanning ? <Loader2 size={16} className="spin-animation" /> : <RefreshCw size={16} />}
+              onClick={onRescan}
+              disabled={isScanning || folders.length === 0}
+              title="Rescan configured folders for new or changed music"
+            >
+              {isScanning ? 'Scanning...' : 'Rescan'}
+            </Button>
+            <Button
+              variant="tonal"
+              size="md"
+              icon={<Shuffle size={16} />}
+              onClick={() => shuffleAll(tracks)}
+              disabled={tracks.length === 0}
+              title="Shuffle and play all songs in your library"
+            >
+              Shuffle All
+            </Button>
+          </div>
         </div>
 
         {/* Tier 2: Filter Chips & Material 3 Sort Popover */}

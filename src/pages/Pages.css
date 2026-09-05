@@ -56,6 +56,13 @@
   max-width: 460px;
 }
 
+.songs-header-buttons {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  flex-wrap: wrap;
+}
+
 .chips-bar {
   display: flex;
   align-items: center;
