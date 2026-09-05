@@ -20,9 +20,15 @@
 }
 
 .titlebar-logo {
-  color: var(--md-sys-color-primary);
   display: flex;
   align-items: center;
+}
+
+.titlebar-logo-img {
+  width: 18px;
+  height: 18px;
+  object-fit: contain;
+  display: block;
 }
 
 .titlebar-title {

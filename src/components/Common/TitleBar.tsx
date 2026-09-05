@@ -57,10 +57,7 @@ export const TitleBar: React.FC = () => {
     <header className="titlebar" data-tauri-drag-region onDoubleClick={handleToggleMaximize}>
       <div className="titlebar-leading" data-tauri-drag-region>
         <div className="titlebar-logo">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-            <circle cx="12" cy="12" r="10" />
-            <polygon points="10 8 16 12 10 16 10 8" fill="currentColor" />
-          </svg>
+          <img src="/logo.png" alt="Endurance" className="titlebar-logo-img" width="18" height="18" />
         </div>
         <span className="titlebar-title" data-tauri-drag-region>Endurance</span>
         <span className="titlebar-badge" data-tauri-drag-region>Local</span>
