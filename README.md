@@ -317,77 +317,6 @@ Endurance/
 
 ## Roadmap
 
-### Completed (v0.1.0)
-- [x] Recursive local music folder scanner and metadata indexing
-- [x] Hardware-accelerated audio engine for MP3 and M4A
-- [x] Synchronized offline LRC lyrics parser with click-to-seek
-- [x] Two-state shuffle engine and drag-and-drop queue management
-- [x] Dynamic artwork color extraction and warm Material 3 design system
-- [x] Persistent SQLite database with automated versioned migrations
-- [x] Windows NSIS and MSI packaging with embedded application icons
-
-### Planned (v0.2.0+)
-- [ ] Cross-platform macOS support (universal `.dmg` bundle with native window styling)
-- [ ] User-created custom playlists and playlist management
-- [ ] Expanded audio container support (FLAC, OGG, WAV)
-- [ ] Integrated release update notifications
-
----
-
-## Contributing
-
-Contributions from the open-source community are welcome.
-
-### Contribution Workflow
-
-1. **Fork** the repository on GitHub.
-2. **Create a Feature Branch**:
-   ```bash
-   git checkout -b feature/your-feature-name
-   ```
-3. **Commit your changes**:
-   ```bash
-   git commit -m "feat: describe your change"
-   ```
-4. **Run Verification**:
-   ```bash
-   npm test
-   npx tsc --noEmit
-   cd src-tauri && cargo test && cd ..
-   ```
-5. **Open a Pull Request** explaining the intent and testing approach.
-
-### Guidelines
-* Keep pull requests focused on a single feature or bug fix.
-* Maintain the existing offline-first design and avoid introducing unnecessary external dependencies.
-* Ensure both frontend and Rust tests pass before opening a PR.
-
----
-
-## Issue Reporting & Support
-
-If you encounter a bug or have a suggestion:
-
-* Open an issue on the [**GitHub Issues**](https://github.com/Endurance3000/Endurance/issues) tracker.
-* In bug reports, please include:
-  * Endurance version (e.g., `v0.1.0`)
-  * Windows OS version (e.g., Windows 11 23H2)
-  * Audio file format (e.g., MP3 / M4A)
-  * Steps to reproduce the issue and observed vs. expected behavior
-
----
-
-## Releases
-
-* [**Latest Release (v0.1.0)**](https://github.com/Endurance3000/Endurance/releases/latest)
-* [**All Releases**](https://github.com/Endurance3000/Endurance/releases)
-* [**The New Version is under development**]
-* [**Feel free to suggest the features to be added in the new version**]
-
----
-
-## Roadmap
-
 ### v0.1.0 — Released
 
 - [x] Local music library scanning and indexing
@@ -443,6 +372,58 @@ If you encounter a bug or have a suggestion:
 - [ ] Advanced library management
 - [ ] Lyrics offset adjustment
 - [ ] Additional platform-specific improvements
+
+---
+
+## Contributing
+
+Contributions from the open-source community are welcome.
+
+### Contribution Workflow
+
+1. **Fork** the repository on GitHub.
+2. **Create a Feature Branch**:
+   ```bash
+   git checkout -b feature/your-feature-name
+   ```
+3. **Commit your changes**:
+   ```bash
+   git commit -m "feat: describe your change"
+   ```
+4. **Run Verification**:
+   ```bash
+   npm test
+   npx tsc --noEmit
+   cd src-tauri && cargo test && cd ..
+   ```
+5. **Open a Pull Request** explaining the intent and testing approach.
+
+### Guidelines
+* Keep pull requests focused on a single feature or bug fix.
+* Maintain the existing offline-first design and avoid introducing unnecessary external dependencies.
+* Ensure both frontend and Rust tests pass before opening a PR.
+
+---
+
+## Issue Reporting & Support
+
+If you encounter a bug or have a suggestion:
+
+* Open an issue on the [**GitHub Issues**](https://github.com/Endurance3000/Endurance/issues) tracker.
+* In bug reports, please include:
+  * Endurance version (e.g., `v0.1.0`)
+  * Windows OS version (e.g., Windows 11 23H2)
+  * Audio file format (e.g., MP3 / M4A)
+  * Steps to reproduce the issue and observed vs. expected behavior
+
+---
+
+## Releases
+
+* [**Latest Release (v0.1.0)**](https://github.com/Endurance3000/Endurance/releases/latest)
+* [**All Releases**](https://github.com/Endurance3000/Endurance/releases)
+* [**The New Version is under development**]
+* [**Feel free to suggest the features to be added in the new version**]
 
 ---
 
