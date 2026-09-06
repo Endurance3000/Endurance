@@ -386,6 +386,66 @@ If you encounter a bug or have a suggestion:
 
 ---
 
+## Roadmap
+
+### v0.1.0 — Released
+
+- [x] Local music library scanning and indexing
+- [x] MP3 and M4A playback
+- [x] Playback queue and queue management
+- [x] Shuffle and repeat modes
+- [x] Synchronized offline LRC lyrics
+- [x] Playback history and favorites
+- [x] Dynamic artwork-based theming
+- [x] Light, Dark, System, and High Contrast themes
+- [x] Material 3-inspired interface
+- [x] Expressive waveform seek bar
+- [x] Windows installer and application branding
+
+### v0.2.0 — Planned
+
+#### Playback & Controls
+
+- [ ] Fix and improve keyboard shortcuts across the entire application
+- [ ] Improve volume slider accuracy and audio-volume mapping
+- [ ] Improve keyboard accessibility and focus behavior
+- [ ] Regression-test playback controls, seeking, queue, shuffle, repeat, volume, and mute
+
+#### Mini Player
+
+- [ ] Add a compact floating Mini Player
+- [ ] Keep the Mini Player always on top of other windows
+- [ ] Display album artwork, song title, and artist
+- [ ] Provide essential playback controls and progress
+- [ ] Share playback state with the main Endurance player
+- [ ] Support the Mini Player consistently across Windows and macOS
+
+#### UI & Experience
+
+- [ ] Improve song-list hover states so the song title and artist highlight as one cohesive row
+- [ ] Preserve clear visual hierarchy between song titles and artist names
+- [ ] Continue refining Material 3-inspired interactions and animations
+
+#### Cross-Platform & macOS
+
+- [ ] Complete cross-platform compatibility improvements
+- [ ] Add macOS-native window and title-bar behavior
+- [ ] Support platform-appropriate keyboard shortcuts (`Ctrl` on Windows, `⌘` on macOS)
+- [ ] Add macOS application packaging
+- [ ] Build and test Endurance on real macOS hardware
+- [ ] Prepare macOS distribution and signing/notarization
+
+### Future
+
+- [ ] Playlists and playlist management
+- [ ] Improved album and artist browsing
+- [ ] Sleep timer
+- [ ] Advanced library management
+- [ ] Lyrics offset adjustment
+- [ ] Additional platform-specific improvements
+
+---
+
 ## License
 
 Endurance is currently being prepared as an open-source project. A formal open-source license will be established in the repository root before accepting external contributions under a defined license.
