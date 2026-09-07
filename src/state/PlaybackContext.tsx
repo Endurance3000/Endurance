@@ -22,6 +22,19 @@ import { historyService } from '../services/history/historyService';
 import { preferencesService } from '../services/preferences/preferencesService';
 import { useTheme } from './ThemeContext';
 
+import {
+  handlePlaybackShortcut,
+  KeyboardShortcutActions,
+  KeyboardShortcutEvent,
+  KeyboardShortcutState,
+} from '../services/audio/shortcutHelper';
+export type {
+  KeyboardShortcutActions,
+  KeyboardShortcutEvent,
+  KeyboardShortcutState,
+};
+export { handlePlaybackShortcut };
+
 const PlaybackContext = createContext<PlaybackContextType | null>(null);
 
 export const PlaybackProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
@@ -489,50 +502,26 @@ export const PlaybackProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     setPlaybackError(null);
   }, []);
 
-  // Global Keyboard Shortcuts (Space, ArrowLeft/Right, ArrowUp/Down)
+  // Global Keyboard Shortcuts (Space, ArrowLeft/Right, ArrowUp/Down, M)
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      // Ignore if user is currently interacting with an input field
-      const target = e.target as HTMLElement | null;
-      if (
-        target &&
-        (target.tagName === 'INPUT' ||
-          target.tagName === 'TEXTAREA' ||
-          target.tagName === 'SELECT' ||
-          target.isContentEditable)
-      ) {
-        return;
-      }
-
-      switch (e.code) {
-        case 'Space':
-          e.preventDefault();
-          togglePlay();
-          break;
-        case 'ArrowLeft':
-          e.preventDefault();
-          seek(Math.max(0, stateRef.current.currentTime - 5));
-          break;
-        case 'ArrowRight':
-          e.preventDefault();
-          seek(Math.min(stateRef.current.duration, stateRef.current.currentTime + 5));
-          break;
-        case 'ArrowUp':
-          e.preventDefault();
-          setVolume(stateRef.current.volume + 0.05);
-          break;
-        case 'ArrowDown':
-          e.preventDefault();
-          setVolume(stateRef.current.volume - 0.05);
-          break;
-        default:
-          break;
-      }
+      handlePlaybackShortcut(
+        e,
+        {
+          togglePlay,
+          seek,
+          prevTrack,
+          nextTrack,
+          setVolume,
+          toggleMute,
+        },
+        stateRef.current
+      );
     };
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [togglePlay, seek, setVolume]);
+  }, [togglePlay, seek, setVolume, prevTrack, nextTrack, toggleMute]);
 
   return (
     <PlaybackContext.Provider

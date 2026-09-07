@@ -1,0 +1,115 @@
+export interface KeyboardShortcutActions {
+  togglePlay: () => void;
+  seek: (seconds: number) => void;
+  prevTrack: () => void;
+  nextTrack: () => void;
+  setVolume: (volume: number) => void;
+  toggleMute: () => void;
+}
+
+export interface KeyboardShortcutState {
+  currentTime: number;
+  duration: number;
+  volume: number;
+}
+
+export interface KeyboardShortcutEvent {
+  code?: string;
+  key?: string;
+  ctrlKey?: boolean;
+  metaKey?: boolean;
+  altKey?: boolean;
+  shiftKey?: boolean;
+  target?: EventTarget | { tagName?: string; isContentEditable?: boolean } | null;
+  preventDefault?: () => void;
+}
+
+/**
+ * Pure dispatcher for global keyboard shortcuts in Endurance.
+ * Returns true if a shortcut was matched and executed, false otherwise.
+ */
+export function handlePlaybackShortcut(
+  e: KeyboardShortcutEvent,
+  actions: KeyboardShortcutActions,
+  state: KeyboardShortcutState
+): boolean {
+  // Ignore if user is currently interacting with an input field or editable area
+  const target = e.target as (HTMLElement & { isContentEditable?: boolean }) | { tagName?: string; isContentEditable?: boolean } | null;
+  if (
+    target &&
+    (target.tagName === 'INPUT' ||
+      target.tagName === 'TEXTAREA' ||
+      target.tagName === 'SELECT' ||
+      target.isContentEditable)
+  ) {
+    return false;
+  }
+
+  const isModifier = Boolean(e.ctrlKey || e.metaKey);
+  const isPlain = !e.ctrlKey && !e.metaKey && !e.altKey && !e.shiftKey;
+
+  switch (e.code) {
+    case 'Space':
+      if (!e.altKey) {
+        e.preventDefault?.();
+        actions.togglePlay();
+        return true;
+      }
+      break;
+    case 'ArrowLeft':
+      if (!e.altKey) {
+        e.preventDefault?.();
+        if (isModifier) {
+          actions.prevTrack();
+          return true;
+        } else if (isPlain) {
+          actions.seek(Math.max(0, state.currentTime - 5));
+          return true;
+        }
+      }
+      break;
+    case 'ArrowRight':
+      if (!e.altKey) {
+        e.preventDefault?.();
+        if (isModifier) {
+          actions.nextTrack();
+          return true;
+        } else if (isPlain) {
+          actions.seek(Math.min(state.duration, state.currentTime + 5));
+          return true;
+        }
+      }
+      break;
+    case 'ArrowUp':
+      if (isPlain) {
+        e.preventDefault?.();
+        actions.setVolume(state.volume + 0.05);
+        return true;
+      }
+      break;
+    case 'ArrowDown':
+      if (isPlain) {
+        e.preventDefault?.();
+        actions.setVolume(state.volume - 0.05);
+        return true;
+      }
+      break;
+    case 'KeyM':
+      if (isPlain) {
+        e.preventDefault?.();
+        actions.toggleMute();
+        return true;
+      }
+      break;
+    default:
+      // Fallback for layouts where e.code might vary but e.key is 'm' / 'M'
+      if ((e.key === 'm' || e.key === 'M') && isPlain) {
+        e.preventDefault?.();
+        actions.toggleMute();
+        return true;
+      }
+      break;
+  }
+
+  return false;
+}
