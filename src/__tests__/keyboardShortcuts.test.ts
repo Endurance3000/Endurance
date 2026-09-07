@@ -221,7 +221,7 @@ describe('Global Keyboard Shortcuts & Focus Guard Tests', () => {
   });
 
   describe('Volume Controls (ArrowUp & ArrowDown)', () => {
-    it('ArrowUp increases volume by 5%', () => {
+    it('Normal Arrow Up increases volume by 5%', () => {
       const { actions, getCounts } = createMockActions();
       let prevented = false;
       const event: KeyboardShortcutEvent = {
@@ -239,7 +239,43 @@ describe('Global Keyboard Shortcuts & Focus Guard Tests', () => {
       assert.ok(Math.abs(getCounts().volumeValues[0] - 0.55) < 0.0001);
     });
 
-    it('ArrowDown decreases volume by 5%', () => {
+    it('Arrow Up from 95% stops at 100%', () => {
+      const { actions, getCounts } = createMockActions();
+      let prevented = false;
+      const event: KeyboardShortcutEvent = {
+        code: 'ArrowUp',
+        preventDefault: () => {
+          prevented = true;
+        },
+      };
+
+      const handled = handlePlaybackShortcut(event, actions, { ...defaultState, volume: 0.95 });
+
+      assert.strictEqual(handled, true);
+      assert.strictEqual(prevented, true);
+      assert.strictEqual(getCounts().volumeValues.length, 1);
+      assert.ok(Math.abs(getCounts().volumeValues[0] - 1.0) < 0.0001);
+    });
+
+    it('Arrow Up from 100% remains at 100% and does not wrap', () => {
+      const { actions, getCounts } = createMockActions();
+      let prevented = false;
+      const event: KeyboardShortcutEvent = {
+        code: 'ArrowUp',
+        preventDefault: () => {
+          prevented = true;
+        },
+      };
+
+      const handled = handlePlaybackShortcut(event, actions, { ...defaultState, volume: 1.0 });
+
+      assert.strictEqual(handled, true);
+      assert.strictEqual(prevented, true);
+      assert.strictEqual(getCounts().volumeValues.length, 1);
+      assert.strictEqual(getCounts().volumeValues[0], 1.0);
+    });
+
+    it('Normal Arrow Down decreases volume by 5%', () => {
       const { actions, getCounts } = createMockActions();
       let prevented = false;
       const event: KeyboardShortcutEvent = {
@@ -255,6 +291,42 @@ describe('Global Keyboard Shortcuts & Focus Guard Tests', () => {
       assert.strictEqual(prevented, true);
       assert.strictEqual(getCounts().volumeValues.length, 1);
       assert.ok(Math.abs(getCounts().volumeValues[0] - 0.45) < 0.0001);
+    });
+
+    it('Arrow Down from 5% stops at 0%', () => {
+      const { actions, getCounts } = createMockActions();
+      let prevented = false;
+      const event: KeyboardShortcutEvent = {
+        code: 'ArrowDown',
+        preventDefault: () => {
+          prevented = true;
+        },
+      };
+
+      const handled = handlePlaybackShortcut(event, actions, { ...defaultState, volume: 0.05 });
+
+      assert.strictEqual(handled, true);
+      assert.strictEqual(prevented, true);
+      assert.strictEqual(getCounts().volumeValues.length, 1);
+      assert.ok(Math.abs(getCounts().volumeValues[0] - 0.0) < 0.0001);
+    });
+
+    it('Arrow Down from 0% remains at 0%', () => {
+      const { actions, getCounts } = createMockActions();
+      let prevented = false;
+      const event: KeyboardShortcutEvent = {
+        code: 'ArrowDown',
+        preventDefault: () => {
+          prevented = true;
+        },
+      };
+
+      const handled = handlePlaybackShortcut(event, actions, { ...defaultState, volume: 0.0 });
+
+      assert.strictEqual(handled, true);
+      assert.strictEqual(prevented, true);
+      assert.strictEqual(getCounts().volumeValues.length, 1);
+      assert.strictEqual(getCounts().volumeValues[0], 0.0);
     });
 
     it('Ctrl + ArrowUp does not trigger volume adjustment', () => {

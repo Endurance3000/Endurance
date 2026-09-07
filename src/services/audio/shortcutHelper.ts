@@ -83,14 +83,14 @@ export function handlePlaybackShortcut(
     case 'ArrowUp':
       if (isPlain) {
         e.preventDefault?.();
-        actions.setVolume(state.volume + 0.05);
+        actions.setVolume(Math.min(1, state.volume + 0.05));
         return true;
       }
       break;
     case 'ArrowDown':
       if (isPlain) {
         e.preventDefault?.();
-        actions.setVolume(state.volume - 0.05);
+        actions.setVolume(Math.max(0, state.volume - 0.05));
         return true;
       }
       break;
