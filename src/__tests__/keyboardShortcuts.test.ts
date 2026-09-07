@@ -75,10 +75,22 @@ describe('Global Keyboard Shortcuts & Focus Guard Tests', () => {
     });
 
     it('Alt + Space does not trigger playback toggle', () => {
-      const { actions, getCounts } = createMockActions();
+      const { actions } = createMockActions();
       const event: KeyboardShortcutEvent = {
         code: 'Space',
         altKey: true,
+      };
+
+      const handled = handlePlaybackShortcut(event, actions, defaultState);
+
+      assert.strictEqual(handled, false);
+    });
+
+    it('Does not hijack Space on a focused button', () => {
+      const { actions, getCounts } = createMockActions();
+      const event: KeyboardShortcutEvent = {
+        code: 'Space',
+        target: { tagName: 'BUTTON' },
       };
 
       const handled = handlePlaybackShortcut(event, actions, defaultState);
@@ -500,6 +512,21 @@ describe('Global Keyboard Shortcuts & Focus Guard Tests', () => {
 
       assert.strictEqual(handled, false);
       assert.strictEqual(getCounts().muteToggleCount, 0);
+    });
+  });
+
+  describe('Event Default Prevention Guard', () => {
+    it('Ignores shortcuts when the event is already defaultPrevented', () => {
+      const { actions, getCounts } = createMockActions();
+      const event: KeyboardShortcutEvent = {
+        code: 'Space',
+        defaultPrevented: true,
+      };
+
+      const handled = handlePlaybackShortcut(event, actions, defaultState);
+
+      assert.strictEqual(handled, false);
+      assert.strictEqual(getCounts().playToggleCount, 0);
     });
   });
 

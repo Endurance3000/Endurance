@@ -22,6 +22,7 @@ export interface KeyboardShortcutEvent {
   shiftKey?: boolean;
   target?: EventTarget | { tagName?: string; isContentEditable?: boolean } | null;
   preventDefault?: () => void;
+  defaultPrevented?: boolean
 }
 
 /**
@@ -33,6 +34,9 @@ export function handlePlaybackShortcut(
   actions: KeyboardShortcutActions,
   state: KeyboardShortcutState
 ): boolean {
+  if (e.defaultPrevented == true) {
+    return false;
+  }
   // Ignore if user is currently interacting with an input field or editable area
   const target = e.target as (HTMLElement & { isContentEditable?: boolean }) | { tagName?: string; isContentEditable?: boolean } | null;
   if (
@@ -51,6 +55,14 @@ export function handlePlaybackShortcut(
   switch (e.code) {
     case 'Space':
       if (!e.altKey) {
+        const target = e.target as
+          | { tagName?: string; isContentEditable?: boolean }
+          | null;
+
+        if (target?.tagName === 'BUTTON') {
+          return false;
+        }
+
         e.preventDefault?.();
         actions.togglePlay();
         return true;
