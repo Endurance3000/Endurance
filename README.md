@@ -339,10 +339,10 @@ Endurance/
 
 #### Playback & Controls
 
-- [ ] Fix and improve keyboard shortcuts across the entire application
-- [ ] Improve volume slider accuracy and audio-volume mapping
-- [ ] Improve keyboard accessibility and focus behavior
-- [ ] Regression-test playback controls, seeking, queue, shuffle, repeat, volume, and mute
+- [x] Fix and improve keyboard shortcuts across the entire application
+- [x] Improve volume slider accuracy and audio-volume mapping
+- [x] Improve keyboard accessibility and focus behavior
+- [x] Regression-test playback controls, seeking, queue, shuffle, repeat, volume, and mute
 
 #### Mini Player
 
