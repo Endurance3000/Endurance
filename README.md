@@ -330,6 +330,10 @@ Endurance/
 - [x] Material 3-inspired interface
 - [x] Expressive waveform seek bar
 - [x] Windows installer and application branding
+- [x] GitHub Release with Windows installers
+- [x] README documentation and application previews
+
+---
 
 ### v0.2.0 — Planned
 
@@ -349,11 +353,23 @@ Endurance/
 - [ ] Share playback state with the main Endurance player
 - [ ] Support the Mini Player consistently across Windows and macOS
 
+#### User-Created Offline Lyrics
+
+- [ ] Add a lyrics editor for users to write or paste their own lyrics
+- [ ] Automatically detect timestamped lyrics
+- [ ] Automatically synchronize timestamped lyrics with playback
+- [ ] Support both plain and synchronized user-created lyrics
+- [ ] Allow users to edit and replace existing lyrics
+- [ ] Allow users to adjust lyric timestamps for synchronization
+- [ ] Store user-created lyrics locally alongside the user's music
+- [ ] Preserve the existing offline lyrics experience
+
 #### UI & Experience
 
-- [ ] Improve song-list hover states so the song title and artist highlight as one cohesive row
+- [ ] Improve song-list hover states so song titles and artist names highlight as one cohesive row
 - [ ] Preserve clear visual hierarchy between song titles and artist names
 - [ ] Continue refining Material 3-inspired interactions and animations
+- [ ] Improve overall accessibility and keyboard navigation
 
 #### Cross-Platform & macOS
 
@@ -363,15 +379,61 @@ Endurance/
 - [ ] Add macOS application packaging
 - [ ] Build and test Endurance on real macOS hardware
 - [ ] Prepare macOS distribution and signing/notarization
+- [ ] Ensure shared playback, library, lyrics, themes, and database functionality work consistently across platforms
+
+---
+
+### v0.3.0 — Planned
+
+#### Online Lyrics
+
+- [ ] Introduce optional online lyrics functionality
+- [ ] Research and integrate a reliable lyrics provider/API
+- [ ] Search for lyrics using song metadata
+- [ ] Fetch synchronized lyrics when available
+- [ ] Fall back to plain lyrics when synchronized lyrics are unavailable
+- [ ] Keep locally stored/user-created lyrics available offline
+- [ ] Prioritize local lyrics before attempting an online lookup
+- [ ] Handle unavailable lyrics and network failures gracefully
+- [ ] Consider local caching of successfully retrieved lyrics
+- [ ] Clearly separate online functionality from the core offline player
+
+#### Online & Offline Architecture
+
+- [ ] Keep Endurance fully usable without an internet connection
+- [ ] Make online services optional rather than required
+- [ ] Avoid making playback dependent on online services
+- [ ] Design a clean provider abstraction for future online features
+
+---
 
 ### Future
 
+#### Library & Organization
+
 - [ ] Playlists and playlist management
-- [ ] Improved album and artist browsing
-- [ ] Sleep timer
+- [ ] Improved album browsing
+- [ ] Improved artist browsing
 - [ ] Advanced library management
-- [ ] Lyrics offset adjustment
-- [ ] Additional platform-specific improvements
+- [ ] Better sorting and filtering options
+
+#### Playback
+
+- [ ] Sleep timer
+- [ ] Additional playback customization
+- [ ] Further audio and player improvements
+
+#### Lyrics
+
+- [ ] Advanced lyrics synchronization tools
+- [ ] Improved lyrics editing experience
+- [ ] Additional lyrics providers
+
+#### Platform Support
+
+- [ ] Continued macOS improvements
+- [ ] Evaluate additional desktop platforms
+- [ ] Platform-specific polish and native integrations
 
 ---
 
