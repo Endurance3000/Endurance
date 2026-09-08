@@ -15,7 +15,7 @@
   flex-shrink: 0;
   box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.15);
   transition: background-color var(--motion-duration-medium-2) var(--motion-easing-standard),
-              border-color var(--motion-duration-medium-2) var(--motion-easing-standard);
+    border-color var(--motion-duration-medium-2) var(--motion-easing-standard);
 }
 
 /* ==========================================================================
@@ -48,7 +48,7 @@
   border-radius: var(--radius-md) !important;
   box-shadow: var(--elevation-1);
   transition: transform var(--motion-duration-short-2) var(--motion-easing-emphasized-decelerate),
-              box-shadow var(--motion-duration-short-2) var(--motion-easing-standard);
+    box-shadow var(--motion-duration-short-2) var(--motion-easing-standard);
 }
 
 .player-track-info:hover .player-bar-artwork {
@@ -114,14 +114,14 @@
   border: 1px solid var(--md-sys-color-outline-subtle);
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12);
   transition: background-color var(--motion-duration-medium-1) var(--motion-easing-standard),
-              box-shadow var(--motion-duration-medium-1) var(--motion-easing-standard);
+    box-shadow var(--motion-duration-medium-1) var(--motion-easing-standard);
 }
 
 /* Shuffle Button 2-State Colors */
 .player-shuffle-btn {
   color: var(--md-sys-color-on-surface) !important;
   transition: color var(--motion-duration-short-2) var(--motion-easing-standard),
-              background-color var(--motion-duration-short-2) var(--motion-easing-standard) !important;
+    background-color var(--motion-duration-short-2) var(--motion-easing-standard) !important;
 }
 
 .player-shuffle-btn.active,
@@ -166,9 +166,14 @@
   position: relative;
   overflow: hidden;
   transition: transform var(--motion-duration-short-2) var(--motion-easing-emphasized-decelerate),
-              background-color var(--motion-duration-short-2) var(--motion-easing-standard),
-              box-shadow var(--motion-duration-short-2) var(--motion-easing-standard),
-              filter var(--motion-duration-short-2) var(--motion-easing-standard);
+    background-color var(--motion-duration-short-2) var(--motion-easing-standard),
+    box-shadow var(--motion-duration-short-2) var(--motion-easing-standard),
+    filter var(--motion-duration-short-2) var(--motion-easing-standard);
+}
+
+.player-play-btn:focus-visible {
+  outline: 2px solid var(--md-sys-color-focus-ring);
+  outline-offset: 2px;
 }
 
 .player-play-btn:hover:not(:disabled) {
@@ -189,7 +194,7 @@
 
 .play-icon-transition {
   transition: transform var(--motion-duration-short-2) var(--motion-easing-emphasized-decelerate),
-              opacity var(--motion-duration-short-2) var(--motion-easing-standard);
+    opacity var(--motion-duration-short-2) var(--motion-easing-standard);
 }
 
 /* Timeline & Sine Wave Container */
@@ -349,6 +354,7 @@
     grid-template-columns: 240px 1fr 220px;
     padding: 0 var(--space-md);
   }
+
   .volume-slider-track {
     width: 60px;
   }
@@ -359,6 +365,7 @@
     grid-template-columns: 180px 1fr 160px;
     padding: 0 var(--space-sm);
   }
+
   .volume-slider-track {
     width: 50px;
   }

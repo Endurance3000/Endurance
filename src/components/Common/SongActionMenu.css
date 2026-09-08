@@ -27,6 +27,7 @@
     opacity: 0;
     transform: scale(0.95);
   }
+
   to {
     opacity: 1;
     transform: scale(1);
@@ -48,14 +49,18 @@
   cursor: pointer;
   width: 100%;
   transition: background-color var(--motion-duration-short-1) var(--motion-easing-standard),
-              color var(--motion-duration-short-1) var(--motion-easing-standard);
+    color var(--motion-duration-short-1) var(--motion-easing-standard);
 }
 
 .song-menu-item:hover,
 .song-menu-item:focus-visible {
   background-color: var(--md-sys-color-surface-variant);
   color: var(--md-sys-color-primary);
-  outline: none;
+}
+
+.song-menu-item:focus-visible {
+  outline: 2px solid var(--md-sys-color-focus-ring);
+  outline-offset: 2px;
 }
 
 .song-menu-item-icon {

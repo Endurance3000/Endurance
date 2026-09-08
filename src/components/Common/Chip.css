@@ -18,6 +18,11 @@
   transition: all var(--motion-duration-short-2) var(--motion-easing-standard);
 }
 
+.m3-chip:focus-visible {
+  outline: 2px solid var(--md-sys-color-focus-ring);
+  outline-offset: 2px;
+}
+
 .m3-chip:hover {
   background: var(--md-sys-color-surface-container-high);
   color: var(--md-sys-color-on-surface);
