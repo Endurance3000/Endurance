@@ -11,10 +11,15 @@
   background: transparent;
   color: var(--md-sys-color-on-surface-variant);
   transition: transform var(--motion-duration-short-2) var(--motion-easing-standard-decelerate),
-              background-color var(--motion-duration-short-2) var(--motion-easing-standard),
-              color var(--motion-duration-short-2) var(--motion-easing-standard),
-              border-color var(--motion-duration-short-2) var(--motion-easing-standard),
-              box-shadow var(--motion-duration-short-2) var(--motion-easing-standard);
+    background-color var(--motion-duration-short-2) var(--motion-easing-standard),
+    color var(--motion-duration-short-2) var(--motion-easing-standard),
+    border-color var(--motion-duration-short-2) var(--motion-easing-standard),
+    box-shadow var(--motion-duration-short-2) var(--motion-easing-standard);
+}
+
+.m3-icon-btn:focus-visible {
+  outline: 2px solid var(--md-sys-color-focus-ring);
+  outline-offset: 2px;
 }
 
 .m3-icon-btn:active:not(:disabled) {

@@ -387,6 +387,11 @@
   justify-content: center;
 }
 
+.index-play-btn:focus-visible {
+  outline: 2px solid var(--md-sys-color-focus-ring);
+  outline-offset: 2px;
+}
+
 .song-row:hover .index-number {
   display: none;
 }
@@ -605,6 +610,11 @@ button.setting-badge:hover {
   transition: all var(--motion-duration-short-2) var(--motion-easing-standard);
 }
 
+.m3-switch:focus-visible {
+  outline: 2px solid var(--md-sys-color-focus-ring);
+  outline-offset: 2px;
+}
+
 .m3-switch-thumb {
   width: 16px;
   height: 16px;
@@ -648,10 +658,12 @@ button.setting-badge:hover {
   .page-container {
     padding: var(--space-xl) var(--space-lg);
   }
+
   .songs-table-header,
   .song-row {
     grid-template-columns: 40px 1fr 60px 80px;
   }
+
   .col-album {
     display: none;
   }
@@ -706,6 +718,7 @@ button.setting-badge:hover {
   from {
     transform: rotate(0deg);
   }
+
   to {
     transform: rotate(360deg);
   }

@@ -35,6 +35,11 @@
   width: 100%;
 }
 
+.m3-search-input:focus-visible {
+  outline: 2px solid var(--md-sys-color-focus-ring);
+  outline-offset: 2px;
+}
+
 .m3-search-input::placeholder {
   color: var(--md-sys-color-on-surface-variant);
   opacity: 0.75;
@@ -54,6 +59,11 @@
   outline: none;
   flex-shrink: 0;
   transition: all var(--motion-duration-short-1) var(--motion-easing-standard);
+}
+
+.m3-search-clear:focus-visible {
+  outline: 2px solid var(--md-sys-color-focus-ring);
+  outline-offset: 2px;
 }
 
 .m3-search-clear:hover {

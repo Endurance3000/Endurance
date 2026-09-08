@@ -47,8 +47,13 @@
   text-align: left;
   outline: none;
   transition: color var(--motion-duration-short-2) var(--motion-easing-standard),
-              transform var(--motion-duration-short-1) var(--motion-easing-standard);
+    transform var(--motion-duration-short-1) var(--motion-easing-standard);
   overflow: hidden;
+}
+
+.m3-nav-item:focus-visible {
+  outline: 2px solid var(--md-sys-color-focus-ring);
+  outline-offset: 2px;
 }
 
 .m3-nav-item:hover {
@@ -74,7 +79,7 @@
   transform: scale(0.92);
   z-index: 0;
   transition: opacity var(--motion-duration-medium-1) var(--motion-easing-emphasized-decelerate),
-              transform var(--motion-duration-medium-1) var(--motion-easing-emphasized-decelerate);
+    transform var(--motion-duration-medium-1) var(--motion-easing-emphasized-decelerate);
 }
 
 .m3-nav-item.active .m3-nav-indicator {
