@@ -1,10 +1,19 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Button } from '../components/Common/Button';
 import { IconButton } from '../components/Common/IconButton';
 import { Card } from '../components/Common/Card';
 import { SectionHeader } from '../components/Common/SectionHeader';
 import { TrackArtwork } from '../components/Library/TrackArtwork';
-import { FolderPlus, Play, Pause, Sparkles, Music, ShieldCheck, Zap, MoreHorizontal } from 'lucide-react';
+import {
+  FolderPlus,
+  Play,
+  Pause,
+  Sparkles,
+  Music,
+  ShieldCheck,
+  Zap,
+  MoreHorizontal,
+} from 'lucide-react';
 import { usePlayback } from '../state/PlaybackContext';
 import { historyService } from '../services/history/historyService';
 import { SongActionMenu } from '../components/Common/SongActionMenu';
@@ -25,9 +34,18 @@ export const Home: React.FC<HomeProps> = ({
   onAddFolder,
 }) => {
   const { currentTrack, isPlaying, playTrack, togglePlay } = usePlayback();
+
   const [historyItems, setHistoryItems] = useState<HistoryItem[]>([]);
   const [menuTrack, setMenuTrack] = useState<Track | null>(null);
-  const [menuPosition, setMenuPosition] = useState<{ x: number; y: number }>({ x: 0, y: 0 });
+  const [menuPosition, setMenuPosition] = useState<{ x: number; y: number }>({
+    x: 0,
+    y: 0,
+  });
+
+  // Stores the exact More Options button that opened the current menu.
+  // Right-click/context-menu openings explicitly clear this ref because
+  // there is no button trigger to restore focus to.
+  const menuTriggerRef = useRef<HTMLButtonElement | null>(null);
 
   useEffect(() => {
     const unsub = historyService.subscribe(setHistoryItems);
@@ -38,24 +56,71 @@ export const Home: React.FC<HomeProps> = ({
   // Deduplicate history items so unique tracks appear in "Recently Played"
   const recentHistoryTracks: Track[] = [];
   const seenIds = new Set<string>();
+
   for (const item of historyItems) {
     if (!seenIds.has(item.track.id)) {
       seenIds.add(item.track.id);
       recentHistoryTracks.push(item.track);
+
       if (recentHistoryTracks.length >= 4) break;
     }
   }
 
   // Take up to 4 most recently added tracks for the quick access preview
   const recentTracks = [...tracks]
-    .sort((a, b) => (parseInt(b.date_added, 10) || 0) - (parseInt(a.date_added, 10) || 0))
+    .sort(
+      (a, b) =>
+        (parseInt(b.date_added, 10) || 0) -
+        (parseInt(a.date_added, 10) || 0)
+    )
     .slice(0, 4);
+
+  const handleOpenMenu = (
+    e: React.MouseEvent<HTMLButtonElement>,
+    track: Track
+  ) => {
+    e.preventDefault();
+    e.stopPropagation();
+
+    // Remember exactly which button opened the menu.
+    menuTriggerRef.current = e.currentTarget;
+
+    const rect = e.currentTarget.getBoundingClientRect();
+
+    setMenuPosition({
+      x: rect.right,
+      y: rect.bottom + 4,
+    });
+
+    setMenuTrack(track);
+  };
+
+  const handleContextMenu = (
+    e: React.MouseEvent<HTMLElement>,
+    track: Track
+  ) => {
+    e.preventDefault();
+
+    // Context-menu opening has no button trigger to restore focus to.
+    menuTriggerRef.current = null;
+
+    setMenuPosition({
+      x: e.clientX,
+      y: e.clientY,
+    });
+
+    setMenuTrack(track);
+  };
 
   return (
     <div className="page-container motion-fade-in">
       <header className="page-header">
         <h1 className="page-title">Welcome to Endurance</h1>
-        <p className="page-subtitle">A personal, local-first audio player inspired by Material 3 Expressive and Google Pixel aesthetics.</p>
+
+        <p className="page-subtitle">
+          A personal, local-first audio player inspired by Material 3
+          Expressive and Google Pixel aesthetics.
+        </p>
       </header>
 
       {/* Hero Welcome Card */}
@@ -64,16 +129,29 @@ export const Home: React.FC<HomeProps> = ({
           <div className="hero-badge">
             <Sparkles size={14} /> Local Music Library Active
           </div>
+
           <h2 className="hero-title">Your Local Music Sanctuary</h2>
+
           <p className="hero-description">
-            Endurance references your local audio files directly with zero cloud telemetry.
-            Enjoy synchronized lyrics, dynamic artwork-derived palettes, and expressive motion.
+            Endurance references your local audio files directly with zero
+            cloud telemetry. Enjoy synchronized lyrics, dynamic
+            artwork-derived palettes, and expressive motion.
           </p>
+
           <div className="hero-actions">
-            <Button variant="filled" icon={<FolderPlus size={18} />} onClick={onAddFolder}>
+            <Button
+              variant="filled"
+              icon={<FolderPlus size={18} />}
+              onClick={onAddFolder}
+            >
               Add Music Folder
             </Button>
-            <Button variant="tonal" icon={<Play size={18} />} onClick={onNavigateSongs}>
+
+            <Button
+              variant="tonal"
+              icon={<Play size={18} />}
+              onClick={onNavigateSongs}
+            >
               Browse Songs ({tracks.length})
             </Button>
           </div>
@@ -85,15 +163,20 @@ export const Home: React.FC<HomeProps> = ({
         title="Library Glance"
         subtitle="Current status of your local audio collection"
       />
+
       <div className="quick-glance-grid">
         <Card variant="filled" interactive className="glance-card">
           <div className="glance-icon-wrap">
             <Music size={20} className="glance-icon" />
           </div>
+
           <div className="glance-label">Total Tracks</div>
+
           <div className="glance-value">{tracks.length} Songs</div>
+
           <p className="glance-hint">
-            {folders.length} configured {folders.length === 1 ? 'directory' : 'directories'}
+            {folders.length} configured{' '}
+            {folders.length === 1 ? 'directory' : 'directories'}
           </p>
         </Card>
 
@@ -101,32 +184,47 @@ export const Home: React.FC<HomeProps> = ({
           <div className="glance-icon-wrap">
             <ShieldCheck size={20} className="glance-icon" />
           </div>
+
           <div className="glance-label">Offline Core</div>
+
           <div className="glance-value">SQLite Database</div>
-          <p className="glance-hint">Versioned local migrations; zero remote tracking</p>
+
+          <p className="glance-hint">
+            Versioned local migrations; zero remote tracking
+          </p>
         </Card>
 
         <Card variant="filled" interactive className="glance-card">
           <div className="glance-icon-wrap">
             <Zap size={20} className="glance-icon" />
           </div>
+
           <div className="glance-label">Formats Supported</div>
+
           <div className="glance-value">MP3 & M4A</div>
-          <p className="glance-hint">Fast rescan caching via file size & modification time</p>
+
+          <p className="glance-hint">
+            Fast rescan caching via file size & modification time
+          </p>
         </Card>
       </div>
 
-      {/* Recently Played Section (if history recorded) */}
+      {/* Recently Played Section */}
       {recentHistoryTracks.length > 0 && (
         <>
           <SectionHeader
             title="Recently Played"
             subtitle="Pick up where you left off"
           />
-          <div className="demo-cards-grid" style={{ marginBottom: 'var(--space-3xl)' }}>
+
+          <div
+            className="demo-cards-grid"
+            style={{ marginBottom: 'var(--space-3xl)' }}
+          >
             {recentHistoryTracks.map((track) => {
               const isCurrentTrack = currentTrack?.id === track.id;
               const isCardPlaying = isCurrentTrack && isPlaying;
+
               const handleCardClick = () => {
                 if (isCurrentTrack) {
                   togglePlay();
@@ -143,15 +241,18 @@ export const Home: React.FC<HomeProps> = ({
                   padding="sm"
                   className="demo-album-card"
                   onClick={handleCardClick}
-                  onContextMenu={(e) => {
-                    e.preventDefault();
-                    setMenuPosition({ x: e.clientX, y: e.clientY });
-                    setMenuTrack(track);
-                  }}
-                  aria-label={`${isCardPlaying ? 'Pause' : 'Play'} ${track.title}`}
+                  onContextMenu={(e) => handleContextMenu(e, track)}
+                  aria-label={`${isCardPlaying ? 'Pause' : 'Play'} ${
+                    track.title
+                  }`}
                 >
                   <div className="demo-album-artwork">
-                    <TrackArtwork artworkHash={track.artwork_hash} alt={track.title} size="lg" />
+                    <TrackArtwork
+                      artworkHash={track.artwork_hash}
+                      alt={track.title}
+                      size="lg"
+                    />
+
                     <div className="demo-album-play-overlay">
                       {isCardPlaying ? (
                         <Pause size={20} fill="currentColor" />
@@ -160,21 +261,23 @@ export const Home: React.FC<HomeProps> = ({
                       )}
                     </div>
                   </div>
+
                   <div className="demo-album-card-header">
                     <div className="demo-album-meta-wrap">
-                      <div className="demo-album-title truncate">{track.title}</div>
-                      <div className="demo-album-artist truncate">{track.artist}</div>
+                      <div className="demo-album-title truncate">
+                        {track.title}
+                      </div>
+
+                      <div className="demo-album-artist truncate">
+                        {track.artist}
+                      </div>
                     </div>
+
                     <IconButton
                       icon={<MoreHorizontal size={14} />}
                       aria-label="More options"
                       size="sm"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        const rect = e.currentTarget.getBoundingClientRect();
-                        setMenuPosition({ x: rect.right, y: rect.bottom + 4 });
-                        setMenuTrack(track);
-                      }}
+                      onClick={(e) => handleOpenMenu(e, track)}
                     />
                   </div>
                 </Card>
@@ -191,15 +294,21 @@ export const Home: React.FC<HomeProps> = ({
             title="Recently Added Tracks"
             subtitle="Audio tracks recently indexed in your library"
             action={
-              <Button variant="text" size="sm" onClick={onNavigateSongs}>
+              <Button
+                variant="text"
+                size="sm"
+                onClick={onNavigateSongs}
+              >
                 View All
               </Button>
             }
           />
+
           <div className="demo-cards-grid">
             {recentTracks.map((track) => {
               const isCurrentTrack = currentTrack?.id === track.id;
               const isCardPlaying = isCurrentTrack && isPlaying;
+
               const handleCardClick = () => {
                 if (isCurrentTrack) {
                   togglePlay();
@@ -216,15 +325,18 @@ export const Home: React.FC<HomeProps> = ({
                   padding="sm"
                   className="demo-album-card"
                   onClick={handleCardClick}
-                  onContextMenu={(e) => {
-                    e.preventDefault();
-                    setMenuPosition({ x: e.clientX, y: e.clientY });
-                    setMenuTrack(track);
-                  }}
-                  aria-label={`${isCardPlaying ? 'Pause' : 'Play'} ${track.title}`}
+                  onContextMenu={(e) => handleContextMenu(e, track)}
+                  aria-label={`${isCardPlaying ? 'Pause' : 'Play'} ${
+                    track.title
+                  }`}
                 >
                   <div className="demo-album-artwork">
-                    <TrackArtwork artworkHash={track.artwork_hash} alt={track.title} size="lg" />
+                    <TrackArtwork
+                      artworkHash={track.artwork_hash}
+                      alt={track.title}
+                      size="lg"
+                    />
+
                     <div className="demo-album-play-overlay">
                       {isCardPlaying ? (
                         <Pause size={20} fill="currentColor" />
@@ -233,21 +345,23 @@ export const Home: React.FC<HomeProps> = ({
                       )}
                     </div>
                   </div>
+
                   <div className="demo-album-card-header">
                     <div className="demo-album-meta-wrap">
-                      <div className="demo-album-title truncate">{track.title}</div>
-                      <div className="demo-album-artist truncate">{track.artist}</div>
+                      <div className="demo-album-title truncate">
+                        {track.title}
+                      </div>
+
+                      <div className="demo-album-artist truncate">
+                        {track.artist}
+                      </div>
                     </div>
+
                     <IconButton
                       icon={<MoreHorizontal size={14} />}
                       aria-label="More options"
                       size="sm"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        const rect = e.currentTarget.getBoundingClientRect();
-                        setMenuPosition({ x: rect.right, y: rect.bottom + 4 });
-                        setMenuTrack(track);
-                      }}
+                      onClick={(e) => handleOpenMenu(e, track)}
                     />
                   </div>
                 </Card>
@@ -261,13 +375,28 @@ export const Home: React.FC<HomeProps> = ({
             title="Get Started"
             subtitle="Add a music directory to build your library"
           />
-          <Card variant="outlined" padding="lg" className="home-empty-card">
+
+          <Card
+            variant="outlined"
+            padding="lg"
+            className="home-empty-card"
+          >
             <FolderPlus size={32} className="home-empty-icon" />
-            <h3 className="home-empty-title">Your library is currently empty</h3>
+
+            <h3 className="home-empty-title">
+              Your library is currently empty
+            </h3>
+
             <p className="home-empty-desc">
-              Choose a folder containing MP3 or M4A music files to begin enjoying Endurance.
+              Choose a folder containing MP3 or M4A music files to begin
+              enjoying Endurance.
             </p>
-            <Button variant="filled" icon={<FolderPlus size={16} />} onClick={onAddFolder}>
+
+            <Button
+              variant="filled"
+              icon={<FolderPlus size={16} />}
+              onClick={onAddFolder}
+            >
               Choose Music Directory
             </Button>
           </Card>
@@ -281,6 +410,7 @@ export const Home: React.FC<HomeProps> = ({
           isOpen={true}
           onClose={() => setMenuTrack(null)}
           position={menuPosition}
+          triggerRef={menuTriggerRef}
         />
       )}
     </div>

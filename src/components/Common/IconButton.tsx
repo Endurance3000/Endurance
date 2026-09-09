@@ -10,29 +10,35 @@ export interface IconButtonProps extends React.ButtonHTMLAttributes<HTMLButtonEl
   selected?: boolean;
 }
 
-export const IconButton: React.FC<IconButtonProps> = ({
-  icon,
-  'aria-label': ariaLabel,
-  variant = 'standard',
-  size = 'md',
-  tooltip,
-  selected = false,
-  className = '',
-  disabled,
-  ...props
-}) => {
-  return (
-    <button
-      type="button"
-      className={`m3-icon-btn m3-icon-btn-${variant} m3-icon-btn-${size} ${selected ? 'selected' : ''} ${className}`}
-      aria-label={ariaLabel}
-      title={tooltip || ariaLabel}
-      disabled={disabled}
-      {...props}
-    >
-      <span className="m3-icon-btn-inner" aria-hidden="true">
-        {icon}
-      </span>
-    </button>
-  );
-};
+export const IconButton = React.forwardRef<HTMLButtonElement, IconButtonProps>(
+  (
+    {
+      icon,
+      'aria-label': ariaLabel,
+      variant = 'standard',
+      size = 'md',
+      tooltip,
+      selected = false,
+      className = '',
+      disabled,
+      ...props
+    },
+    ref
+  ) => {
+    return (
+      <button
+        ref={ref}
+        type="button"
+        className={`m3-icon-btn m3-icon-btn-${variant} m3-icon-btn-${size} ${selected ? 'selected' : ''} ${className}`}
+        aria-label={ariaLabel}
+        title={tooltip || ariaLabel}
+        disabled={disabled}
+        {...props}
+      >
+        <span className="m3-icon-btn-inner" aria-hidden="true">
+          {icon}
+        </span>
+      </button>
+    );
+  }
+);
