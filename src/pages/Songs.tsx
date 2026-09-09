@@ -314,14 +314,13 @@ export const Songs: React.FC<SongsProps> = ({
               return (
                 <div
                   key={track.id}
-                  className={`song-row ${isCurrentTrack ? 'song-row-active' : ''} ${
-                    isMissing ? 'song-row-unavailable' : ''
-                  }`}
+                  className={`song-row ${isCurrentTrack ? 'song-row-active' : ''} ${isMissing ? 'song-row-unavailable' : ''
+                    }`}
                   role="listitem"
                   tabIndex={0}
                   onClick={handleSelectTrack}
                   onKeyDown={(e) => {
-                    if (e.key === 'Enter') {
+                    if (e.key === 'Enter' && e.target === e.currentTarget) {
                       handleSelectTrack();
                     }
                   }}

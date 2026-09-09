@@ -125,7 +125,7 @@ export const Favorites: React.FC<FavoritesProps> = ({
                   tabIndex={0}
                   onClick={handleSelectTrack}
                   onKeyDown={(e) => {
-                    if (e.key === 'Enter') {
+                    if (e.key === 'Enter' && e.target === e.currentTarget) {
                       handleSelectTrack();
                     }
                   }}
