@@ -3,6 +3,7 @@ pub mod commands;
 pub mod db;
 pub mod lyrics;
 pub mod metadata;
+pub mod mini_player;
 pub mod models;
 pub mod scanner;
 #[cfg(test)]
@@ -12,7 +13,7 @@ use artwork::ArtworkCache;
 use commands::AppState;
 use db::Database;
 use scanner::LibraryScanner;
-use tauri::Manager;
+use tauri::{Manager, RunEvent};
 
 #[tauri::command]
 fn get_system_info() -> serde_json::Value {
@@ -55,6 +56,7 @@ pub fn run() {
         })
         .invoke_handler(tauri::generate_handler![
             get_system_info,
+            mini_player::open_mini_player,
             commands::pick_music_folder,
             commands::get_library_folders,
             commands::add_library_folder,
@@ -70,6 +72,16 @@ pub fn run() {
             commands::set_user_preference,
             commands::show_in_folder
         ])
-        .run(tauri::generate_context!())
-        .expect("error while running endurance application");
+        .build(tauri::generate_context!())
+        .expect("error while building endurance application")
+        .run(|app_handle, event| match event {
+            RunEvent::WindowEvent { label, event, .. } => {
+                if label == "main"
+                    && matches!(&event, tauri::WindowEvent::CloseRequested { .. })
+                {
+                    mini_player::close_mini_player(app_handle);
+                }
+            }
+            _ => {}
+        });
 }
