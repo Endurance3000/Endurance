@@ -1,0 +1,23 @@
+.mini-player-placeholder {
+  align-items: center;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  justify-content: center;
+  padding: 24px;
+  text-align: center;
+  width: 100vw;
+}
+
+.mini-player-placeholder h1 {
+  margin: 0;
+}
+
+.mini-player-placeholder p {
+  margin: 8px 0 0;
+}
+
+.mini-player-close-button {
+  margin-top: 16px;
+}

@@ -13,12 +13,14 @@ import {
   Loader2,
   FileText,
   ListMusic,
+  PictureInPicture2,
 } from 'lucide-react';
 import { IconButton } from '../Common/IconButton';
 import { TrackArtwork } from '../Library/TrackArtwork';
 import { ExpressiveWaveSlider } from './ExpressiveWaveSlider';
 import { usePlayback } from '../../state/PlaybackContext';
 import { formatDuration } from '../../utils/formatters';
+import { miniPlayerService } from '../../services/window/miniPlayerService';
 import './PlayerBar.css';
 
 interface PlayerBarProps {
@@ -286,6 +288,15 @@ export const PlayerBar: React.FC<PlayerBarProps> = ({ onToggleExpand, isExpanded
           onClick={onToggleExpand}
           size="sm"
           disabled={!hasTrack}
+          className="player-extra-btn"
+        />
+
+        <IconButton
+          icon={<PictureInPicture2 size={18} />}
+          aria-label="Open Mini Player"
+          tooltip="Open Mini Player"
+          onClick={() => void miniPlayerService.open()}
+          size="sm"
           className="player-extra-btn"
         />
 
