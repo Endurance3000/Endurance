@@ -39,10 +39,22 @@ pub async fn open_mini_player(app_handle: AppHandle) -> Result<(), String> {
 
     match result {
         Ok(_) => Ok(()),
-        Err(error) => {
-            Err(format!("Failed to create Mini Player: {error}"))
-        }
+        Err(error) => Err(format!("Failed to create Mini Player: {error}")),
     }
+}
+
+#[tauri::command]
+pub fn set_mini_player_always_on_top(
+    app_handle: AppHandle,
+    always_on_top: bool,
+) -> Result<(), String> {
+    let window = app_handle
+        .get_webview_window(MINI_PLAYER_LABEL)
+        .ok_or_else(|| "Mini Player window is not open".to_string())?;
+
+    window
+        .set_always_on_top(always_on_top)
+        .map_err(|error| format!("Failed to set Mini Player always-on-top: {error}"))
 }
 
 pub fn close_mini_player(app_handle: &AppHandle) {

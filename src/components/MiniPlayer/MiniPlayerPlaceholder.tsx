@@ -2,6 +2,7 @@ import React, { useEffect, useRef, useState } from "react";
 import {
   Loader2,
   Pause,
+  Pin,
   Play,
   SkipBack,
   SkipForward,
@@ -9,6 +10,7 @@ import {
   Volume2,
   VolumeX,
 } from "lucide-react";
+import { invoke } from "@tauri-apps/api/core";
 import { IconButton } from "../Common/IconButton";
 import { TrackArtwork } from "../Library/TrackArtwork";
 import { ExpressiveWaveSlider } from "../Player/ExpressiveWaveSlider";
@@ -52,9 +54,11 @@ const MiniPlayerVolume: React.FC<MiniPlayerVolumeProps> = ({
     if (disabled) return;
 
     setVolumeFromPointer(event.clientX);
+
     const handlePointerMove = (moveEvent: PointerEvent) => {
       setVolumeFromPointer(moveEvent.clientX);
     };
+
     const handlePointerUp = () => {
       window.removeEventListener("pointermove", handlePointerMove);
       window.removeEventListener("pointerup", handlePointerUp);
@@ -119,17 +123,38 @@ const MiniPlayerVolume: React.FC<MiniPlayerVolumeProps> = ({
     </div>
   );
 };
+
 export const MiniPlayerView: React.FC<{
   snapshot: PlaybackSnapshot | null;
 }> = ({ snapshot }) => {
+  const [alwaysOnTop, setAlwaysOnTop] = useState(false);
+  const [alwaysOnTopError, setAlwaysOnTopError] = useState(false);
+
   const currentTrack = snapshot?.currentTrack ?? null;
   const hasTrack = currentTrack !== null;
   const duration = snapshot?.duration ?? 0;
   const currentTime = snapshot?.currentTime ?? 0;
+
   const clampedCurrentTime =
     duration > 0
       ? Math.min(duration, Math.max(0, currentTime))
       : Math.max(0, currentTime);
+
+  const handleAlwaysOnTopToggle = async () => {
+    const nextValue = !alwaysOnTop;
+
+    try {
+      await invoke("set_mini_player_always_on_top", {
+        alwaysOnTop: nextValue,
+      });
+
+      setAlwaysOnTop(nextValue);
+      setAlwaysOnTopError(false);
+    } catch (error: unknown) {
+      console.warn("Failed to change Mini Player always-on-top state:", error);
+      setAlwaysOnTopError(true);
+    }
+  };
 
   return (
     <main aria-label="Mini Player" className="mini-player-placeholder">
@@ -142,6 +167,7 @@ export const MiniPlayerView: React.FC<{
           size="lg"
           className="mini-player-artwork"
         />
+
         <div className="mini-player-metadata">
           {hasTrack ? (
             <>
@@ -151,6 +177,7 @@ export const MiniPlayerView: React.FC<{
               >
                 {currentTrack.title}
               </strong>
+
               <span
                 className="mini-player-artist truncate"
                 title={currentTrack.artist}
@@ -160,20 +187,32 @@ export const MiniPlayerView: React.FC<{
             </>
           ) : (
             <>
-              <strong className="mini-player-title">No Track Selected</strong>
+              <strong className="mini-player-title">
+                No Track Selected
+              </strong>
+
               <span className="mini-player-artist">
                 Endurance Offline Player
               </span>
             </>
           )}
+
           {snapshot?.isLoading && (
             <span className="mini-player-status" aria-live="polite">
-              <Loader2 size={13} className="spin-animation" /> Loading audio
+              <Loader2 size={13} className="spin-animation" />
+              Loading audio
             </span>
           )}
+
           {snapshot?.playbackError && (
             <span className="mini-player-error" role="alert">
               {snapshot.playbackError}
+            </span>
+          )}
+
+          {alwaysOnTopError && (
+            <span className="mini-player-error" role="alert">
+              Unable to change Always on Top
             </span>
           )}
         </div>
@@ -187,31 +226,43 @@ export const MiniPlayerView: React.FC<{
         <span className="timeline-time">
           {formatDuration(clampedCurrentTime)}
         </span>
+
         <ExpressiveWaveSlider
           currentTime={currentTime}
           duration={duration}
           isPlaying={snapshot?.isPlaying ?? false}
-          onSeek={(seconds) => sendMiniPlayerCommand({ type: "seek", seconds })}
+          onSeek={(seconds) =>
+            sendMiniPlayerCommand({ type: "seek", seconds })
+          }
           disabled={!hasTrack || duration <= 0}
         />
+
         <span className="timeline-time">
           {duration > 0 ? formatDuration(duration) : "0:00"}
         </span>
       </div>
 
-      <footer className="mini-player-controls" aria-label="Playback controls">
+      <footer
+        className="mini-player-controls"
+        aria-label="Playback controls"
+      >
         <IconButton
           icon={<SkipBack size={17} />}
           aria-label="Previous track"
           tooltip="Previous"
-          onClick={() => sendMiniPlayerCommand({ type: "previous-track" })}
+          onClick={() =>
+            sendMiniPlayerCommand({ type: "previous-track" })
+          }
           disabled={!hasTrack}
           size="sm"
         />
+
         <button
           type="button"
           className="player-play-btn mini-player-play-btn"
-          onClick={() => sendMiniPlayerCommand({ type: "toggle-play" })}
+          onClick={() =>
+            sendMiniPlayerCommand({ type: "toggle-play" })
+          }
           disabled={!hasTrack && !(snapshot?.isLoading ?? false)}
           aria-label={
             snapshot?.isLoading
@@ -233,17 +284,25 @@ export const MiniPlayerView: React.FC<{
           ) : snapshot?.isPlaying ? (
             <Pause size={19} fill="currentColor" />
           ) : (
-            <Play size={19} fill="currentColor" style={{ marginLeft: 2 }} />
+            <Play
+              size={19}
+              fill="currentColor"
+              style={{ marginLeft: 2 }}
+            />
           )}
         </button>
+
         <IconButton
           icon={<SkipForward size={17} />}
           aria-label="Next track"
           tooltip="Next"
-          onClick={() => sendMiniPlayerCommand({ type: "next-track" })}
+          onClick={() =>
+            sendMiniPlayerCommand({ type: "next-track" })
+          }
           disabled={!hasTrack}
           size="sm"
         />
+
         <MiniPlayerVolume
           volume={snapshot?.volume ?? 0.75}
           isMuted={snapshot?.isMuted ?? false}
@@ -251,7 +310,35 @@ export const MiniPlayerView: React.FC<{
           onVolumeChange={(volume) =>
             sendMiniPlayerCommand({ type: "set-volume", volume })
           }
-          onToggleMute={() => sendMiniPlayerCommand({ type: "toggle-mute" })}
+          onToggleMute={() =>
+            sendMiniPlayerCommand({ type: "toggle-mute" })
+          }
+        />
+
+        <IconButton
+          icon={
+            <Pin
+              size={16}
+              fill={alwaysOnTop ? "currentColor" : "none"}
+            />
+          }
+          aria-label={
+            alwaysOnTop
+              ? "Disable Always on Top"
+              : "Enable Always on Top"
+          }
+          tooltip={
+            alwaysOnTop
+              ? "Disable Always on Top"
+              : "Always on Top"
+          }
+          onClick={() => void handleAlwaysOnTopToggle()}
+          size="sm"
+          className={
+            alwaysOnTop
+              ? "mini-player-always-on-top-active"
+              : undefined
+          }
         />
       </footer>
     </main>
@@ -259,7 +346,8 @@ export const MiniPlayerView: React.FC<{
 };
 
 export const MiniPlayer: React.FC = () => {
-  const [snapshot, setSnapshot] = useState<PlaybackSnapshot | null>(null);
+  const [snapshot, setSnapshot] =
+    useState<PlaybackSnapshot | null>(null);
 
   useEffect(() => {
     let disposed = false;
@@ -273,7 +361,12 @@ export const MiniPlayer: React.FC = () => {
         else unlisten = cleanup;
       })
       .catch((error: unknown) => {
-        if (!disposed) console.warn("Mini Player bridge unavailable:", error);
+        if (!disposed) {
+          console.warn(
+            "Mini Player bridge unavailable:",
+            error,
+          );
+        }
       });
 
     return () => {

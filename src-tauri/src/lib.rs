@@ -57,6 +57,7 @@ pub fn run() {
         .invoke_handler(tauri::generate_handler![
             get_system_info,
             mini_player::open_mini_player,
+            mini_player::set_mini_player_always_on_top,
             commands::pick_music_folder,
             commands::get_library_folders,
             commands::add_library_folder,
