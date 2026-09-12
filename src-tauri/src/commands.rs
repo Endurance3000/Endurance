@@ -98,6 +98,16 @@ pub fn get_track_lyrics(track_file_path: String) -> Result<Option<ResolvedLyrics
 }
 
 #[tauri::command]
+pub fn save_lyrics_file(
+    source_path: String,
+    content: String,
+    encoding: String,
+    expected_fingerprint: Option<crate::lyrics::LyricsSourceFingerprint>,
+) -> Result<crate::lyrics::LyricsSourceFingerprint, String> {
+    crate::lyrics::save_lrc_file(&source_path, &content, &encoding, expected_fingerprint.as_ref())
+}
+
+#[tauri::command]
 pub fn record_playback_history(
     track_id: String,
     duration_played: f64,

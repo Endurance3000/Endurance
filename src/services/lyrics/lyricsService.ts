@@ -1,7 +1,8 @@
 import { invoke } from '@tauri-apps/api/core';
 import { ParsedLyrics, parseLrc } from './lrcParser';
-import { LyricsDocument } from './lyricsDocument';
+import { LyricsDocument, LyricsSourceFingerprint } from './lyricsDocument';
 import { parseLyricsDocument } from './editableLrcParser';
+import { serializeLyricsDocument } from './lrcSerializer';
 
 export interface ResolvedTrackLyrics {
   file_path: string;
@@ -68,6 +69,46 @@ class LyricsService {
   }
 
   /**
+   * Atomically saves an editable LyricsDocument back to its existing source file.
+   *
+   * Flow:
+   * 1. Validates that document.sourcePath is provided and non-empty.
+   * 2. Validates that document.sourceFingerprint is provided for conflict detection.
+   * 3. Serializes the LyricsDocument to canonical LRC text via serializeLyricsDocument().
+   * 4. Invokes native Tauri command 'save_lyrics_file'.
+   * 5. Returns the updated LyricsSourceFingerprint computed from the saved file.
+   *
+   * Note on concurrency:
+   * The fingerprint check provides optimistic conflict detection to reject saves if
+   * the source file was modified externally since it was loaded. However, like any
+   * user-space filesystem operation, it cannot strictly eliminate a TOCTOU race
+   * condition if an external process modifies the file in the microsecond window
+   * between validation and atomic replacement.
+   *
+   * Guarantees:
+   * - Does NOT mutate the input document or any nested objects.
+   * - Does NOT modify playback lyrics state or cache.
+   * - Requires an existing source file; does not implement Save As or new file creation.
+   */
+  async saveLyricsDocument(document: LyricsDocument): Promise<LyricsSourceFingerprint> {
+    if (!document.sourcePath || document.sourcePath.trim() === '') {
+      throw new Error('Missing source path: cannot save a document without an existing file path');
+    }
+    if (!document.sourceFingerprint) {
+      throw new Error('Source fingerprint unavailable: cannot verify file state before saving');
+    }
+
+    const content = serializeLyricsDocument(document);
+
+    return await invoke<LyricsSourceFingerprint>('save_lyrics_file', {
+      sourcePath: document.sourcePath,
+      content,
+      encoding: document.encoding,
+      expectedFingerprint: document.sourceFingerprint,
+    });
+  }
+
+  /**
    * Clears the in-memory lyrics cache (e.g. during rescan).
    */
   clearCache(): void {
@@ -76,3 +117,9 @@ class LyricsService {
 }
 
 export const lyricsService = new LyricsService();
+
+export async function saveLyricsDocument(
+  document: LyricsDocument,
+): Promise<LyricsSourceFingerprint> {
+  return lyricsService.saveLyricsDocument(document);
+}

@@ -1,16 +1,21 @@
 import { describe, it, beforeEach } from 'node:test';
 import assert from 'node:assert/strict';
-import { lyricsService, ResolvedTrackLyrics } from '../lyricsService';
+import { lyricsService, saveLyricsDocument, ResolvedTrackLyrics } from '../lyricsService';
+import { createEditableLyricLine, createLyricsDocument, LyricsSourceFingerprint } from '../lyricsDocument';
 
 describe('LyricsService tests', () => {
   let mockResolved: ResolvedTrackLyrics | null = null;
+  let mockSaveResult: LyricsSourceFingerprint | null = null;
   let shouldFail = false;
+  let backendErrorMessage = 'Backend error reading lyrics';
   let invokeCalls: Array<{ cmd: string; args: unknown }> = [];
 
   beforeEach(() => {
     lyricsService.clearCache();
     mockResolved = null;
+    mockSaveResult = null;
     shouldFail = false;
+    backendErrorMessage = 'Backend error reading lyrics';
     invokeCalls = [];
 
     (globalThis as unknown as { window: unknown }).window = globalThis;
@@ -18,7 +23,10 @@ describe('LyricsService tests', () => {
       invoke: async (cmd: string, args: unknown) => {
         invokeCalls.push({ cmd, args });
         if (shouldFail) {
-          throw new Error('Backend error reading lyrics');
+          throw new Error(backendErrorMessage);
+        }
+        if (cmd === 'save_lyrics_file') {
+          return mockSaveResult;
         }
         return mockResolved;
       },
@@ -130,5 +138,153 @@ describe('LyricsService tests', () => {
     mockResolved = null;
     const doc = await lyricsService.getLyricsDocument('C:/Music/missing.mp3');
     assert.equal(doc, null);
+  });
+
+  it('saveLyricsDocument validates, serializes, and invokes native save_lyrics_file', async () => {
+    const doc = createLyricsDocument({
+      sourcePath: 'C:/Music/song.lrc',
+      encoding: 'utf-8',
+      lineEnding: 'lf',
+      metadata: {
+        title: 'Song Title',
+        artist: 'Artist',
+        album: null,
+        lyricist: null,
+        unknown: [],
+      },
+      lines: [
+        createEditableLyricLine('First line', 5000),
+        createEditableLyricLine('Second line', 10000),
+      ],
+      sourceFingerprint: {
+        algorithm: 'sha256',
+        value: 'initial-hash-123',
+        sizeBytes: 100,
+        modifiedTimeMilliseconds: 1700000000000,
+      },
+    });
+
+    const expectedNewFp: LyricsSourceFingerprint = {
+      algorithm: 'sha256',
+      value: 'new-hash-456',
+      sizeBytes: 150,
+      modifiedTimeMilliseconds: 1700000001000,
+    };
+    mockSaveResult = expectedNewFp;
+
+    const result = await lyricsService.saveLyricsDocument(doc);
+
+    assert.deepEqual(result, expectedNewFp);
+    assert.equal(invokeCalls.length, 1);
+    assert.equal(invokeCalls[0].cmd, 'save_lyrics_file');
+
+    const args = invokeCalls[0].args as {
+      sourcePath: string;
+      content: string;
+      encoding: string;
+      expectedFingerprint: LyricsSourceFingerprint;
+    };
+    assert.equal(args.sourcePath, 'C:/Music/song.lrc');
+    assert.equal(args.encoding, 'utf-8');
+    assert.equal(args.content, '[ti:Song Title]\n[ar:Artist]\n[00:05.00]First line\n[00:10.00]Second line');
+    assert.deepEqual(args.expectedFingerprint, doc.sourceFingerprint);
+  });
+
+  it('saveLyricsDocument rejects if sourcePath is missing, null, or whitespace', async () => {
+    const docNoPath = createLyricsDocument({
+      sourcePath: null,
+      sourceFingerprint: { algorithm: 'sha256', value: 'hash' },
+    });
+
+    await assert.rejects(
+      async () => lyricsService.saveLyricsDocument(docNoPath),
+      /Missing source path/,
+    );
+    assert.equal(invokeCalls.length, 0);
+
+    const docEmptyPath = createLyricsDocument({
+      sourcePath: '   ',
+      sourceFingerprint: { algorithm: 'sha256', value: 'hash' },
+    });
+
+    await assert.rejects(
+      async () => lyricsService.saveLyricsDocument(docEmptyPath),
+      /Missing source path/,
+    );
+    assert.equal(invokeCalls.length, 0);
+  });
+
+  it('saveLyricsDocument rejects if sourceFingerprint is null', async () => {
+    const docNoFp = createLyricsDocument({
+      sourcePath: 'C:/Music/song.lrc',
+      sourceFingerprint: null,
+    });
+
+    await assert.rejects(
+      async () => lyricsService.saveLyricsDocument(docNoFp),
+      /Source fingerprint unavailable/,
+    );
+    assert.equal(invokeCalls.length, 0);
+  });
+
+  it('saveLyricsDocument does not mutate the input document', async () => {
+    const doc = createLyricsDocument({
+      sourcePath: 'C:/Music/song.lrc',
+      encoding: 'utf-8',
+      lineEnding: 'lf',
+      metadata: {
+        title: 'Original Title',
+        artist: null,
+        album: null,
+        lyricist: null,
+        unknown: [],
+      },
+      lines: [createEditableLyricLine('Line 1', 1000)],
+      sourceFingerprint: {
+        algorithm: 'sha256',
+        value: 'orig-hash',
+      },
+    });
+
+    const docSnapshot = JSON.parse(JSON.stringify(doc));
+
+    mockSaveResult = {
+      algorithm: 'sha256',
+      value: 'new-hash-different',
+    };
+
+    await lyricsService.saveLyricsDocument(doc);
+
+    // Verify deep immutability
+    assert.deepEqual(JSON.parse(JSON.stringify(doc)), docSnapshot);
+    assert.equal(doc.sourceFingerprint?.value, 'orig-hash');
+  });
+
+  it('saveLyricsDocument propagates backend errors without masking', async () => {
+    const doc = createLyricsDocument({
+      sourcePath: 'C:/Music/conflict.lrc',
+      sourceFingerprint: { algorithm: 'sha256', value: 'old-hash' },
+    });
+
+    shouldFail = true;
+    backendErrorMessage = 'Source file modified externally: expected old-hash, found current-hash';
+
+    await assert.rejects(
+      async () => lyricsService.saveLyricsDocument(doc),
+      /Source file modified externally/,
+    );
+  });
+
+  it('standalone saveLyricsDocument helper invokes service and returns result', async () => {
+    const doc = createLyricsDocument({
+      sourcePath: 'C:/Music/standalone.lrc',
+      sourceFingerprint: { algorithm: 'sha256', value: 'hash-abc' },
+    });
+
+    mockSaveResult = { algorithm: 'sha256', value: 'hash-xyz' };
+
+    const res = await saveLyricsDocument(doc);
+    assert.deepEqual(res, mockSaveResult);
+    assert.equal(invokeCalls.length, 1);
   });
 });
