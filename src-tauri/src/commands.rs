@@ -1,6 +1,6 @@
 use crate::artwork::ArtworkCache;
 use crate::db::Database;
-use crate::lyrics::find_and_read_lrc;
+use crate::lyrics::{find_and_read_lrc, ResolvedLyrics};
 use crate::models::{HistoryItem, LibraryFolder, ScanSummary, Track};
 use crate::scanner::LibraryScanner;
 use std::collections::HashMap;
@@ -93,8 +93,8 @@ pub fn get_track_artwork(artwork_hash: String, state: State<AppState>) -> Result
 }
 
 #[tauri::command]
-pub fn get_track_lyrics(track_file_path: String) -> Result<Option<String>, String> {
-    Ok(find_and_read_lrc(&track_file_path))
+pub fn get_track_lyrics(track_file_path: String) -> Result<Option<ResolvedLyrics>, String> {
+    find_and_read_lrc(&track_file_path)
 }
 
 #[tauri::command]
