@@ -1,6 +1,20 @@
 use serde::{Deserialize, Serialize};
+use sha2::{Digest, Sha256};
 use std::fs;
+use std::io::Write;
 use std::path::{Path, PathBuf};
+
+/// Model for lyric file source fingerprint used for conflict and external modification detection.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct LyricsSourceFingerprint {
+    pub algorithm: String,
+    pub value: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub size_bytes: Option<u64>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub modified_time_milliseconds: Option<u64>,
+}
 
 /// Result of resolving and reading a lyric sidecar file.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
@@ -195,6 +209,369 @@ pub fn read_lrc_file(path: &Path) -> Result<String, String> {
         text.remove(0);
     }
     Ok(text)
+}
+
+/// Computes the cryptographic and filesystem fingerprint for a file at `path`.
+pub fn compute_file_fingerprint(path: &Path) -> Result<LyricsSourceFingerprint, String> {
+    let metadata = fs::metadata(path)
+        .map_err(|e| format!("Failed to read metadata for '{}': {}", path.display(), e))?;
+    let bytes = fs::read(path)
+        .map_err(|e| format!("Failed to read file '{}': {}", path.display(), e))?;
+
+    let mut hasher = Sha256::new();
+    hasher.update(&bytes);
+    let hash = hex::encode(hasher.finalize());
+
+    let size_bytes = metadata.len();
+    let modified_time_milliseconds = metadata
+        .modified()
+        .ok()
+        .and_then(|t| t.duration_since(std::time::UNIX_EPOCH).ok())
+        .map(|d| d.as_millis() as u64);
+
+    Ok(LyricsSourceFingerprint {
+        algorithm: "sha256".to_string(),
+        value: hash,
+        size_bytes: Some(size_bytes),
+        modified_time_milliseconds,
+    })
+}
+
+/// Encodes serialized LRC text content into raw bytes according to requested encoding.
+/// Supports:
+/// - utf-8: standard UTF-8 without BOM
+/// - utf-8-bom: UTF-8 with leading EF BB BF
+/// - utf-16le: UTF-16 little-endian without BOM
+/// - utf-16be: UTF-16 big-endian without BOM
+/// Rejects unknown or unsupported encodings without guessing.
+pub fn encode_lyrics_content(content: &str, encoding: &str) -> Result<Vec<u8>, String> {
+    let enc = encoding.trim().to_lowercase();
+    match enc.as_str() {
+        "utf-8" => Ok(content.as_bytes().to_vec()),
+        "utf-8-bom" => {
+            let mut bytes = Vec::with_capacity(3 + content.len());
+            bytes.extend_from_slice(&[0xEF, 0xBB, 0xBF]);
+            bytes.extend_from_slice(content.as_bytes());
+            Ok(bytes)
+        }
+        "utf-16le" => {
+            let mut bytes = Vec::with_capacity(content.len() * 2);
+            for code_unit in content.encode_utf16() {
+                bytes.extend_from_slice(&code_unit.to_le_bytes());
+            }
+            Ok(bytes)
+        }
+        "utf-16be" => {
+            let mut bytes = Vec::with_capacity(content.len() * 2);
+            for code_unit in content.encode_utf16() {
+                bytes.extend_from_slice(&code_unit.to_be_bytes());
+            }
+            Ok(bytes)
+        }
+        _ => Err(format!("Unsupported or unknown encoding: '{}'", encoding)),
+    }
+}
+
+/// Verifies that the existing file on disk matches the expected fingerprint.
+///
+/// Note on TOCTOU (time-of-check to time-of-use):
+/// The fingerprint check provides conflict detection before initiating the save sequence.
+/// However, like any user-space filesystem operation, it cannot strictly eliminate a TOCTOU
+/// race condition if an external process modifies the file in the microsecond window between
+/// verification and atomic replacement. The save layer minimizes this window by performing
+/// verification immediately before the atomic file swap.
+pub fn verify_fingerprint(path: &Path, expected: &LyricsSourceFingerprint) -> Result<(), String> {
+    let metadata = fs::metadata(path)
+        .map_err(|e| format!("Failed to read metadata for '{}': {}", path.display(), e))?;
+    let bytes = fs::read(path)
+        .map_err(|e| format!("Failed to read file '{}': {}", path.display(), e))?;
+
+    let mut hasher = Sha256::new();
+    hasher.update(&bytes);
+    let current_sha256 = hex::encode(hasher.finalize());
+
+    let current_size = metadata.len();
+    let current_mtime = metadata
+        .modified()
+        .ok()
+        .and_then(|t| t.duration_since(std::time::UNIX_EPOCH).ok())
+        .map(|d| d.as_millis() as u64);
+
+    if expected.algorithm.eq_ignore_ascii_case("sha256") {
+        if !current_sha256.eq_ignore_ascii_case(&expected.value) {
+            return Err(format!(
+                "Source file modified externally: expected SHA-256 '{}', found '{}'",
+                expected.value, current_sha256
+            ));
+        }
+        if let Some(expected_size) = expected.size_bytes {
+            if current_size != expected_size {
+                return Err(format!(
+                    "Source file modified externally: expected size {} bytes, found {} bytes",
+                    expected_size, current_size
+                ));
+            }
+        }
+    } else if expected.algorithm.eq_ignore_ascii_case("size-mtime") {
+        if let Some(expected_size) = expected.size_bytes {
+            if current_size != expected_size {
+                return Err(format!(
+                    "Source file modified externally: expected size {} bytes, found {} bytes",
+                    expected_size, current_size
+                ));
+            }
+        }
+        if let Some(expected_mtime) = expected.modified_time_milliseconds {
+            if let Some(actual_mtime) = current_mtime {
+                if actual_mtime != expected_mtime {
+                    return Err(format!(
+                        "Source file modified externally: expected modified time {}, found {}",
+                        expected_mtime, actual_mtime
+                    ));
+                }
+            }
+        }
+        let expected_val = format!("{}:{}", current_size, current_mtime.unwrap_or(0));
+        if !expected.value.is_empty()
+            && expected.value != expected_val
+            && !expected.value.eq_ignore_ascii_case(&current_sha256)
+        {
+            return Err(format!(
+                "Source file modified externally: fingerprint value mismatch for algorithm '{}'",
+                expected.algorithm
+            ));
+        }
+    } else {
+        if !expected.value.is_empty() && !expected.value.eq_ignore_ascii_case(&current_sha256) {
+            return Err(format!(
+                "Source file modified externally: expected fingerprint '{}', found '{}'",
+                expected.value, current_sha256
+            ));
+        }
+    }
+
+    Ok(())
+}
+
+/// Fallback replacement strategy using a temporary backup with rollback.
+/// Used on Windows when ReplaceFileW is not supported by the underlying filesystem (e.g. FAT32/exFAT).
+fn safe_backup_and_swap(temp_path: &Path, target_path: &Path) -> Result<(), String> {
+    let parent = target_path.parent().unwrap_or_else(|| Path::new("."));
+    let backup_name = format!(
+        ".{}.{}_{}.bak",
+        target_path.file_name().and_then(|n| n.to_str()).unwrap_or("lyrics"),
+        std::process::id(),
+        std::time::SystemTime::now()
+            .duration_since(std::time::UNIX_EPOCH)
+            .unwrap_or_default()
+            .as_nanos()
+    );
+    let backup_path = parent.join(backup_name);
+
+    // 1. Move target to backup
+    fs::rename(target_path, &backup_path).map_err(|e| {
+        format!(
+            "Fallback replacement failed to rename original to backup: {}",
+            e
+        )
+    })?;
+
+    // 2. Move temp to target
+    if let Err(e) = fs::rename(temp_path, target_path) {
+        // Rollback: try to restore original from backup
+        let _ = fs::rename(&backup_path, target_path);
+        return Err(format!(
+            "Fallback replacement failed to move temp file into place (restored backup): {}",
+            e
+        ));
+    }
+
+    // 3. Remove backup
+    let _ = fs::remove_file(&backup_path);
+    Ok(())
+}
+
+#[cfg(windows)]
+fn win32_replace_file(temp_path: &Path, target_path: &Path) -> Result<(), String> {
+    use std::os::windows::ffi::OsStrExt;
+
+    #[link(name = "kernel32")]
+    extern "system" {
+        fn ReplaceFileW(
+            lpReplacedFileName: *const u16,
+            lpReplacementFileName: *const u16,
+            lpBackupFileName: *const u16,
+            dwReplaceFlags: u32,
+            lpExclude: *mut std::ffi::c_void,
+            lpReserved: *mut std::ffi::c_void,
+        ) -> i32;
+    }
+
+    let target_wide: Vec<u16> = target_path
+        .as_os_str()
+        .encode_wide()
+        .chain(std::iter::once(0))
+        .collect();
+    let temp_wide: Vec<u16> = temp_path
+        .as_os_str()
+        .encode_wide()
+        .chain(std::iter::once(0))
+        .collect();
+
+    // In ReplaceFileW:
+    // lpReplacedFileName = target_path (the file being replaced)
+    // lpReplacementFileName = temp_path (the new file)
+    let success = unsafe {
+        ReplaceFileW(
+            target_wide.as_ptr(),
+            temp_wide.as_ptr(),
+            std::ptr::null(),
+            0,
+            std::ptr::null_mut(),
+            std::ptr::null_mut(),
+        )
+    };
+
+    if success != 0 {
+        return Ok(());
+    }
+
+    let os_err = std::io::Error::last_os_error();
+    let raw_code = os_err.raw_os_error().unwrap_or(0);
+
+    // If ReplaceFileW returns ERROR_INVALID_FUNCTION (1) or ERROR_NOT_SUPPORTED (50),
+    // fall back to safe backup-and-swap with rollback.
+    if raw_code == 1 || raw_code == 50 {
+        return safe_backup_and_swap(temp_path, target_path);
+    }
+
+    Err(format!(
+        "Failed to replace '{}' with '{}' via ReplaceFileW: {}",
+        target_path.display(),
+        temp_path.display(),
+        os_err
+    ))
+}
+
+/// Replaces target_path with temp_path atomically.
+///
+/// On Windows:
+/// Uses Win32 `ReplaceFileW`, which is Microsoft's canonical atomic file replacement API.
+/// If `ReplaceFileW` is not supported on the underlying filesystem (e.g. non-NTFS like FAT32/exFAT),
+/// it falls back to a safe backup-and-swap mechanism with rollback, never directly overwriting
+/// the original file with in-place writes.
+///
+/// On non-Windows (macOS/Linux):
+/// Uses `std::fs::rename`, which POSIX guarantees to replace the destination atomically.
+pub fn atomic_replace_file(temp_path: &Path, target_path: &Path) -> Result<(), String> {
+    #[cfg(windows)]
+    {
+        win32_replace_file(temp_path, target_path)
+    }
+    #[cfg(not(windows))]
+    {
+        fs::rename(temp_path, target_path).map_err(|e| {
+            format!(
+                "Failed to replace '{}' with '{}': {}",
+                target_path.display(),
+                temp_path.display(),
+                e
+            )
+        })
+    }
+}
+
+/// Saves serialized LRC content to an existing file using atomic replacement and fingerprint conflict detection.
+///
+/// Execution Sequence:
+/// 1. Validates that source_path is provided and non-empty.
+/// 2. Validates that the target file exists on disk.
+/// 3. Validates that an expected fingerprint is provided (rejects if null/None).
+/// 4. Validates requested encoding (rejects unknown/unsupported encodings without guessing).
+/// 5. Encodes serialized text to bytes.
+/// 6. Verifies current file against expected fingerprint.
+/// 7. Creates a unique temporary file in the SAME directory as the source file.
+/// 8. Writes all encoded bytes and flushes (sync_all).
+/// 9. Drops the file handle to release any open locks before replacement.
+/// 10. Replaces the original with the temporary file atomically (ReplaceFileW on Windows, rename on POSIX).
+/// 11. Cleans up temporary file if any step fails; the original file remains untouched.
+/// 12. Returns the fresh LyricsSourceFingerprint for the newly saved file.
+pub fn save_lrc_file(
+    source_path: &str,
+    content: &str,
+    encoding: &str,
+    expected_fingerprint: Option<&LyricsSourceFingerprint>,
+) -> Result<LyricsSourceFingerprint, String> {
+    let clean_path = source_path.trim().trim_matches('"');
+    if clean_path.is_empty() {
+        return Err("Missing source path: cannot save a document without an existing file path".to_string());
+    }
+
+    let target_path = Path::new(clean_path);
+    if !target_path.is_file() {
+        return Err(format!("Source file does not exist: '{}'", target_path.display()));
+    }
+
+    let expected = expected_fingerprint.ok_or_else(|| {
+        "Source fingerprint unavailable: cannot verify file state before saving".to_string()
+    })?;
+
+    // Validate encoding and encode content before touching filesystem
+    let encoded_bytes = encode_lyrics_content(content, encoding)?;
+
+    // Verify external modification conflict
+    verify_fingerprint(target_path, expected)?;
+
+    // Create unique temporary file in the SAME directory
+    let parent_dir = target_path.parent().ok_or_else(|| {
+        format!(
+            "Invalid source path: cannot determine parent directory for '{}'",
+            target_path.display()
+        )
+    })?;
+
+    let file_stem = target_path
+        .file_stem()
+        .and_then(|s| s.to_str())
+        .unwrap_or("lyrics");
+
+    let temp_name = format!(
+        ".{}.{}_{}.tmp",
+        file_stem,
+        std::process::id(),
+        std::time::SystemTime::now()
+            .duration_since(std::time::UNIX_EPOCH)
+            .unwrap_or_default()
+            .as_nanos()
+    );
+    let temp_path = parent_dir.join(temp_name);
+
+    // Write bytes to temp file
+    let mut file = fs::File::create(&temp_path).map_err(|e| {
+        format!("Failed to create temporary file '{}': {}", temp_path.display(), e)
+    })?;
+
+    if let Err(e) = file.write_all(&encoded_bytes) {
+        let _ = fs::remove_file(&temp_path);
+        return Err(format!("Failed to write temporary file '{}': {}", temp_path.display(), e));
+    }
+
+    if let Err(e) = file.sync_all() {
+        let _ = fs::remove_file(&temp_path);
+        return Err(format!("Failed to flush temporary file '{}': {}", temp_path.display(), e));
+    }
+
+    // Explicitly drop file handle to ensure it is closed before replacement
+    drop(file);
+
+    // Atomically replace target with temp
+    if let Err(e) = atomic_replace_file(&temp_path, target_path) {
+        let _ = fs::remove_file(&temp_path);
+        return Err(e);
+    }
+
+    // Compute and return the new fingerprint of the saved file
+    compute_file_fingerprint(target_path)
 }
 
 #[cfg(test)]
@@ -510,6 +887,332 @@ mod tests {
 
         let res = find_and_read_lrc(&audio.to_string_lossy()).unwrap();
         assert!(res.is_none(), "Unrelated prefixes must not be resolved as lyrics");
+
+        let _ = fs::remove_dir_all(&temp_dir);
+    }
+
+    // --- Native Save Tests ---
+
+    #[test]
+    fn test_save_utf8_success() {
+        let temp_dir = create_temp_dir("save_utf8");
+        let lrc_path = temp_dir.join("song.lrc");
+        fs::write(&lrc_path, b"[00:01.00]Initial").unwrap();
+
+        let initial_fp = compute_file_fingerprint(&lrc_path).unwrap();
+        let new_content = "[00:05.00]New UTF-8 content: \u{266A}\n[00:10.00]Second line";
+
+        let new_fp = save_lrc_file(
+            &lrc_path.to_string_lossy(),
+            new_content,
+            "utf-8",
+            Some(&initial_fp),
+        )
+        .expect("Save should succeed");
+
+        let disk_bytes = fs::read(&lrc_path).unwrap();
+        assert_eq!(disk_bytes, new_content.as_bytes());
+        assert_ne!(new_fp.value, initial_fp.value);
+        assert_eq!(new_fp.algorithm, "sha256");
+
+        let _ = fs::remove_dir_all(&temp_dir);
+    }
+
+    #[test]
+    fn test_save_utf8_bom_success() {
+        let temp_dir = create_temp_dir("save_utf8_bom");
+        let lrc_path = temp_dir.join("song.lrc");
+        fs::write(&lrc_path, b"[00:01.00]Initial").unwrap();
+
+        let initial_fp = compute_file_fingerprint(&lrc_path).unwrap();
+        let new_content = "[00:02.00]BOM content";
+
+        let _ = save_lrc_file(
+            &lrc_path.to_string_lossy(),
+            new_content,
+            "utf-8-bom",
+            Some(&initial_fp),
+        )
+        .expect("Save should succeed");
+
+        let disk_bytes = fs::read(&lrc_path).unwrap();
+        assert_eq!(&disk_bytes[0..3], &[0xEF, 0xBB, 0xBF]);
+        assert_eq!(&disk_bytes[3..], new_content.as_bytes());
+
+        let _ = fs::remove_dir_all(&temp_dir);
+    }
+
+    #[test]
+    fn test_save_utf16le_success() {
+        let temp_dir = create_temp_dir("save_utf16le");
+        let lrc_path = temp_dir.join("song.lrc");
+        fs::write(&lrc_path, b"[00:01.00]Initial").unwrap();
+
+        let initial_fp = compute_file_fingerprint(&lrc_path).unwrap();
+        let new_content = "[00:03.00]UTF-16LE \u{1F3B6} melody";
+
+        let _ = save_lrc_file(
+            &lrc_path.to_string_lossy(),
+            new_content,
+            "utf-16le",
+            Some(&initial_fp),
+        )
+        .expect("Save should succeed");
+
+        let disk_bytes = fs::read(&lrc_path).unwrap();
+        let mut expected_bytes: Vec<u8> = Vec::new();
+        for u in new_content.encode_utf16() {
+            expected_bytes.extend_from_slice(&u.to_le_bytes());
+        }
+        assert_eq!(disk_bytes, expected_bytes);
+
+        let _ = fs::remove_dir_all(&temp_dir);
+    }
+
+    #[test]
+    fn test_save_utf16be_success() {
+        let temp_dir = create_temp_dir("save_utf16be");
+        let lrc_path = temp_dir.join("song.lrc");
+        fs::write(&lrc_path, b"[00:01.00]Initial").unwrap();
+
+        let initial_fp = compute_file_fingerprint(&lrc_path).unwrap();
+        let new_content = "[00:04.00]UTF-16BE \u{1F3B6} melody";
+
+        let _ = save_lrc_file(
+            &lrc_path.to_string_lossy(),
+            new_content,
+            "utf-16be",
+            Some(&initial_fp),
+        )
+        .expect("Save should succeed");
+
+        let disk_bytes = fs::read(&lrc_path).unwrap();
+        let mut expected_bytes: Vec<u8> = Vec::new();
+        for u in new_content.encode_utf16() {
+            expected_bytes.extend_from_slice(&u.to_be_bytes());
+        }
+        assert_eq!(disk_bytes, expected_bytes);
+
+        let _ = fs::remove_dir_all(&temp_dir);
+    }
+
+    #[test]
+    fn test_save_missing_source_path() {
+        let err = save_lrc_file("", "content", "utf-8", None).unwrap_err();
+        assert!(err.contains("Missing source path"));
+
+        let err_ws = save_lrc_file("   ", "content", "utf-8", None).unwrap_err();
+        assert!(err_ws.contains("Missing source path"));
+    }
+
+    #[test]
+    fn test_save_nonexistent_source_file() {
+        let temp_dir = create_temp_dir("save_nonexistent");
+        let missing_path = temp_dir.join("nonexistent.lrc");
+        let fake_fp = LyricsSourceFingerprint {
+            algorithm: "sha256".to_string(),
+            value: "abc".to_string(),
+            size_bytes: Some(10),
+            modified_time_milliseconds: Some(100),
+        };
+
+        let err = save_lrc_file(
+            &missing_path.to_string_lossy(),
+            "content",
+            "utf-8",
+            Some(&fake_fp),
+        )
+        .unwrap_err();
+        assert!(err.contains("Source file does not exist"));
+
+        let _ = fs::remove_dir_all(&temp_dir);
+    }
+
+    #[test]
+    fn test_save_unknown_encoding_rejected() {
+        let temp_dir = create_temp_dir("save_unknown_enc");
+        let lrc_path = temp_dir.join("song.lrc");
+        fs::write(&lrc_path, b"Initial").unwrap();
+        let fp = compute_file_fingerprint(&lrc_path).unwrap();
+
+        let err = save_lrc_file(
+            &lrc_path.to_string_lossy(),
+            "content",
+            "unknown",
+            Some(&fp),
+        )
+        .unwrap_err();
+        assert!(err.contains("Unsupported or unknown encoding"));
+
+        let err2 = save_lrc_file(
+            &lrc_path.to_string_lossy(),
+            "content",
+            "shift-jis",
+            Some(&fp),
+        )
+        .unwrap_err();
+        assert!(err2.contains("Unsupported or unknown encoding"));
+
+        let _ = fs::remove_dir_all(&temp_dir);
+    }
+
+    #[test]
+    fn test_save_null_fingerprint_rejected() {
+        let temp_dir = create_temp_dir("save_null_fp");
+        let lrc_path = temp_dir.join("song.lrc");
+        fs::write(&lrc_path, b"Initial").unwrap();
+
+        let err = save_lrc_file(
+            &lrc_path.to_string_lossy(),
+            "content",
+            "utf-8",
+            None,
+        )
+        .unwrap_err();
+        assert!(err.contains("Source fingerprint unavailable"));
+
+        let _ = fs::remove_dir_all(&temp_dir);
+    }
+
+    #[test]
+    fn test_save_externally_modified_source_rejected() {
+        let temp_dir = create_temp_dir("save_modified");
+        let lrc_path = temp_dir.join("song.lrc");
+        fs::write(&lrc_path, b"Version 1").unwrap();
+
+        let fp1 = compute_file_fingerprint(&lrc_path).unwrap();
+
+        // Simulate external modification
+        fs::write(&lrc_path, b"Version 2 modified externally").unwrap();
+
+        let err = save_lrc_file(
+            &lrc_path.to_string_lossy(),
+            "Version 3 from editor",
+            "utf-8",
+            Some(&fp1),
+        )
+        .unwrap_err();
+
+        assert!(err.contains("Source file modified externally"));
+        // Original modified file must not be overwritten
+        assert_eq!(fs::read(&lrc_path).unwrap(), b"Version 2 modified externally");
+
+        let _ = fs::remove_dir_all(&temp_dir);
+    }
+
+    #[test]
+    fn test_save_original_file_remains_unchanged_after_rejection() {
+        let temp_dir = create_temp_dir("save_unchanged_on_err");
+        let lrc_path = temp_dir.join("song.lrc");
+        let original_bytes = b"[00:00.00]Original pristine content\n";
+        fs::write(&lrc_path, original_bytes).unwrap();
+
+        let fp = compute_file_fingerprint(&lrc_path).unwrap();
+
+        // Trigger failure with invalid encoding
+        let _ = save_lrc_file(
+            &lrc_path.to_string_lossy(),
+            "new content",
+            "invalid-encoding",
+            Some(&fp),
+        );
+
+        assert_eq!(fs::read(&lrc_path).unwrap(), original_bytes);
+
+        let _ = fs::remove_dir_all(&temp_dir);
+    }
+
+    #[test]
+    fn test_save_temporary_file_cleanup() {
+        let temp_dir = create_temp_dir("save_cleanup");
+        let lrc_path = temp_dir.join("song.lrc");
+        fs::write(&lrc_path, b"Initial").unwrap();
+
+        let fp = compute_file_fingerprint(&lrc_path).unwrap();
+
+        // Successful save
+        save_lrc_file(
+            &lrc_path.to_string_lossy(),
+            "Updated",
+            "utf-8",
+            Some(&fp),
+        )
+        .unwrap();
+
+        // Verify no leftover .tmp files
+        let entries = fs::read_dir(&temp_dir).unwrap();
+        for entry in entries.flatten() {
+            let path = entry.path();
+            let name = path.file_name().unwrap().to_string_lossy();
+            assert!(!name.ends_with(".tmp"), "Found leftover tmp file: {}", name);
+        }
+
+        let _ = fs::remove_dir_all(&temp_dir);
+    }
+
+    #[test]
+    fn test_save_size_mtime_fingerprint_verification() {
+        let temp_dir = create_temp_dir("save_size_mtime");
+        let lrc_path = temp_dir.join("song.lrc");
+        fs::write(&lrc_path, b"Initial data").unwrap();
+
+        let meta = fs::metadata(&lrc_path).unwrap();
+        let size = meta.len();
+        let mtime = meta
+            .modified()
+            .unwrap()
+            .duration_since(std::time::UNIX_EPOCH)
+            .unwrap()
+            .as_millis() as u64;
+
+        let sm_fp = LyricsSourceFingerprint {
+            algorithm: "size-mtime".to_string(),
+            value: format!("{}:{}", size, mtime),
+            size_bytes: Some(size),
+            modified_time_milliseconds: Some(mtime),
+        };
+
+        // Saving with matching size-mtime should succeed
+        let res = save_lrc_file(
+            &lrc_path.to_string_lossy(),
+            "[00:01.00]Saved via size-mtime",
+            "utf-8",
+            Some(&sm_fp),
+        );
+        assert!(res.is_ok());
+
+        // Now with outdated size-mtime, saving should fail
+        let err = save_lrc_file(
+            &lrc_path.to_string_lossy(),
+            "[00:02.00]Should fail",
+            "utf-8",
+            Some(&sm_fp),
+        )
+        .unwrap_err();
+        assert!(err.contains("Source file modified externally"));
+
+        let _ = fs::remove_dir_all(&temp_dir);
+    }
+
+    #[test]
+    fn test_fallback_safe_backup_and_swap_directly() {
+        let temp_dir = create_temp_dir("backup_swap");
+        let target_path = temp_dir.join("original.lrc");
+        let temp_path = temp_dir.join(".temp_swap.tmp");
+
+        fs::write(&target_path, b"Original file content").unwrap();
+        fs::write(&temp_path, b"New file content").unwrap();
+
+        safe_backup_and_swap(&temp_path, &target_path).expect("Backup swap should succeed");
+
+        assert_eq!(fs::read(&target_path).unwrap(), b"New file content");
+        assert!(!temp_path.exists());
+
+        // Ensure no backup files left
+        for entry in fs::read_dir(&temp_dir).unwrap().flatten() {
+            let name = entry.file_name().to_string_lossy().to_string();
+            assert!(!name.ends_with(".bak"), "Leftover backup file: {}", name);
+        }
 
         let _ = fs::remove_dir_all(&temp_dir);
     }

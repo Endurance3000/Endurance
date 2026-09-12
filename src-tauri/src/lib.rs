@@ -67,6 +67,7 @@ pub fn run() {
             commands::toggle_track_favorite,
             commands::get_track_artwork,
             commands::get_track_lyrics,
+            commands::save_lyrics_file,
             commands::record_playback_history,
             commands::get_playback_history,
             commands::get_user_preferences,
