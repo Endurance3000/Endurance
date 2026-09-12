@@ -371,6 +371,14 @@ Endurance/
 - [ ] Continue refining Material 3-inspired interactions and animations
 - [ ] Improve overall accessibility and keyboard navigation
 
+#### Add an Endurance startup/loading screen
+
+- [ ] Display the Endurance branding while the application initializes.
+- [ ] Prevent a blank/uninitialized UI from being shown during startup.
+- [ ] Use the existing warm Endurance visual language.
+- [ ] Provide a smooth transition from startup into the main application.
+- [ ] Keep startup lightweight and avoid delaying the application unnecessarily.
+
 #### Cross-Platform & macOS
 
 - [ ] Complete cross-platform compatibility improvements
