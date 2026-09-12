@@ -35,13 +35,13 @@ describe('LyricsService tests', () => {
 
   it('getResolvedLyrics resolves sidecar file path and raw content', async () => {
     mockResolved = {
-      file_path: 'C:/Music/acoustic.lrc',
+      filePath: 'C:/Music/acoustic.lrc',
       content: '[00:01.00]First line',
     };
 
     const resolved = await lyricsService.getResolvedLyrics('C:/Music/acoustic.mp3');
     assert.deepStrictEqual(resolved, {
-      file_path: 'C:/Music/acoustic.lrc',
+      filePath: 'C:/Music/acoustic.lrc',
       content: '[00:01.00]First line',
     });
     assert.strictEqual(invokeCalls.length, 1);
@@ -61,7 +61,7 @@ describe('LyricsService tests', () => {
 
   it('getLyrics parses lyrics from the resolved payload and caches the result', async () => {
     mockResolved = {
-      file_path: 'C:/Music/track.lrc',
+      filePath: 'C:/Music/track.lrc',
       content: '[00:05.50]Hello world',
     };
 
@@ -89,7 +89,7 @@ describe('LyricsService tests', () => {
     assert.strictEqual(parsed.type, 'none');
 
     mockResolved = {
-      file_path: 'C:/Music/empty.lrc',
+      filePath: 'C:/Music/empty.lrc',
       content: '',
     };
     const parsedEmpty = await lyricsService.getLyrics('C:/Music/empty.mp3', true);
@@ -104,7 +104,7 @@ describe('LyricsService tests', () => {
 
   it('clearCache empties in-memory cache', async () => {
     mockResolved = {
-      file_path: 'C:/Music/cached.lrc',
+      filePath: 'C:/Music/cached.lrc',
       content: '[00:01.00]Line',
     };
 
@@ -118,7 +118,7 @@ describe('LyricsService tests', () => {
 
   it('getLyricsDocument resolves and loads an editable LyricsDocument', async () => {
     mockResolved = {
-      file_path: 'C:/Music/song.lrc',
+      filePath: 'C:/Music/song.lrc',
       content: '[ti:My Title]\n[00:10.00]First line\n[00:20.00]Second line',
     };
 
@@ -286,5 +286,109 @@ describe('LyricsService tests', () => {
     const res = await saveLyricsDocument(doc);
     assert.deepEqual(res, mockSaveResult);
     assert.equal(invokeCalls.length, 1);
+  });
+
+  it('getLyricsDocument preserves sourceFingerprint returned by getResolvedLyrics', async () => {
+    const expectedFp = {
+      algorithm: 'sha256' as const,
+      value: 'resolved-sha256-hash-456',
+      sizeBytes: 85,
+      modifiedTimeMilliseconds: 1700000000000,
+    };
+
+    mockResolved = {
+      filePath: 'C:/Music/test.lrc',
+      content: '[00:01.00]Hello world',
+      sourceFingerprint: expectedFp,
+    };
+
+    const doc = await lyricsService.getLyricsDocument('C:/Music/test.mp3');
+    assert.ok(doc !== null);
+    assert.equal(doc.sourcePath, 'C:/Music/test.lrc');
+    assert.deepEqual(doc.sourceFingerprint, expectedFp);
+  });
+
+  it('loaded document can be saved directly and passes loaded fingerprint as expectedFingerprint', async () => {
+    const initialFp = {
+      algorithm: 'sha256' as const,
+      value: 'initial-loaded-fp-999',
+      sizeBytes: 120,
+    };
+
+    mockResolved = {
+      filePath: 'C:/Music/roundtrip.lrc',
+      content: '[00:10.00]Original line',
+      sourceFingerprint: initialFp,
+      encoding: 'utf-8',
+    };
+
+    mockSaveResult = {
+      algorithm: 'sha256',
+      value: 'new-saved-fp-1000',
+    };
+
+    // 1. Load document via getLyricsDocument
+    const doc = await lyricsService.getLyricsDocument('C:/Music/roundtrip.mp3');
+    assert.ok(doc !== null);
+    assert.equal(doc.sourcePath, 'C:/Music/roundtrip.lrc');
+    assert.equal(doc.encoding, 'utf-8');
+    assert.deepEqual(doc.sourceFingerprint, initialFp);
+
+    // 2. Save document directly via saveLyricsDocument
+    const saveRes = await lyricsService.saveLyricsDocument(doc);
+    assert.deepEqual(saveRes, mockSaveResult);
+
+    // 3. Verify native invoke call received the exact loaded sourcePath, encoding, and fingerprint
+    const saveCall = invokeCalls.find((c) => c.cmd === 'save_lyrics_file');
+    assert.ok(saveCall);
+    const saveArgs = saveCall.args as {
+      sourcePath: string;
+      encoding: string;
+      expectedFingerprint: LyricsSourceFingerprint;
+    };
+    assert.equal(saveArgs.sourcePath, 'C:/Music/roundtrip.lrc');
+    assert.equal(saveArgs.encoding, 'utf-8');
+    assert.deepEqual(saveArgs.expectedFingerprint, initialFp);
+  });
+
+  it('getLyricsDocument propagates encoding into LyricsDocument for all supported encodings', async () => {
+    const supportedEncodings = ['utf-8', 'utf-8-bom', 'utf-16le', 'utf-16be'] as const;
+
+    for (const encoding of supportedEncodings) {
+      mockResolved = {
+        filePath: `C:/Music/${encoding}.lrc`,
+        content: '[00:01.00]Line',
+        encoding,
+      };
+
+      const doc = await lyricsService.getLyricsDocument(`C:/Music/${encoding}.mp3`);
+      assert.ok(doc !== null);
+      assert.equal(doc.encoding, encoding);
+      assert.equal(doc.sourcePath, `C:/Music/${encoding}.lrc`);
+    }
+  });
+
+  it('saveLyricsDocument preserves non-utf8 encodings such as utf-16le and passes to save_lyrics_file', async () => {
+    const doc = createLyricsDocument({
+      sourcePath: 'C:/Music/unicode.lrc',
+      encoding: 'utf-16le',
+      sourceFingerprint: { algorithm: 'sha256', value: 'fp-utf16' },
+      lines: [createEditableLyricLine('Unicode line', 1000)],
+    });
+
+    mockSaveResult = { algorithm: 'sha256', value: 'fp-utf16-saved' };
+
+    const res = await lyricsService.saveLyricsDocument(doc);
+    assert.deepEqual(res, mockSaveResult);
+
+    const saveCall = invokeCalls.find((c) => c.cmd === 'save_lyrics_file');
+    assert.ok(saveCall);
+    const saveArgs = saveCall.args as {
+      sourcePath: string;
+      encoding: string;
+      expectedFingerprint: LyricsSourceFingerprint;
+    };
+    assert.equal(saveArgs.encoding, 'utf-16le');
+    assert.equal(saveArgs.sourcePath, 'C:/Music/unicode.lrc');
   });
 });

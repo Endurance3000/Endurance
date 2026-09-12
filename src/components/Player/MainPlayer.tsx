@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { ChevronDown, Music2 } from 'lucide-react';
+import { ChevronDown, Music2, FileEdit } from 'lucide-react';
+import { Track } from '../../types';
 import { usePlayback } from '../../state/PlaybackContext';
 import { lyricsService } from '../../services/lyrics/lyricsService';
 import { findActiveLyricIndex, ParsedLyrics } from '../../services/lyrics/lrcParser';
@@ -8,9 +9,10 @@ import './MainPlayer.css';
 
 interface MainPlayerProps {
   onClose: () => void;
+  onEditLyrics?: (track: Track) => void;
 }
 
-export const MainPlayer: React.FC<MainPlayerProps> = ({ onClose }) => {
+export const MainPlayer: React.FC<MainPlayerProps> = ({ onClose, onEditLyrics }) => {
   const { currentTrack, currentTime, seek } = usePlayback();
   const [lyricsData, setLyricsData] = useState<ParsedLyrics>({ type: 'none' });
   const [artworkDataUri, setArtworkDataUri] = useState<string | null>(null);
@@ -69,6 +71,33 @@ export const MainPlayer: React.FC<MainPlayerProps> = ({ onClose }) => {
       isMounted = false;
     };
   }, [currentTrack?.id]);
+
+  // Refresh lyrics on disk update
+  useEffect(() => {
+    const handleLyricsUpdated = (e: Event) => {
+      const customEvent = e as CustomEvent<{ filePath?: string }>;
+      if (!currentTrack) return;
+      if (!customEvent.detail?.filePath || customEvent.detail.filePath === currentTrack.file_path) {
+        lyricsService.getLyrics(currentTrack.file_path, true).then((loaded) => {
+          setLyricsData(loaded);
+        });
+      }
+    };
+
+    window.addEventListener('endurance:lyrics-updated', handleLyricsUpdated);
+    return () => window.removeEventListener('endurance:lyrics-updated', handleLyricsUpdated);
+  }, [currentTrack]);
+
+  const handleEditLyrics = () => {
+    if (!currentTrack) return;
+    if (onEditLyrics) {
+      onEditLyrics(currentTrack);
+    } else {
+      window.dispatchEvent(
+        new CustomEvent('endurance:open-lyrics-editor', { detail: { track: currentTrack } })
+      );
+    }
+  };
 
   // Load high-res artwork data URI
   useEffect(() => {
@@ -206,6 +235,19 @@ export const MainPlayer: React.FC<MainPlayerProps> = ({ onClose }) => {
           <ChevronDown size={18} className="collapse-icon" />
           <span>Collapse</span>
         </button>
+
+        {currentTrack && (
+          <button
+            type="button"
+            className="main-player-collapse-btn main-player-edit-lyrics-btn"
+            onClick={handleEditLyrics}
+            aria-label="Edit Lyrics"
+            title="Edit Lyrics"
+          >
+            <FileEdit size={16} />
+            <span>Edit Lyrics</span>
+          </button>
+        )}
       </header>
 
       {/* Main 2-Column Body */}
@@ -335,6 +377,17 @@ export const MainPlayer: React.FC<MainPlayerProps> = ({ onClose }) => {
                   {currentTrack.album}
                 </div>
               )}
+
+              <div style={{ marginTop: 'var(--space-md)' }}>
+                <button
+                  type="button"
+                  className="main-player-collapse-btn"
+                  onClick={handleEditLyrics}
+                >
+                  <FileEdit size={15} />
+                  <span>Edit Lyrics</span>
+                </button>
+              </div>
             </div>
           )}
         </section>
