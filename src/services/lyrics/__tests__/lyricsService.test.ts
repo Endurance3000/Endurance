@@ -107,4 +107,28 @@ describe('LyricsService tests', () => {
     await lyricsService.getLyrics('C:/Music/cached.mp3');
     assert.strictEqual(invokeCalls.length, 2);
   });
+
+  it('getLyricsDocument resolves and loads an editable LyricsDocument', async () => {
+    mockResolved = {
+      file_path: 'C:/Music/song.lrc',
+      content: '[ti:My Title]\n[00:10.00]First line\n[00:20.00]Second line',
+    };
+
+    const doc = await lyricsService.getLyricsDocument('C:/Music/song.mp3');
+    assert.ok(doc !== null);
+    assert.equal(doc.format, 'lrc');
+    assert.equal(doc.sourcePath, 'C:/Music/song.lrc');
+    assert.equal(doc.metadata.title, 'My Title');
+    assert.equal(doc.lines.length, 2);
+    assert.equal(doc.lines[0].timeMilliseconds, 10000);
+    assert.equal(doc.lines[0].text, 'First line');
+    assert.equal(doc.lines[1].timeMilliseconds, 20000);
+    assert.equal(doc.lines[1].text, 'Second line');
+  });
+
+  it('getLyricsDocument returns null if sidecar file is not resolved', async () => {
+    mockResolved = null;
+    const doc = await lyricsService.getLyricsDocument('C:/Music/missing.mp3');
+    assert.equal(doc, null);
+  });
 });

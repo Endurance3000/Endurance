@@ -1,5 +1,7 @@
 import { invoke } from '@tauri-apps/api/core';
 import { ParsedLyrics, parseLrc } from './lrcParser';
+import { LyricsDocument } from './lyricsDocument';
+import { parseLyricsDocument } from './editableLrcParser';
 
 export interface ResolvedTrackLyrics {
   file_path: string;
@@ -49,6 +51,19 @@ class LyricsService {
 
     return await invoke<ResolvedTrackLyrics | null>('get_track_lyrics', {
       trackFilePath,
+    });
+  }
+
+  /**
+   * Loads an editable LyricsDocument model for an audio track path.
+   * Resolves the exact local sidecar file and parses it without altering playback state.
+   */
+  async getLyricsDocument(trackFilePath: string): Promise<LyricsDocument | null> {
+    const resolved = await this.getResolvedLyrics(trackFilePath);
+    if (!resolved) return null;
+
+    return parseLyricsDocument(resolved.content, {
+      sourcePath: resolved.file_path,
     });
   }
 
