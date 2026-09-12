@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
-import { ListPlus, ArrowUpToLine, FolderOpen, Copy, Check } from 'lucide-react';
+import { ListPlus, ArrowUpToLine, FolderOpen, Copy, Check, FileEdit } from 'lucide-react';
 import { invoke } from '@tauri-apps/api/core';
 import { Track } from '../../types';
 import { usePlayback } from '../../state/PlaybackContext';
@@ -12,6 +12,7 @@ interface SongActionMenuProps {
   onClose: () => void;
   position: { x: number; y: number };
   triggerRef?: React.RefObject<HTMLButtonElement | null>;
+  onEditLyrics?: (track: Track) => void;
 }
 
 export const SongActionMenu: React.FC<SongActionMenuProps> = ({
@@ -20,6 +21,7 @@ export const SongActionMenu: React.FC<SongActionMenuProps> = ({
   onClose,
   position,
   triggerRef,
+  onEditLyrics,
 }) => {
   const { playNext, addToQueue } = usePlayback();
 
@@ -133,9 +135,20 @@ export const SongActionMenu: React.FC<SongActionMenuProps> = ({
     }
   };
 
+  const handleEditLyrics = () => {
+    if (onEditLyrics) {
+      onEditLyrics(track);
+    } else {
+      window.dispatchEvent(
+        new CustomEvent('endurance:open-lyrics-editor', { detail: { track } })
+      );
+    }
+    onClose();
+  };
+
   // Viewport boundary clamping
   const menuWidth = 210;
-  const menuHeight = 165;
+  const menuHeight = 205;
 
   let targetX = position.x;
   let targetY = position.y;
@@ -203,6 +216,18 @@ export const SongActionMenu: React.FC<SongActionMenuProps> = ({
       </button>
 
       <div className="song-menu-divider" />
+
+      <button
+        type="button"
+        className="song-menu-item"
+        role="menuitem"
+        onClick={handleEditLyrics}
+      >
+        <span className="song-menu-item-icon">
+          <FileEdit size={15} />
+        </span>
+        <span>Edit Lyrics</span>
+      </button>
 
       <button
         type="button"

@@ -1,0 +1,539 @@
+/* ==========================================================================
+   LYRICS EDITOR MODAL (Material 3 Expressive & Warm Espresso Aesthetic)
+   ========================================================================== */
+
+.lyrics-editor-backdrop {
+  position: fixed;
+  top: var(--titlebar-height);
+  left: 0;
+  right: 0;
+  bottom: var(--player-bar-height);
+  background: rgba(0, 0, 0, 0.72);
+  backdrop-filter: blur(6px);
+  z-index: 90;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--space-md) var(--space-xl);
+  animation: m3EditorFadeIn var(--motion-duration-short-2) var(--motion-easing-standard);
+}
+
+@keyframes m3EditorFadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.lyrics-editor-panel {
+  background: var(--md-sys-color-surface-container);
+  border: 1px solid var(--md-sys-color-outline-subtle);
+  border-radius: var(--radius-2xl);
+  width: min(920px, 94vw);
+  height: min(760px, 100%);
+  max-height: 100%;
+  box-shadow: 0 16px 48px rgba(0, 0, 0, 0.6), 0 0 0 1px rgba(255, 251, 233, 0.05);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  position: relative;
+  outline: none;
+  animation: m3EditorScaleUp var(--motion-duration-medium-2) var(--motion-easing-emphasized-decelerate);
+}
+
+@keyframes m3EditorScaleUp {
+  from {
+    opacity: 0;
+    transform: scale(0.96) translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+/* ==========================================================================
+   HEADER
+   ========================================================================== */
+
+.lyrics-editor-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--space-md) var(--space-xl);
+  background: var(--md-sys-color-surface-container-high);
+  border-bottom: 1px solid var(--md-sys-color-outline-subtle);
+  flex-shrink: 0;
+  gap: var(--space-md);
+}
+
+.lyrics-editor-header-left {
+  display: flex;
+  align-items: center;
+  gap: var(--space-md);
+  min-width: 0;
+}
+
+.lyrics-editor-title-wrap {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.lyrics-editor-title {
+  font-family: var(--font-family-display);
+  font-size: 1.125rem;
+  font-weight: 700;
+  color: var(--md-sys-color-on-surface);
+  line-height: 1.3;
+  margin: 0;
+}
+
+.lyrics-editor-subtitle {
+  font-size: 0.8125rem;
+  color: var(--md-sys-color-on-surface-variant);
+  margin-top: 1px;
+}
+
+.lyrics-editor-dirty-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  background: rgba(251, 191, 36, 0.16);
+  border: 1px solid rgba(251, 191, 36, 0.35);
+  color: var(--md-sys-color-warning);
+  font-size: 0.75rem;
+  font-weight: 600;
+  padding: 2px 8px;
+  border-radius: var(--radius-full);
+  letter-spacing: 0.02em;
+}
+
+.lyrics-editor-saved-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  background: rgba(52, 211, 153, 0.16);
+  border: 1px solid rgba(52, 211, 153, 0.35);
+  color: var(--md-sys-color-success);
+  font-size: 0.75rem;
+  font-weight: 600;
+  padding: 2px 8px;
+  border-radius: var(--radius-full);
+}
+
+.lyrics-editor-header-actions {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  flex-shrink: 0;
+}
+
+/* ==========================================================================
+   ERROR & CONFLICT BANNERS
+   ========================================================================== */
+
+.lyrics-editor-banner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-md);
+  padding: var(--space-sm) var(--space-xl);
+  font-size: 0.875rem;
+  flex-shrink: 0;
+  border-bottom: 1px solid transparent;
+}
+
+.lyrics-editor-banner-error {
+  background: var(--md-sys-color-error-container);
+  color: var(--md-sys-color-on-error-container);
+  border-color: rgba(248, 113, 113, 0.3);
+}
+
+.lyrics-editor-banner-conflict {
+  background: #4a2118;
+  color: #fed7aa;
+  border-color: rgba(251, 146, 60, 0.35);
+}
+
+.lyrics-editor-banner-content {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  flex: 1;
+}
+
+/* ==========================================================================
+   SCROLLABLE BODY
+   ========================================================================== */
+
+.lyrics-editor-body {
+  flex: 1;
+  overflow-y: auto;
+  padding: var(--space-lg) var(--space-xl) var(--space-2xl);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-md);
+  min-height: 0;
+}
+
+.lyrics-editor-body::-webkit-scrollbar {
+  width: 8px;
+}
+
+.lyrics-editor-body::-webkit-scrollbar-thumb {
+  background: var(--md-sys-color-surface-container-highest);
+  border-radius: var(--radius-full);
+}
+
+/* ==========================================================================
+   EMPTY STATE (NO LRC SIDE-CAR FILE)
+   ========================================================================== */
+
+.lyrics-editor-empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: var(--space-5xl) var(--space-2xl);
+  margin: auto 0;
+  max-width: 520px;
+  align-self: center;
+}
+
+.lyrics-editor-empty-icon {
+  color: var(--md-sys-color-primary);
+  opacity: 0.85;
+  margin-bottom: var(--space-lg);
+}
+
+.lyrics-editor-empty-title {
+  font-family: var(--font-family-display);
+  font-size: 1.35rem;
+  font-weight: 700;
+  color: var(--md-sys-color-on-surface);
+  margin-bottom: var(--space-xs);
+}
+
+.lyrics-editor-empty-desc {
+  font-size: 0.9375rem;
+  color: var(--md-sys-color-on-surface-variant);
+  line-height: 1.5;
+  margin-bottom: var(--space-xl);
+}
+
+/* ==========================================================================
+   LOADING SPINNER
+   ========================================================================== */
+
+.lyrics-editor-loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  flex: 1;
+  gap: var(--space-md);
+  color: var(--md-sys-color-primary);
+  font-size: 0.9375rem;
+}
+
+/* ==========================================================================
+   METADATA SECTION (COLLAPSIBLE)
+   ========================================================================== */
+
+.lyrics-editor-metadata-card {
+  background: var(--md-sys-color-surface-container-low);
+  border: 1px solid var(--md-sys-color-outline-subtle);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  transition: border-color var(--motion-duration-short-2) var(--motion-easing-standard);
+}
+
+.lyrics-editor-metadata-toggle {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--space-sm) var(--space-md);
+  background: transparent;
+  border: none;
+  color: var(--md-sys-color-on-surface);
+  font-size: 0.8125rem;
+  font-weight: 600;
+  cursor: pointer;
+  outline: none;
+}
+
+.lyrics-editor-metadata-toggle:focus-visible {
+  outline: 2px solid var(--md-sys-color-focus-ring);
+  outline-offset: -2px;
+}
+
+.lyrics-editor-metadata-toggle:hover {
+  background: var(--md-sys-color-surface-container-high);
+}
+
+.lyrics-editor-metadata-toggle-left {
+  display: flex;
+  align-items: center;
+  gap: var(--space-xs);
+}
+
+.lyrics-editor-metadata-fields {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: var(--space-sm);
+  padding: var(--space-xs) var(--space-md) var(--space-md);
+  border-top: 1px solid var(--md-sys-color-outline-subtle);
+}
+
+.metadata-input-group {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2xs);
+}
+
+.metadata-input-label {
+  font-size: 0.6875rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  color: var(--md-sys-color-text-muted);
+  letter-spacing: 0.05em;
+}
+
+.metadata-input {
+  background: var(--md-sys-color-surface-container-highest);
+  border: 1px solid var(--md-sys-color-outline-subtle);
+  color: var(--md-sys-color-on-surface);
+  font-size: 0.8125rem;
+  padding: var(--space-2xs) var(--space-xs);
+  border-radius: var(--radius-sm);
+  outline: none;
+}
+
+.metadata-input:focus {
+  border-color: var(--md-sys-color-primary);
+  outline: 1px solid var(--md-sys-color-primary);
+}
+
+/* ==========================================================================
+   LYRIC ROWS LIST
+   ========================================================================== */
+
+.lyrics-editor-rows-header {
+  display: grid;
+  grid-template-columns: 110px 1fr 40px;
+  gap: var(--space-sm);
+  padding: 0 var(--space-xs);
+  color: var(--md-sys-color-text-muted);
+  font-size: 0.6875rem;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.lyrics-editor-rows-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-xs);
+}
+
+.lyrics-editor-row {
+  display: grid;
+  grid-template-columns: 110px 1fr 40px;
+  gap: var(--space-sm);
+  align-items: center;
+  padding: 2px var(--space-xs);
+  border-radius: var(--radius-md);
+  transition: background-color var(--motion-duration-short-1) var(--motion-easing-standard);
+}
+
+.lyrics-editor-row:hover {
+  background: rgba(255, 251, 233, 0.03);
+}
+
+.lyrics-editor-row:focus-within {
+  background: rgba(255, 251, 233, 0.04);
+}
+
+/* Timestamp Input */
+.timestamp-col {
+  position: relative;
+}
+
+.timestamp-input {
+  width: 100%;
+  font-family: var(--font-family-mono);
+  font-size: 0.8125rem;
+  font-weight: 600;
+  text-align: center;
+  background: var(--md-sys-color-surface-container-high);
+  border: 1px solid var(--md-sys-color-outline-subtle);
+  color: var(--md-sys-color-primary);
+  padding: var(--space-xs) 0;
+  border-radius: var(--radius-sm);
+  outline: none;
+  transition: border-color var(--motion-duration-short-1) var(--motion-easing-standard);
+}
+
+.timestamp-input::placeholder {
+  color: var(--md-sys-color-text-muted);
+  opacity: 0.5;
+  font-weight: 400;
+}
+
+.timestamp-input:focus {
+  border-color: var(--md-sys-color-primary);
+  outline: 1px solid var(--md-sys-color-primary);
+}
+
+.timestamp-input.is-invalid {
+  border-color: var(--md-sys-color-error);
+  color: var(--md-sys-color-error);
+  background: rgba(248, 113, 113, 0.08);
+}
+
+.timestamp-input.is-invalid:focus {
+  outline: 1px solid var(--md-sys-color-error);
+}
+
+/* Lyric Text Input */
+.lyric-text-col {
+  min-width: 0;
+}
+
+.lyric-text-input {
+  width: 100%;
+  font-family: var(--font-family-base);
+  font-size: 0.9375rem;
+  color: var(--md-sys-color-on-surface);
+  background: var(--md-sys-color-surface-container-lowest);
+  border: 1px solid var(--md-sys-color-outline-subtle);
+  padding: var(--space-xs) var(--space-sm);
+  border-radius: var(--radius-sm);
+  outline: none;
+  transition: border-color var(--motion-duration-short-1) var(--motion-easing-standard);
+}
+
+.lyric-text-input::placeholder {
+  color: var(--md-sys-color-text-muted);
+  opacity: 0.35;
+}
+
+.lyric-text-input:focus {
+  border-color: var(--md-sys-color-primary);
+  outline: 1px solid var(--md-sys-color-primary);
+  background: var(--md-sys-color-surface-container-low);
+}
+
+/* Row Action */
+.row-delete-col {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Add Line Bottom Action */
+.lyrics-editor-add-line-wrap {
+  padding-top: var(--space-sm);
+  padding-bottom: var(--space-md);
+  display: flex;
+  justify-content: flex-start;
+}
+
+.lyrics-editor-add-line-btn {
+  background: var(--md-sys-color-surface-container-high);
+  color: var(--md-sys-color-primary);
+  border: 1.5px solid var(--md-sys-color-primary);
+  font-weight: 600;
+  letter-spacing: 0.015em;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.25);
+  transition: all var(--motion-duration-short-2) var(--motion-easing-standard);
+}
+
+.lyrics-editor-add-line-btn:hover:not(:disabled) {
+  background: var(--md-sys-color-primary);
+  color: var(--md-sys-color-on-primary);
+  border-color: var(--md-sys-color-primary);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.35), 0 0 16px rgba(206, 171, 147, 0.2);
+  transform: translateY(-1px);
+}
+
+.lyrics-editor-add-line-btn:active:not(:disabled) {
+  transform: translateY(0) scale(0.97);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+}
+
+.lyrics-editor-add-line-btn:focus-visible {
+  outline: 2px solid var(--md-sys-color-primary);
+  outline-offset: 2px;
+}
+
+/* ==========================================================================
+   DISCARD CONFIRMATION DIALOG (NESTED OVERLAY)
+   ========================================================================== */
+
+.lyrics-editor-confirm-backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.75);
+  backdrop-filter: blur(4px);
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--space-xl);
+  border-radius: var(--radius-2xl);
+  animation: m3EditorFadeIn var(--motion-duration-short-1) var(--motion-easing-standard);
+}
+
+.lyrics-editor-confirm-panel {
+  background: var(--md-sys-color-surface-container-high);
+  border: 1px solid var(--md-sys-color-outline);
+  border-radius: var(--radius-xl);
+  padding: var(--space-xl);
+  max-width: 440px;
+  width: 100%;
+  box-shadow: var(--elevation-3);
+}
+
+.confirm-title {
+  font-family: var(--font-family-display);
+  font-size: 1.125rem;
+  font-weight: 700;
+  color: var(--md-sys-color-on-surface);
+  margin: 0 0 var(--space-xs) 0;
+}
+
+.confirm-desc {
+  font-size: 0.875rem;
+  color: var(--md-sys-color-on-surface-variant);
+  line-height: 1.5;
+  margin: 0 0 var(--space-lg) 0;
+}
+
+.confirm-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: var(--space-sm);
+}
+
+/* ==========================================================================
+   RESPONSIVE ADJUSTMENTS
+   ========================================================================== */
+
+@media (max-width: 768px) {
+  .lyrics-editor-panel {
+    width: 100%;
+    height: 100%;
+    border-radius: 0;
+  }
+  
+  .lyrics-editor-metadata-fields {
+    grid-template-columns: 1fr;
+  }
+}

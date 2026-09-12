@@ -18,9 +18,14 @@ pub struct LyricsSourceFingerprint {
 
 /// Result of resolving and reading a lyric sidecar file.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct ResolvedLyrics {
     pub file_path: String,
     pub content: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub source_fingerprint: Option<LyricsSourceFingerprint>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub encoding: Option<String>,
 }
 
 /// Candidate priority tiers for deterministic lyric resolution.
@@ -165,10 +170,13 @@ pub fn find_and_read_lrc(track_file_path: &str) -> Result<Option<ResolvedLyrics>
         None => return Ok(None),
     };
 
-    let content = read_lrc_file(&resolved_path)?;
+    let (content, encoding) = read_lrc_file_with_encoding(&resolved_path)?;
+    let source_fingerprint = compute_file_fingerprint(&resolved_path).ok();
     Ok(Some(ResolvedLyrics {
         file_path: resolved_path.to_string_lossy().to_string(),
         content,
+        source_fingerprint,
+        encoding: Some(encoding),
     }))
 }
 
@@ -177,12 +185,14 @@ pub fn find_and_read_lrc(track_file_path: &str) -> Result<Option<ResolvedLyrics>
 /// - UTF-8 with BOM
 /// - UTF-16LE with BOM
 /// - UTF-16BE with BOM
-/// - Empty files (returns empty string)
-pub fn read_lrc_file(path: &Path) -> Result<String, String> {
+/// - Empty files (returns empty string with "utf-8" encoding)
+///
+/// Returns a tuple `(decoded_content, detected_encoding)`.
+pub fn read_lrc_file_with_encoding(path: &Path) -> Result<(String, String), String> {
     let bytes = fs::read(path).map_err(|e| format!("Failed to read lyric file '{}': {}", path.display(), e))?;
 
     if bytes.is_empty() {
-        return Ok(String::new());
+        return Ok((String::new(), "utf-8".to_string()));
     }
 
     // Handle UTF-16LE with BOM (0xFF, 0xFE)
@@ -191,7 +201,7 @@ pub fn read_lrc_file(path: &Path) -> Result<String, String> {
             .chunks_exact(2)
             .map(|chunk| u16::from_le_bytes([chunk[0], chunk[1]]))
             .collect();
-        return Ok(String::from_utf16_lossy(&u16_chars));
+        return Ok((String::from_utf16_lossy(&u16_chars), "utf-16le".to_string()));
     }
 
     // Handle UTF-16BE with BOM (0xFE, 0xFF)
@@ -200,15 +210,26 @@ pub fn read_lrc_file(path: &Path) -> Result<String, String> {
             .chunks_exact(2)
             .map(|chunk| u16::from_be_bytes([chunk[0], chunk[1]]))
             .collect();
-        return Ok(String::from_utf16_lossy(&u16_chars));
+        return Ok((String::from_utf16_lossy(&u16_chars), "utf-16be".to_string()));
     }
 
     // Handle UTF-8 (with or without BOM)
+    let has_utf8_bom = bytes.starts_with(&[0xEF, 0xBB, 0xBF]);
     let mut text = String::from_utf8_lossy(&bytes).to_string();
     if text.starts_with('\u{feff}') {
         text.remove(0);
     }
-    Ok(text)
+    let encoding = if has_utf8_bom {
+        "utf-8-bom".to_string()
+    } else {
+        "utf-8".to_string()
+    };
+    Ok((text, encoding))
+}
+
+/// Reads and decodes a lyric file returning decoded text content.
+pub fn read_lrc_file(path: &Path) -> Result<String, String> {
+    read_lrc_file_with_encoding(path).map(|(content, _)| content)
 }
 
 /// Computes the cryptographic and filesystem fingerprint for a file at `path`.
@@ -770,6 +791,7 @@ mod tests {
 
         let res = find_and_read_lrc(&audio.to_string_lossy()).unwrap().unwrap();
         assert_eq!(res.content, text);
+        assert_eq!(res.encoding, Some("utf-8".to_string()));
 
         let _ = fs::remove_dir_all(&temp_dir);
     }
@@ -788,6 +810,7 @@ mod tests {
 
         let res = find_and_read_lrc(&audio.to_string_lossy()).unwrap().unwrap();
         assert_eq!(res.content, "[00:01.00]BOM line\n");
+        assert_eq!(res.encoding, Some("utf-8-bom".to_string()));
 
         let _ = fs::remove_dir_all(&temp_dir);
     }
@@ -810,6 +833,7 @@ mod tests {
 
         let res = find_and_read_lrc(&audio.to_string_lossy()).unwrap().unwrap();
         assert_eq!(res.content, lyrics_str);
+        assert_eq!(res.encoding, Some("utf-16le".to_string()));
 
         let _ = fs::remove_dir_all(&temp_dir);
     }
@@ -832,6 +856,7 @@ mod tests {
 
         let res = find_and_read_lrc(&audio.to_string_lossy()).unwrap().unwrap();
         assert_eq!(res.content, lyrics_str);
+        assert_eq!(res.encoding, Some("utf-16be".to_string()));
 
         let _ = fs::remove_dir_all(&temp_dir);
     }
@@ -1215,5 +1240,144 @@ mod tests {
         }
 
         let _ = fs::remove_dir_all(&temp_dir);
+    }
+
+    #[test]
+    fn test_find_and_read_lrc_returns_fingerprint() {
+        let temp_dir = create_temp_dir("find_fp");
+        let audio = temp_dir.join("song.mp3");
+        let lrc = temp_dir.join("song.lrc");
+
+        fs::write(&audio, b"fake audio content").unwrap();
+        fs::write(&lrc, b"[00:10.00]Test lyrics line").unwrap();
+
+        let res = find_and_read_lrc(&audio.to_string_lossy()).unwrap().expect("Should resolve lyrics");
+        assert_eq!(res.file_path, lrc.to_string_lossy());
+        assert_eq!(res.content, "[00:10.00]Test lyrics line");
+
+        let fp = res.source_fingerprint.expect("Resolved lyrics must include source fingerprint");
+        assert_eq!(fp.algorithm, "sha256");
+        assert_eq!(fp.value.len(), 64);
+        assert_eq!(fp.size_bytes, Some(26));
+        assert!(fp.modified_time_milliseconds.is_some());
+
+        // Verify fingerprint matches direct compute_file_fingerprint
+        let direct_fp = compute_file_fingerprint(&lrc).unwrap();
+        assert_eq!(fp.value, direct_fp.value);
+        assert_eq!(fp.size_bytes, direct_fp.size_bytes);
+
+        let _ = fs::remove_dir_all(&temp_dir);
+    }
+
+    #[test]
+    fn test_resolved_fingerprint_passes_directly_to_save_lrc_file() {
+        let temp_dir = create_temp_dir("resolve_save_fp");
+        let audio = temp_dir.join("track.mp3");
+        let lrc = temp_dir.join("track.lrc");
+
+        fs::write(&audio, b"audio data").unwrap();
+        fs::write(&lrc, b"[00:05.00]Initial lyrics").unwrap();
+
+        // 1. Resolve and read using find_and_read_lrc (as get_track_lyrics does)
+        let resolved = find_and_read_lrc(&audio.to_string_lossy()).unwrap().expect("Must resolve");
+        let loaded_fp = resolved.source_fingerprint.expect("Must have fingerprint");
+        let loaded_encoding = resolved.encoding.expect("Must have encoding");
+        assert_eq!(loaded_encoding, "utf-8");
+
+        // 2. Pass the resolved fingerprint and encoding directly into save_lrc_file without external changes
+        let new_fp = save_lrc_file(
+            &resolved.file_path,
+            "[00:05.00]Edited lyrics content",
+            &loaded_encoding,
+            Some(&loaded_fp),
+        )
+        .expect("Save should succeed using resolved fingerprint and encoding");
+
+        // 3. Verify new fingerprint is returned and file has updated content
+        assert_ne!(new_fp.value, loaded_fp.value);
+        let updated_content = fs::read_to_string(&lrc).unwrap();
+        assert_eq!(updated_content, "[00:05.00]Edited lyrics content");
+
+        let _ = fs::remove_dir_all(&temp_dir);
+    }
+
+    #[test]
+    fn test_resolved_encoding_and_fingerprint_roundtrip_all_encodings() {
+        let test_cases = [
+            ("utf-8", "[00:01.00]Hello UTF-8"),
+            ("utf-8-bom", "[00:01.00]Hello UTF-8-BOM"),
+            ("utf-16le", "[00:01.00]Hello UTF-16LE \u{1F3B5}"),
+            ("utf-16be", "[00:01.00]Hello UTF-16BE \u{1F3B6}"),
+        ];
+
+        for (enc, initial_text) in test_cases {
+            let temp_dir = create_temp_dir(&format!("roundtrip_{}", enc));
+            let audio = temp_dir.join("track.mp3");
+            let lrc = temp_dir.join("track.lrc");
+
+            fs::write(&audio, b"audio").unwrap();
+
+            // Encode initial file according to test case
+            let raw_initial = match enc {
+                "utf-8" => initial_text.as_bytes().to_vec(),
+                "utf-8-bom" => {
+                    let mut b = vec![0xEF, 0xBB, 0xBF];
+                    b.extend_from_slice(initial_text.as_bytes());
+                    b
+                }
+                "utf-16le" => {
+                    let mut b = vec![0xFF, 0xFE];
+                    for u in initial_text.encode_utf16() {
+                        b.extend_from_slice(&u.to_le_bytes());
+                    }
+                    b
+                }
+                "utf-16be" => {
+                    let mut b = vec![0xFE, 0xFF];
+                    for u in initial_text.encode_utf16() {
+                        b.extend_from_slice(&u.to_be_bytes());
+                    }
+                    b
+                }
+                _ => unreachable!(),
+            };
+            fs::write(&lrc, &raw_initial).unwrap();
+
+            // 1. Resolve via find_and_read_lrc
+            let resolved = find_and_read_lrc(&audio.to_string_lossy())
+                .unwrap()
+                .expect("Must resolve");
+            assert_eq!(resolved.encoding.as_deref(), Some(enc));
+            let loaded_fp = resolved.source_fingerprint.expect("Must have fingerprint");
+            let loaded_enc = resolved.encoding.expect("Must have encoding");
+
+            // 2. Save with edited text using the resolved encoding and resolved fingerprint
+            let edited_text = format!("{}\n[00:02.00]Edited line", initial_text);
+            let new_fp = save_lrc_file(
+                &resolved.file_path,
+                &edited_text,
+                &loaded_enc,
+                Some(&loaded_fp),
+            )
+            .expect("Save should succeed using resolved encoding and fingerprint");
+            assert_ne!(new_fp.value, loaded_fp.value);
+
+            // 3. Verify resulting file on disk remains correctly encoded according to the resolved encoding
+            let saved_bytes = fs::read(&lrc).unwrap();
+            let expected_bytes = encode_lyrics_content(&edited_text, enc).unwrap();
+            assert_eq!(saved_bytes, expected_bytes);
+
+            // For UTF-8 and UTF-8 BOM, verify find_and_read_lrc re-resolves seamlessly with preserved encoding
+            if enc == "utf-8" || enc == "utf-8-bom" {
+                let re_resolved = find_and_read_lrc(&audio.to_string_lossy())
+                    .unwrap()
+                    .expect("Must re-resolve");
+                assert_eq!(re_resolved.content, edited_text);
+                assert_eq!(re_resolved.encoding.as_deref(), Some(enc));
+                assert_eq!(re_resolved.source_fingerprint.as_ref(), Some(&new_fp));
+            }
+
+            let _ = fs::remove_dir_all(&temp_dir);
+        }
     }
 }

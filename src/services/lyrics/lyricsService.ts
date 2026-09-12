@@ -1,12 +1,14 @@
 import { invoke } from '@tauri-apps/api/core';
 import { ParsedLyrics, parseLrc } from './lrcParser';
-import { LyricsDocument, LyricsSourceFingerprint } from './lyricsDocument';
+import { LyricsDocument, LyricsEncoding, LyricsSourceFingerprint } from './lyricsDocument';
 import { parseLyricsDocument } from './editableLrcParser';
 import { serializeLyricsDocument } from './lrcSerializer';
 
 export interface ResolvedTrackLyrics {
-  file_path: string;
+  filePath: string;
   content: string;
+  sourceFingerprint?: LyricsSourceFingerprint;
+  encoding?: LyricsEncoding;
 }
 
 class LyricsService {
@@ -64,7 +66,9 @@ class LyricsService {
     if (!resolved) return null;
 
     return parseLyricsDocument(resolved.content, {
-      sourcePath: resolved.file_path,
+      sourcePath: resolved.filePath,
+      encoding: resolved.encoding,
+      sourceFingerprint: resolved.sourceFingerprint ?? null,
     });
   }
 
