@@ -2,6 +2,9 @@ name: Build & Package Desktop Application
 
 on:
   workflow_dispatch:
+  push:
+    branches:
+      - development
 
 jobs:
   build-packages:
