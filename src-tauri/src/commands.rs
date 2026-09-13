@@ -148,10 +148,23 @@ pub fn show_in_folder(file_path: String) -> Result<(), String> {
         Ok(())
     }
 
-    #[cfg(not(target_os = "windows"))]
+    #[cfg(target_os = "macos")]
+    {
+        std::process::Command::new("open")
+            .arg("-R")
+            .arg(&file_path)
+            .spawn()
+            .map_err(|e| format!("Failed to reveal file in Finder: {}", e))?;
+        Ok(())
+    }
+
+    #[cfg(not(any(target_os = "windows", target_os = "macos")))]
     {
         let parent = path.parent().unwrap_or(path);
-        open::that(parent).map_err(|e| format!("Failed to open directory: {}", e))?;
+        std::process::Command::new("xdg-open")
+            .arg(parent)
+            .spawn()
+            .map_err(|e| format!("Failed to open directory: {}", e))?;
         Ok(())
     }
 }
