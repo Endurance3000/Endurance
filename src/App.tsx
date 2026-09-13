@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { invoke } from '@tauri-apps/api/core';
 import { TitleBar } from './components/Common/TitleBar';
 import { Sidebar } from './components/Sidebar/Sidebar';
@@ -21,10 +21,12 @@ export const App: React.FC = () => {
   const [systemInfo, setSystemInfo] = useState<SystemInfo | null>(null);
   const [isMainPlayerOpen, setIsMainPlayerOpen] = useState<boolean>(false);
   const [editingLyricsTrack, setEditingLyricsTrack] = useState<Track | null>(null);
+  const hasNotifiedReadyRef = useRef(false);
 
   const {
     tracks,
     folders,
+    isLoading,
     isScanning,
     scanProgress,
     addFolder,
@@ -52,6 +54,16 @@ export const App: React.FC = () => {
 
     fetchSystemInfo();
   }, []);
+
+  // Notify backend when the initial application state is ready
+  useEffect(() => {
+    if (!isLoading && systemInfo !== null && !hasNotifiedReadyRef.current) {
+      hasNotifiedReadyRef.current = true;
+      invoke('close_splashscreen').catch((err) => {
+        console.warn('Could not close splashscreen:', err);
+      });
+    }
+  }, [isLoading, systemInfo]);
 
   // Listen for global open lyrics editor events (e.g. from SongActionMenu or MainPlayer)
   useEffect(() => {

@@ -72,7 +72,8 @@ pub fn run() {
             commands::get_playback_history,
             commands::get_user_preferences,
             commands::set_user_preference,
-            commands::show_in_folder
+            commands::show_in_folder,
+            commands::close_splashscreen
         ])
         .build(tauri::generate_context!())
         .expect("error while building endurance application")

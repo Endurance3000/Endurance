@@ -4,7 +4,7 @@ use crate::lyrics::{find_and_read_lrc, ResolvedLyrics};
 use crate::models::{HistoryItem, LibraryFolder, ScanSummary, Track};
 use crate::scanner::LibraryScanner;
 use std::collections::HashMap;
-use tauri::{AppHandle, State};
+use tauri::{AppHandle, Manager, State};
 
 pub struct AppState {
     pub db: Database,
@@ -154,5 +154,17 @@ pub fn show_in_folder(file_path: String) -> Result<(), String> {
         open::that(parent).map_err(|e| format!("Failed to open directory: {}", e))?;
         Ok(())
     }
+}
+
+#[tauri::command]
+pub async fn close_splashscreen(app_handle: AppHandle) -> Result<(), String> {
+    if let Some(splash) = app_handle.get_webview_window("splashscreen") {
+        let _ = splash.close();
+    }
+    if let Some(main) = app_handle.get_webview_window("main") {
+        let _ = main.show();
+        let _ = main.set_focus();
+    }
+    Ok(())
 }
 
