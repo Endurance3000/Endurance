@@ -26,15 +26,53 @@ export interface KeyboardShortcutEvent {
 }
 
 /**
+ * Detects whether the host runtime platform is macOS.
+ */
+export function isMacPlatform(): boolean {
+  if (typeof navigator !== 'undefined') {
+    if (navigator.userAgent && /Macintosh|Mac OS X/.test(navigator.userAgent)) {
+      return true;
+    }
+    if (navigator.platform && navigator.platform.startsWith('Mac')) {
+      return true;
+    }
+  }
+  return false;
+}
+
+/**
+ * Returns true if the platform-appropriate primary modifier key is pressed.
+ * - macOS: Meta/Command (metaKey) is true, Ctrl (ctrlKey) is false.
+ * - Windows/Linux: Ctrl (ctrlKey) is true, Meta (metaKey) is false.
+ */
+export function isPrimaryModifierActive(
+  e: KeyboardShortcutEvent,
+  isMac: boolean = isMacPlatform()
+): boolean {
+  if (isMac) {
+    return Boolean(e.metaKey && !e.ctrlKey);
+  }
+  return Boolean(e.ctrlKey && !e.metaKey);
+}
+
+/**
+ * Returns the human-readable label for the primary platform modifier key.
+ */
+export function getPrimaryModifierLabel(isMac: boolean = isMacPlatform()): string {
+  return isMac ? '⌘' : 'Ctrl';
+}
+
+/**
  * Pure dispatcher for global keyboard shortcuts in Endurance.
  * Returns true if a shortcut was matched and executed, false otherwise.
  */
 export function handlePlaybackShortcut(
   e: KeyboardShortcutEvent,
   actions: KeyboardShortcutActions,
-  state: KeyboardShortcutState
+  state: KeyboardShortcutState,
+  isMac: boolean = isMacPlatform()
 ): boolean {
-  if (e.defaultPrevented == true) {
+  if (e.defaultPrevented === true) {
     return false;
   }
   // Ignore if user is currently interacting with an input field or editable area
@@ -49,7 +87,7 @@ export function handlePlaybackShortcut(
     return false;
   }
 
-  const isModifier = Boolean(e.ctrlKey || e.metaKey);
+  const isPrimaryModifier = isPrimaryModifierActive(e, isMac);
   const isPlain = !e.ctrlKey && !e.metaKey && !e.altKey && !e.shiftKey;
 
   switch (e.code) {
@@ -71,7 +109,7 @@ export function handlePlaybackShortcut(
     case 'ArrowLeft':
       if (!e.altKey) {
         e.preventDefault?.();
-        if (isModifier) {
+        if (isPrimaryModifier) {
           actions.prevTrack();
           return true;
         } else if (isPlain) {
@@ -83,7 +121,7 @@ export function handlePlaybackShortcut(
     case 'ArrowRight':
       if (!e.altKey) {
         e.preventDefault?.();
-        if (isModifier) {
+        if (isPrimaryModifier) {
           actions.nextTrack();
           return true;
         } else if (isPlain) {
