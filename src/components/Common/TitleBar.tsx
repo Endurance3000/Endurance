@@ -3,6 +3,11 @@ import { getCurrentWindow } from '@tauri-apps/api/window';
 import { Minus, Square, Copy, X } from 'lucide-react';
 import './TitleBar.css';
 
+const isMacOS =
+  typeof window !== 'undefined' &&
+  typeof navigator !== 'undefined' &&
+  (/Macintosh|Mac OS X/.test(navigator.userAgent) || (navigator.platform ? navigator.platform.startsWith('Mac') : false));
+
 export const TitleBar: React.FC = () => {
   const [isMaximized, setIsMaximized] = useState(false);
 
@@ -54,7 +59,11 @@ export const TitleBar: React.FC = () => {
   };
 
   return (
-    <header className="titlebar" data-tauri-drag-region onDoubleClick={handleToggleMaximize}>
+    <header
+      className={`titlebar${isMacOS ? ' titlebar-macos' : ''}`}
+      data-tauri-drag-region
+      onDoubleClick={handleToggleMaximize}
+    >
       <div className="titlebar-leading" data-tauri-drag-region>
         <div className="titlebar-logo">
           <img src="/logo.png" alt="Endurance" className="titlebar-logo-img" width="18" height="18" />
@@ -67,37 +76,39 @@ export const TitleBar: React.FC = () => {
         {/* Intentionally clean, serves as drag area */}
       </div>
 
-      <div className="titlebar-controls">
-        <button
-          type="button"
-          className="titlebar-btn"
-          onClick={handleMinimize}
-          title="Minimize"
-          aria-label="Minimize window"
-        >
-          <Minus size={14} />
-        </button>
+      {!isMacOS && (
+        <div className="titlebar-controls">
+          <button
+            type="button"
+            className="titlebar-btn"
+            onClick={handleMinimize}
+            title="Minimize"
+            aria-label="Minimize window"
+          >
+            <Minus size={14} />
+          </button>
 
-        <button
-          type="button"
-          className="titlebar-btn"
-          onClick={handleToggleMaximize}
-          title={isMaximized ? "Restore" : "Maximize"}
-          aria-label={isMaximized ? "Restore window" : "Maximize window"}
-        >
-          {isMaximized ? <Copy size={12} /> : <Square size={13} />}
-        </button>
+          <button
+            type="button"
+            className="titlebar-btn"
+            onClick={handleToggleMaximize}
+            title={isMaximized ? "Restore" : "Maximize"}
+            aria-label={isMaximized ? "Restore window" : "Maximize window"}
+          >
+            {isMaximized ? <Copy size={12} /> : <Square size={13} />}
+          </button>
 
-        <button
-          type="button"
-          className="titlebar-btn titlebar-btn-close"
-          onClick={handleClose}
-          title="Close"
-          aria-label="Close window"
-        >
-          <X size={14} />
-        </button>
-      </div>
+          <button
+            type="button"
+            className="titlebar-btn titlebar-btn-close"
+            onClick={handleClose}
+            title="Close"
+            aria-label="Close window"
+          >
+            <X size={14} />
+          </button>
+        </div>
+      )}
     </header>
   );
 };
