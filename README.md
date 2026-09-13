@@ -490,7 +490,7 @@ If you encounter a bug or have a suggestion:
 
 ## Releases
 
-* [**Latest Release (v0.1.0)**](https://github.com/Endurance3000/Endurance/releases/latest)
+* [**Latest Release (v0.2.0)**](https://github.com/Endurance3000/Endurance/releases/latest)
 * [**All Releases**](https://github.com/Endurance3000/Endurance/releases)
 * [**The New Version is under development**]
 * [**Feel free to suggest the features to be added in the new version**]
