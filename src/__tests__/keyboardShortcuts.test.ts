@@ -2,6 +2,9 @@ import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
 import {
   handlePlaybackShortcut,
+  isMacPlatform,
+  isPrimaryModifierActive,
+  getPrimaryModifierLabel,
   KeyboardShortcutActions,
   KeyboardShortcutEvent,
   KeyboardShortcutState,
@@ -55,6 +58,32 @@ describe('Global Keyboard Shortcuts & Focus Guard Tests', () => {
     duration: 180,
     volume: 0.5,
   };
+
+  describe('Platform Modifier Abstraction Helpers', () => {
+    it('isPrimaryModifierActive returns true only for Ctrl on Windows (isMac = false)', () => {
+      assert.strictEqual(isPrimaryModifierActive({ ctrlKey: true, metaKey: false }, false), true);
+      assert.strictEqual(isPrimaryModifierActive({ ctrlKey: false, metaKey: true }, false), false);
+      assert.strictEqual(isPrimaryModifierActive({ ctrlKey: true, metaKey: true }, false), false);
+      assert.strictEqual(isPrimaryModifierActive({ ctrlKey: false, metaKey: false }, false), false);
+    });
+
+    it('isPrimaryModifierActive returns true only for Meta/Cmd on macOS (isMac = true)', () => {
+      assert.strictEqual(isPrimaryModifierActive({ metaKey: true, ctrlKey: false }, true), true);
+      assert.strictEqual(isPrimaryModifierActive({ metaKey: false, ctrlKey: true }, true), false);
+      assert.strictEqual(isPrimaryModifierActive({ metaKey: true, ctrlKey: true }, true), false);
+      assert.strictEqual(isPrimaryModifierActive({ metaKey: false, ctrlKey: false }, true), false);
+    });
+
+    it('getPrimaryModifierLabel returns correct label per platform', () => {
+      assert.strictEqual(getPrimaryModifierLabel(false), 'Ctrl');
+      assert.strictEqual(getPrimaryModifierLabel(true), '⌘');
+    });
+
+    it('isMacPlatform executes without error in test environment', () => {
+      const isMac = isMacPlatform();
+      assert.strictEqual(typeof isMac, 'boolean');
+    });
+  });
 
   describe('Playback Control (Spacebar)', () => {
     it('Spacebar toggles play/pause and prevents default page scroll', () => {
@@ -154,8 +183,8 @@ describe('Global Keyboard Shortcuts & Focus Guard Tests', () => {
     });
   });
 
-  describe('Track Navigation (Ctrl/Cmd + Left/Right)', () => {
-    it('Ctrl + ArrowLeft triggers previous track', () => {
+  describe('Track Navigation (Ctrl on Windows / Cmd on macOS)', () => {
+    it('Windows: Ctrl + ArrowLeft triggers previous track', () => {
       const { actions, getCounts } = createMockActions();
       let prevented = false;
       const event: KeyboardShortcutEvent = {
@@ -166,7 +195,7 @@ describe('Global Keyboard Shortcuts & Focus Guard Tests', () => {
         },
       };
 
-      const handled = handlePlaybackShortcut(event, actions, defaultState);
+      const handled = handlePlaybackShortcut(event, actions, defaultState, false);
 
       assert.strictEqual(handled, true);
       assert.strictEqual(prevented, true);
@@ -174,7 +203,20 @@ describe('Global Keyboard Shortcuts & Focus Guard Tests', () => {
       assert.strictEqual(getCounts().seekValues.length, 0);
     });
 
-    it('Meta/Cmd + ArrowLeft triggers previous track on macOS', () => {
+    it('Windows: Meta + ArrowLeft does NOT trigger previous track', () => {
+      const { actions, getCounts } = createMockActions();
+      const event: KeyboardShortcutEvent = {
+        code: 'ArrowLeft',
+        metaKey: true,
+      };
+
+      const handled = handlePlaybackShortcut(event, actions, defaultState, false);
+
+      assert.strictEqual(handled, false);
+      assert.strictEqual(getCounts().prevTrackCount, 0);
+    });
+
+    it('macOS: Meta/Cmd + ArrowLeft triggers previous track', () => {
       const { actions, getCounts } = createMockActions();
       let prevented = false;
       const event: KeyboardShortcutEvent = {
@@ -185,7 +227,7 @@ describe('Global Keyboard Shortcuts & Focus Guard Tests', () => {
         },
       };
 
-      const handled = handlePlaybackShortcut(event, actions, defaultState);
+      const handled = handlePlaybackShortcut(event, actions, defaultState, true);
 
       assert.strictEqual(handled, true);
       assert.strictEqual(prevented, true);
@@ -193,7 +235,20 @@ describe('Global Keyboard Shortcuts & Focus Guard Tests', () => {
       assert.strictEqual(getCounts().seekValues.length, 0);
     });
 
-    it('Ctrl + ArrowRight triggers next track', () => {
+    it('macOS: Ctrl + ArrowLeft does NOT trigger previous track', () => {
+      const { actions, getCounts } = createMockActions();
+      const event: KeyboardShortcutEvent = {
+        code: 'ArrowLeft',
+        ctrlKey: true,
+      };
+
+      const handled = handlePlaybackShortcut(event, actions, defaultState, true);
+
+      assert.strictEqual(handled, false);
+      assert.strictEqual(getCounts().prevTrackCount, 0);
+    });
+
+    it('Windows: Ctrl + ArrowRight triggers next track', () => {
       const { actions, getCounts } = createMockActions();
       let prevented = false;
       const event: KeyboardShortcutEvent = {
@@ -204,7 +259,7 @@ describe('Global Keyboard Shortcuts & Focus Guard Tests', () => {
         },
       };
 
-      const handled = handlePlaybackShortcut(event, actions, defaultState);
+      const handled = handlePlaybackShortcut(event, actions, defaultState, false);
 
       assert.strictEqual(handled, true);
       assert.strictEqual(prevented, true);
@@ -212,7 +267,20 @@ describe('Global Keyboard Shortcuts & Focus Guard Tests', () => {
       assert.strictEqual(getCounts().seekValues.length, 0);
     });
 
-    it('Meta/Cmd + ArrowRight triggers next track on macOS', () => {
+    it('Windows: Meta + ArrowRight does NOT trigger next track', () => {
+      const { actions, getCounts } = createMockActions();
+      const event: KeyboardShortcutEvent = {
+        code: 'ArrowRight',
+        metaKey: true,
+      };
+
+      const handled = handlePlaybackShortcut(event, actions, defaultState, false);
+
+      assert.strictEqual(handled, false);
+      assert.strictEqual(getCounts().nextTrackCount, 0);
+    });
+
+    it('macOS: Meta/Cmd + ArrowRight triggers next track', () => {
       const { actions, getCounts } = createMockActions();
       let prevented = false;
       const event: KeyboardShortcutEvent = {
@@ -223,12 +291,25 @@ describe('Global Keyboard Shortcuts & Focus Guard Tests', () => {
         },
       };
 
-      const handled = handlePlaybackShortcut(event, actions, defaultState);
+      const handled = handlePlaybackShortcut(event, actions, defaultState, true);
 
       assert.strictEqual(handled, true);
       assert.strictEqual(prevented, true);
       assert.strictEqual(getCounts().nextTrackCount, 1);
       assert.strictEqual(getCounts().seekValues.length, 0);
+    });
+
+    it('macOS: Ctrl + ArrowRight does NOT trigger next track', () => {
+      const { actions, getCounts } = createMockActions();
+      const event: KeyboardShortcutEvent = {
+        code: 'ArrowRight',
+        ctrlKey: true,
+      };
+
+      const handled = handlePlaybackShortcut(event, actions, defaultState, true);
+
+      assert.strictEqual(handled, false);
+      assert.strictEqual(getCounts().nextTrackCount, 0);
     });
   });
 

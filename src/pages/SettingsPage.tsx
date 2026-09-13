@@ -22,6 +22,7 @@ import { formatDate } from '../utils/formatters';
 import { SystemInfo, LibraryFolder } from '../types';
 import { useTheme } from '../state/ThemeContext';
 import { preferencesService } from '../services/preferences/preferencesService';
+import { getPrimaryModifierLabel } from '../services/audio/shortcutHelper';
 import './Pages.css';
 
 interface SettingsPageProps {
@@ -367,11 +368,11 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({
             </div>
             <div className="settings-row">
               <span className="setting-label">Previous Track</span>
-              <kbd className="m3-kbd">Ctrl / ⌘ + Left</kbd>
+              <kbd className="m3-kbd">{getPrimaryModifierLabel()} + Left</kbd>
             </div>
             <div className="settings-row">
               <span className="setting-label">Next Track</span>
-              <kbd className="m3-kbd">Ctrl / ⌘ + Right</kbd>
+              <kbd className="m3-kbd">{getPrimaryModifierLabel()} + Right</kbd>
             </div>
             <div className="settings-row">
               <span className="setting-label">Seek Backward / Forward</span>
