@@ -214,7 +214,7 @@ Endurance is built with an efficient, modular stack:
 * **Web Runtime**: [Microsoft Edge WebView2](https://developer.microsoft.com/en-us/microsoft-edge/webview2/) (included by default on modern Windows)
 * **Disk Space**: ~30 MB for application installation
 
-*(Note: macOS support is in preparation and planned for a future release.)*
+*(Note: macOS compatibility is currently in development. Runtime validation on physical macOS hardware has not yet been completed.)*
 
 ---
 
@@ -346,48 +346,48 @@ Endurance/
 
 #### Mini Player
 
-- [ ] Add a compact floating Mini Player
-- [ ] Keep the Mini Player always on top of other windows
-- [ ] Display album artwork, song title, and artist
-- [ ] Provide essential playback controls and progress
-- [ ] Share playback state with the main Endurance player
-- [ ] Support the Mini Player consistently across Windows and macOS
+- [x] Add a compact floating Mini Player
+- [x] Keep the Mini Player always on top of other windows
+- [x] Display album artwork, song title, and artist
+- [x] Provide essential playback controls and progress
+- [x] Share playback state with the main Endurance player
+- [x] Implement the Mini Player with cross-platform support
 
 #### User-Created Offline Lyrics
 
-- [ ] Add a lyrics editor for users to write or paste their own lyrics
-- [ ] Automatically detect timestamped lyrics
-- [ ] Automatically synchronize timestamped lyrics with playback
-- [ ] Support both plain and synchronized user-created lyrics
-- [ ] Allow users to edit and replace existing lyrics
-- [ ] Allow users to adjust lyric timestamps for synchronization
-- [ ] Store user-created lyrics locally alongside the user's music
-- [ ] Preserve the existing offline lyrics experience
+- [x] Add a lyrics editor for users to write or paste their own lyrics
+- [x] Automatically detect timestamped lyrics
+- [x] Automatically synchronize timestamped lyrics with playback
+- [x] Support both plain and synchronized user-created lyrics
+- [x] Allow users to edit and replace existing lyrics
+- [x] Allow users to adjust lyric timestamps for synchronization
+- [x] Store user-created lyrics locally alongside the user's music
+- [x] Preserve the existing offline lyrics experience
 
 #### UI & Experience
 
-- [ ] Improve song-list hover states so song titles and artist names highlight as one cohesive row
-- [ ] Preserve clear visual hierarchy between song titles and artist names
-- [ ] Continue refining Material 3-inspired interactions and animations
-- [ ] Improve overall accessibility and keyboard navigation
+- [x] Improve song-list hover states so song titles and artist names highlight as one cohesive row
+- [x] Preserve clear visual hierarchy between song titles and artist names
+- [x] Continue refining Material 3-inspired interactions and animations
+- [x] Improve overall accessibility and keyboard navigation
 
 #### Add an Endurance startup/loading screen
 
-- [ ] Display the Endurance branding while the application initializes.
-- [ ] Prevent a blank/uninitialized UI from being shown during startup.
-- [ ] Use the existing warm Endurance visual language.
-- [ ] Provide a smooth transition from startup into the main application.
-- [ ] Keep startup lightweight and avoid delaying the application unnecessarily.
+- [x] Display the Endurance branding while the application initializes.
+- [x] Prevent a blank/uninitialized UI from being shown during startup.
+- [x] Use the existing warm Endurance visual language.
+- [x] Provide a smooth transition from startup into the main application.
+- [x] Keep startup lightweight and avoid delaying the application unnecessarily.
 
 #### Cross-Platform & macOS
 
-- [ ] Complete cross-platform compatibility improvements
-- [ ] Add macOS-native window and title-bar behavior
+- [x] Complete cross-platform compatibility improvements
+- [x] Add macOS-native window and title-bar behavior
 - [ ] Support platform-appropriate keyboard shortcuts (`Ctrl` on Windows, `⌘` on macOS)
 - [ ] Add macOS application packaging
 - [ ] Build and test Endurance on real macOS hardware
 - [ ] Prepare macOS distribution and signing/notarization
-- [ ] Ensure shared playback, library, lyrics, themes, and database functionality work consistently across platforms
+- [x] Prepare shared playback, library, lyrics, themes, and database functionality for cross-platform operation
 
 ---
 
