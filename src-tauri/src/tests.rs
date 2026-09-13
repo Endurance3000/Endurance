@@ -241,4 +241,30 @@ mod tests {
         // Cleanup
         let _ = std::fs::remove_dir_all(&temp_dir);
     }
+
+    #[test]
+    fn test_show_in_folder_nonexistent_file() {
+        let res = crate::commands::show_in_folder("non_existent_file_endurance_test_xyz.mp3".to_string());
+        assert!(res.is_err());
+        assert!(res.unwrap_err().contains("File does not exist"));
+    }
+
+    #[test]
+    fn test_get_system_info_reports_dynamic_platform() {
+        let info = crate::get_system_info();
+        assert_eq!(info["app_name"], "Endurance");
+        assert_eq!(info["version"], "0.1.0");
+        assert_eq!(info["platform"], std::env::consts::OS);
+        assert_eq!(info["status"], "ready");
+        assert_eq!(info["offline"], true);
+
+        #[cfg(target_os = "windows")]
+        assert_eq!(info["platform"], "windows");
+
+        #[cfg(target_os = "macos")]
+        assert_eq!(info["platform"], "macos");
+
+        #[cfg(target_os = "linux")]
+        assert_eq!(info["platform"], "linux");
+    }
 }

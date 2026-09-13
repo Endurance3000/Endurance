@@ -20,7 +20,7 @@ fn get_system_info() -> serde_json::Value {
     serde_json::json!({
         "app_name": "Endurance",
         "version": "0.1.0",
-        "platform": "windows",
+        "platform": std::env::consts::OS,
         "status": "ready",
         "offline": true
     })

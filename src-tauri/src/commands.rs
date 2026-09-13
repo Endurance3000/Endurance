@@ -148,22 +148,35 @@ pub fn show_in_folder(file_path: String) -> Result<(), String> {
         Ok(())
     }
 
-    #[cfg(not(target_os = "windows"))]
+    #[cfg(target_os = "macos")]
+    {
+        std::process::Command::new("open")
+            .arg("-R")
+            .arg(&file_path)
+            .spawn()
+            .map_err(|e| format!("Failed to reveal file in Finder: {}", e))?;
+        Ok(())
+    }
+
+    #[cfg(not(any(target_os = "windows", target_os = "macos")))]
     {
         let parent = path.parent().unwrap_or(path);
-        open::that(parent).map_err(|e| format!("Failed to open directory: {}", e))?;
+        std::process::Command::new("xdg-open")
+            .arg(parent)
+            .spawn()
+            .map_err(|e| format!("Failed to open directory: {}", e))?;
         Ok(())
     }
 }
 
 #[tauri::command]
 pub async fn close_splashscreen(app_handle: AppHandle) -> Result<(), String> {
-    if let Some(splash) = app_handle.get_webview_window("splashscreen") {
-        let _ = splash.close();
-    }
     if let Some(main) = app_handle.get_webview_window("main") {
         let _ = main.show();
         let _ = main.set_focus();
+    }
+    if let Some(splash) = app_handle.get_webview_window("splashscreen") {
+        let _ = splash.close();
     }
     Ok(())
 }

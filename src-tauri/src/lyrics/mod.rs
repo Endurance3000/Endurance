@@ -376,6 +376,7 @@ pub fn verify_fingerprint(path: &Path, expected: &LyricsSourceFingerprint) -> Re
 
 /// Fallback replacement strategy using a temporary backup with rollback.
 /// Used on Windows when ReplaceFileW is not supported by the underlying filesystem (e.g. FAT32/exFAT).
+#[cfg(windows)]
 fn safe_backup_and_swap(temp_path: &Path, target_path: &Path) -> Result<(), String> {
     let parent = target_path.parent().unwrap_or_else(|| Path::new("."));
     let backup_name = format!(
@@ -1220,6 +1221,7 @@ mod tests {
     }
 
     #[test]
+    #[cfg(windows)]
     fn test_fallback_safe_backup_and_swap_directly() {
         let temp_dir = create_temp_dir("backup_swap");
         let target_path = temp_dir.join("original.lrc");

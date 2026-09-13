@@ -11,6 +11,12 @@
   -webkit-app-region: drag;
 }
 
+/* Initial macOS spacing to prevent logo/title overlap with native traffic lights.
+   Note: This initial value (70px) must be visually verified on actual macOS hardware. */
+.titlebar-macos {
+  padding-left: 70px;
+}
+
 .titlebar-leading {
   display: flex;
   align-items: center;
