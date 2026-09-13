@@ -171,12 +171,12 @@ pub fn show_in_folder(file_path: String) -> Result<(), String> {
 
 #[tauri::command]
 pub async fn close_splashscreen(app_handle: AppHandle) -> Result<(), String> {
-    if let Some(splash) = app_handle.get_webview_window("splashscreen") {
-        let _ = splash.close();
-    }
     if let Some(main) = app_handle.get_webview_window("main") {
         let _ = main.show();
         let _ = main.set_focus();
+    }
+    if let Some(splash) = app_handle.get_webview_window("splashscreen") {
+        let _ = splash.close();
     }
     Ok(())
 }
