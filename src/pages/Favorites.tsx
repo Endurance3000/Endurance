@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useRef, useState } from 'react';
 import { Heart, Music2, Play, Pause, MoreHorizontal } from 'lucide-react';
 import { EmptyState } from '../components/Common/EmptyState';
 import { IconButton } from '../components/Common/IconButton';
@@ -24,12 +24,57 @@ export const Favorites: React.FC<FavoritesProps> = ({
   const { currentTrack, isPlaying, playTrack, togglePlay } = usePlayback();
 
   const [menuTrack, setMenuTrack] = useState<Track | null>(null);
-  const [menuPosition, setMenuPosition] = useState<{ x: number; y: number }>({ x: 0, y: 0 });
+  const [menuPosition, setMenuPosition] = useState<{ x: number; y: number }>({
+    x: 0,
+    y: 0,
+  });
+
+  // Stores the exact More Options button that opened the current menu.
+  // This is cleared when the menu is opened through right-click/context menu.
+  const menuTriggerRef = useRef<HTMLButtonElement | null>(null);
+
+  const handleOpenMenu = (
+    e: React.MouseEvent<HTMLButtonElement>,
+    track: Track
+  ) => {
+    e.preventDefault();
+    e.stopPropagation();
+
+    // Remember exactly which button opened the menu.
+    menuTriggerRef.current = e.currentTarget;
+
+    const rect = e.currentTarget.getBoundingClientRect();
+
+    setMenuPosition({
+      x: rect.right,
+      y: rect.bottom + 4,
+    });
+
+    setMenuTrack(track);
+  };
+
+  const handleContextMenu = (
+    e: React.MouseEvent<HTMLDivElement>,
+    track: Track
+  ) => {
+    e.preventDefault();
+
+    // There is no button trigger for a context-menu opening.
+    menuTriggerRef.current = null;
+
+    setMenuPosition({
+      x: e.clientX,
+      y: e.clientY,
+    });
+
+    setMenuTrack(track);
+  };
 
   return (
     <div className="page-container motion-fade-in">
       <header className="page-header">
         <h1 className="page-title">Favorites</h1>
+
         <p className="page-subtitle">
           {favoriteTracks.length === 1
             ? '1 loved song in your collection'
@@ -71,39 +116,37 @@ export const Favorites: React.FC<FavoritesProps> = ({
                 }
               };
 
-              const handleOpenMenu = (e: React.MouseEvent) => {
-                e.preventDefault();
-                e.stopPropagation();
-                const rect = e.currentTarget.getBoundingClientRect();
-                setMenuPosition({ x: rect.right, y: rect.bottom + 4 });
-                setMenuTrack(track);
-              };
-
               return (
                 <div
                   key={track.id}
-                  className={`song-row ${isCurrentTrack ? 'song-row-active' : ''} ${
-                    isMissing ? 'song-row-unavailable' : ''
-                  }`}
+                  className={`song-row ${isCurrentTrack ? 'song-row-active' : ''} ${isMissing ? 'song-row-unavailable' : ''
+                    }`}
                   role="listitem"
                   tabIndex={0}
                   onClick={handleSelectTrack}
                   onKeyDown={(e) => {
-                    if (e.key === 'Enter') handleSelectTrack();
+                    if (e.key === 'Enter' && e.target === e.currentTarget) {
+                      handleSelectTrack();
+                    }
                   }}
-                  onContextMenu={(e) => {
-                    e.preventDefault();
-                    setMenuPosition({ x: e.clientX, y: e.clientY });
-                    setMenuTrack(track);
-                  }}
+                  onContextMenu={(e) => handleContextMenu(e, track)}
                 >
                   <div className="col-index">
                     <span className="index-number">{idx + 1}</span>
+
                     <button
                       type="button"
                       className="index-play-btn"
-                      aria-label={isRowPlaying ? `Pause ${track.title}` : `Play ${track.title}`}
-                      title={isRowPlaying ? `Pause ${track.title}` : `Play ${track.title}`}
+                      aria-label={
+                        isRowPlaying
+                          ? `Pause ${track.title}`
+                          : `Play ${track.title}`
+                      }
+                      title={
+                        isRowPlaying
+                          ? `Pause ${track.title}`
+                          : `Play ${track.title}`
+                      }
                       onClick={(e) => {
                         e.stopPropagation();
                         handleSelectTrack();
@@ -123,21 +166,34 @@ export const Favorites: React.FC<FavoritesProps> = ({
                       alt={track.album || track.title}
                       size="sm"
                     />
+
                     <div className="song-title-group">
                       <div style={{ display: 'flex', alignItems: 'center' }}>
-                        <span className="song-row-title truncate">{track.title}</span>
-                        {isMissing && <span className="unavailable-badge">Missing</span>}
+                        <span className="song-row-title truncate">
+                          {track.title}
+                        </span>
+
+                        {isMissing && (
+                          <span className="unavailable-badge">Missing</span>
+                        )}
                       </div>
-                      <span className="song-row-artist truncate">{track.artist}</span>
+
+                      <span className="song-row-artist truncate">
+                        {track.artist}
+                      </span>
                     </div>
                   </div>
 
                   <div className="col-album">
-                    <span className="song-row-album truncate">{track.album}</span>
+                    <span className="song-row-album truncate">
+                      {track.album}
+                    </span>
                   </div>
 
                   <div className="col-duration">
-                    <span className="song-row-time">{formatDuration(track.duration)}</span>
+                    <span className="song-row-time">
+                      {formatDuration(track.duration)}
+                    </span>
                   </div>
 
                   <div
@@ -160,11 +216,12 @@ export const Favorites: React.FC<FavoritesProps> = ({
                       }}
                       size="sm"
                     />
+
                     <IconButton
                       icon={<MoreHorizontal size={16} />}
                       aria-label="More options"
                       size="sm"
-                      onClick={handleOpenMenu}
+                      onClick={(e) => handleOpenMenu(e, track)}
                     />
                   </div>
                 </div>
@@ -181,6 +238,7 @@ export const Favorites: React.FC<FavoritesProps> = ({
           isOpen={true}
           onClose={() => setMenuTrack(null)}
           position={menuPosition}
+          triggerRef={menuTriggerRef}
         />
       )}
     </div>

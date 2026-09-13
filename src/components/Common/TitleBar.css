@@ -11,6 +11,12 @@
   -webkit-app-region: drag;
 }
 
+/* Initial macOS spacing to prevent logo/title overlap with native traffic lights.
+   Note: This initial value (70px) must be visually verified on actual macOS hardware. */
+.titlebar-macos {
+  padding-left: 70px;
+}
+
 .titlebar-leading {
   display: flex;
   align-items: center;
@@ -74,8 +80,13 @@
   cursor: pointer;
   outline: none;
   transition: background-color var(--motion-duration-short-2) var(--motion-easing-standard),
-              color var(--motion-duration-short-2) var(--motion-easing-standard);
+    color var(--motion-duration-short-2) var(--motion-easing-standard);
   -webkit-app-region: no-drag;
+}
+
+.titlebar-btn:focus-visible {
+  outline: 2px solid var(--md-sys-color-focus-ring);
+  outline-offset: -2px;
 }
 
 .titlebar-btn:hover {

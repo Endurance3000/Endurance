@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { invoke } from '@tauri-apps/api/core';
 import { TitleBar } from './components/Common/TitleBar';
 import { Sidebar } from './components/Sidebar/Sidebar';
@@ -12,17 +12,21 @@ import { PlaybackProvider } from './state/PlaybackContext';
 import { ThemeProvider } from './state/ThemeContext';
 import { MainPlayer } from './components/Player/MainPlayer';
 import { QueueDrawer } from './components/Queue/QueueDrawer';
-import { NavigationPage, SystemInfo } from './types';
+import { LyricsEditorModal } from './components/LyricsEditor/LyricsEditorModal';
+import { NavigationPage, SystemInfo, Track } from './types';
 import './App.css';
 
 export const App: React.FC = () => {
   const [currentPage, setCurrentPage] = useState<NavigationPage>('home');
   const [systemInfo, setSystemInfo] = useState<SystemInfo | null>(null);
   const [isMainPlayerOpen, setIsMainPlayerOpen] = useState<boolean>(false);
+  const [editingLyricsTrack, setEditingLyricsTrack] = useState<Track | null>(null);
+  const hasNotifiedReadyRef = useRef(false);
 
   const {
     tracks,
     folders,
+    isLoading,
     isScanning,
     scanProgress,
     addFolder,
@@ -49,6 +53,29 @@ export const App: React.FC = () => {
     };
 
     fetchSystemInfo();
+  }, []);
+
+  // Notify backend when the initial application state is ready
+  useEffect(() => {
+    if (!isLoading && systemInfo !== null && !hasNotifiedReadyRef.current) {
+      hasNotifiedReadyRef.current = true;
+      invoke('close_splashscreen').catch((err) => {
+        console.warn('Could not close splashscreen:', err);
+      });
+    }
+  }, [isLoading, systemInfo]);
+
+  // Listen for global open lyrics editor events (e.g. from SongActionMenu or MainPlayer)
+  useEffect(() => {
+    const handleOpenLyricsEditor = (e: Event) => {
+      const customEvent = e as CustomEvent<{ track: Track }>;
+      if (customEvent.detail?.track) {
+        setEditingLyricsTrack(customEvent.detail.track);
+      }
+    };
+
+    window.addEventListener('endurance:open-lyrics-editor', handleOpenLyricsEditor);
+    return () => window.removeEventListener('endurance:open-lyrics-editor', handleOpenLyricsEditor);
   }, []);
 
   const renderPage = () => {
@@ -126,7 +153,18 @@ export const App: React.FC = () => {
 
           {/* Main Player Full View Overlay (Artwork Left, Lyrics Right) */}
           {isMainPlayerOpen && (
-            <MainPlayer onClose={() => setIsMainPlayerOpen(false)} />
+            <MainPlayer
+              onClose={() => setIsMainPlayerOpen(false)}
+              onEditLyrics={(track) => setEditingLyricsTrack(track)}
+            />
+          )}
+
+          {/* Lyrics Editor Modal Overlay */}
+          {editingLyricsTrack && (
+            <LyricsEditorModal
+              track={editingLyricsTrack}
+              onClose={() => setEditingLyricsTrack(null)}
+            />
           )}
 
           {/* Queue Slide-over Drawer */}

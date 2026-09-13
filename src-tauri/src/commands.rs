@@ -1,10 +1,10 @@
 use crate::artwork::ArtworkCache;
 use crate::db::Database;
-use crate::lyrics::find_and_read_lrc;
+use crate::lyrics::{find_and_read_lrc, ResolvedLyrics};
 use crate::models::{HistoryItem, LibraryFolder, ScanSummary, Track};
 use crate::scanner::LibraryScanner;
 use std::collections::HashMap;
-use tauri::{AppHandle, State};
+use tauri::{AppHandle, Manager, State};
 
 pub struct AppState {
     pub db: Database,
@@ -93,8 +93,18 @@ pub fn get_track_artwork(artwork_hash: String, state: State<AppState>) -> Result
 }
 
 #[tauri::command]
-pub fn get_track_lyrics(track_file_path: String) -> Result<Option<String>, String> {
-    Ok(find_and_read_lrc(&track_file_path))
+pub fn get_track_lyrics(track_file_path: String) -> Result<Option<ResolvedLyrics>, String> {
+    find_and_read_lrc(&track_file_path)
+}
+
+#[tauri::command]
+pub fn save_lyrics_file(
+    source_path: String,
+    content: String,
+    encoding: String,
+    expected_fingerprint: Option<crate::lyrics::LyricsSourceFingerprint>,
+) -> Result<crate::lyrics::LyricsSourceFingerprint, String> {
+    crate::lyrics::save_lrc_file(&source_path, &content, &encoding, expected_fingerprint.as_ref())
 }
 
 #[tauri::command]
@@ -138,11 +148,36 @@ pub fn show_in_folder(file_path: String) -> Result<(), String> {
         Ok(())
     }
 
-    #[cfg(not(target_os = "windows"))]
+    #[cfg(target_os = "macos")]
     {
-        let parent = path.parent().unwrap_or(path);
-        open::that(parent).map_err(|e| format!("Failed to open directory: {}", e))?;
+        std::process::Command::new("open")
+            .arg("-R")
+            .arg(&file_path)
+            .spawn()
+            .map_err(|e| format!("Failed to reveal file in Finder: {}", e))?;
         Ok(())
     }
+
+    #[cfg(not(any(target_os = "windows", target_os = "macos")))]
+    {
+        let parent = path.parent().unwrap_or(path);
+        std::process::Command::new("xdg-open")
+            .arg(parent)
+            .spawn()
+            .map_err(|e| format!("Failed to open directory: {}", e))?;
+        Ok(())
+    }
+}
+
+#[tauri::command]
+pub async fn close_splashscreen(app_handle: AppHandle) -> Result<(), String> {
+    if let Some(main) = app_handle.get_webview_window("main") {
+        let _ = main.show();
+        let _ = main.set_focus();
+    }
+    if let Some(splash) = app_handle.get_webview_window("splashscreen") {
+        let _ = splash.close();
+    }
+    Ok(())
 }
 

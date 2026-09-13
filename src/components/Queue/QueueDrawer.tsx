@@ -1,5 +1,13 @@
 import React, { useEffect, useRef, useCallback } from 'react';
-import { X, GripVertical, Play, Trash2, ListMusic, ChevronUp, ChevronDown } from 'lucide-react';
+import {
+  X,
+  GripVertical,
+  Play,
+  Trash2,
+  ListMusic,
+  ChevronUp,
+  ChevronDown,
+} from 'lucide-react';
 import { usePlayback } from '../../state/PlaybackContext';
 import { TrackArtwork } from '../Library/TrackArtwork';
 import { IconButton } from '../Common/IconButton';
@@ -7,17 +15,16 @@ import { formatDuration } from '../../utils/formatters';
 import './QueueDrawer.css';
 
 // ---------------------------------------------------------------------------
-// Pointer-events drag state (all in refs — no React state during drag to
-// avoid re-renders that would destroy the drag visual in WebView2/Tauri)
+// Pointer-events drag state
 // ---------------------------------------------------------------------------
 interface DragState {
   active: boolean;
-  srcQueueIndex: number;     // actual index inside playbackQueue
+  srcQueueIndex: number;
   startY: number;
   currentY: number;
-  thresholdMet: boolean;     // true once cursor moved > 6px
+  thresholdMet: boolean;
   ghostEl: HTMLElement | null;
-  insertBeforeQueueIndex: number | null; // null means "append at end"
+  insertBeforeQueueIndex: number | null;
   pointerId: number;
 }
 
@@ -37,17 +44,100 @@ export const QueueDrawer: React.FC = () => {
     clearUpcomingQueue,
   } = usePlayback();
 
-  const panelRef    = useRef<HTMLDivElement>(null);
-  const listRef     = useRef<HTMLDivElement>(null);
-  const dragRef     = useRef<DragState | null>(null);
-  const frameRef    = useRef<number>(0);
+  const panelRef = useRef<HTMLDivElement>(null);
+  const listRef = useRef<HTMLDivElement>(null);
+  const closeButtonRef = useRef<HTMLButtonElement>(null);
+  const wasOpenRef = useRef(false);
 
-  // Close on Escape
+  const dragRef = useRef<DragState | null>(null);
+  const frameRef = useRef<number>(0);
+
+  // ---------------------------------------------------------------------------
+  // Focus management
+  // ---------------------------------------------------------------------------
+
+  const restoreQueueTriggerFocus = useCallback(() => {
+    const trigger = document.querySelector<HTMLButtonElement>(
+      'button[data-queue-trigger="true"]'
+    );
+
+    trigger?.focus();
+  }, []);
+
+  // Move focus into the drawer when it opens.
   useEffect(() => {
     if (!isQueueOpen) return;
-    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') setIsQueueOpen(false); };
-    window.addEventListener('keydown', onKey);
-    return () => window.removeEventListener('keydown', onKey);
+
+    wasOpenRef.current = true;
+
+    // Wait until the drawer has rendered before focusing the close button.
+    requestAnimationFrame(() => {
+      closeButtonRef.current?.focus();
+    });
+  }, [isQueueOpen]);
+
+  // Restore focus to the Queue button when the drawer closes.
+  useEffect(() => {
+    if (isQueueOpen) return;
+    if (!wasOpenRef.current) return;
+
+    wasOpenRef.current = false;
+    restoreQueueTriggerFocus();
+  }, [isQueueOpen, restoreQueueTriggerFocus]);
+
+  // ---------------------------------------------------------------------------
+  // Escape + focus trap
+  // ---------------------------------------------------------------------------
+  useEffect(() => {
+    if (!isQueueOpen) return;
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        e.preventDefault();
+        setIsQueueOpen(false);
+        return;
+      }
+
+      if (e.key !== 'Tab') return;
+
+      const panel = panelRef.current;
+      if (!panel) return;
+
+      const focusableElements = Array.from(
+        panel.querySelectorAll<HTMLElement>(
+          'button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])'
+        )
+      ).filter((element) => {
+        const style = window.getComputedStyle(element);
+        return style.display !== 'none' && style.visibility !== 'hidden';
+      });
+
+      if (focusableElements.length === 0) {
+        e.preventDefault();
+        return;
+      }
+
+      const firstElement = focusableElements[0];
+      const lastElement =
+        focusableElements[focusableElements.length - 1];
+
+      if (e.shiftKey && document.activeElement === firstElement) {
+        e.preventDefault();
+        lastElement.focus();
+        return;
+      }
+
+      if (!e.shiftKey && document.activeElement === lastElement) {
+        e.preventDefault();
+        firstElement.focus();
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown);
+    };
   }, [isQueueOpen, setIsQueueOpen]);
 
   // ---------------------------------------------------------------------------
@@ -55,7 +145,8 @@ export const QueueDrawer: React.FC = () => {
   // ---------------------------------------------------------------------------
   const createGhost = useCallback((srcEl: HTMLElement, y: number) => {
     const ghost = srcEl.cloneNode(true) as HTMLElement;
-    const rect  = srcEl.getBoundingClientRect();
+    const rect = srcEl.getBoundingClientRect();
+
     ghost.style.cssText = `
       position: fixed;
       top: ${y - rect.height / 2}px;
@@ -71,194 +162,255 @@ export const QueueDrawer: React.FC = () => {
       transform: scale(1.02);
       transition: box-shadow 0.15s;
     `;
+
     document.body.appendChild(ghost);
     return ghost;
   }, []);
 
-  const moveGhost = useCallback((ghost: HTMLElement, y: number, srcEl: HTMLElement) => {
-    const rect = srcEl.getBoundingClientRect();
-    ghost.style.top = `${y - rect.height / 2}px`;
-  }, []);
+  const moveGhost = useCallback(
+    (ghost: HTMLElement, y: number, srcEl: HTMLElement) => {
+      const rect = srcEl.getBoundingClientRect();
+      ghost.style.top = `${y - rect.height / 2}px`;
+    },
+    []
+  );
 
   const removeGhost = useCallback((ghost: HTMLElement) => {
-    if (ghost.parentNode) ghost.parentNode.removeChild(ghost);
+    if (ghost.parentNode) {
+      ghost.parentNode.removeChild(ghost);
+    }
   }, []);
 
   // ---------------------------------------------------------------------------
-  // Insertion indicator helpers  (direct DOM — no React state)
+  // Insertion indicator helpers
   // ---------------------------------------------------------------------------
   const clearIndicators = useCallback(() => {
-    listRef.current?.querySelectorAll<HTMLElement>('.queue-item').forEach(el => {
-      el.classList.remove('dnd-insert-above', 'dnd-insert-below', 'dnd-src');
-    });
+    listRef.current
+      ?.querySelectorAll<HTMLElement>('.queue-item')
+      .forEach((el) => {
+        el.classList.remove(
+          'dnd-insert-above',
+          'dnd-insert-below',
+          'dnd-src'
+        );
+      });
   }, []);
 
-  /**
-   * Walk the rendered queue items, find which gap the pointer is currently in,
-   * and update CSS classes + return the `insertBeforeQueueIndex` (null = append).
-   */
-  const updateIndicator = useCallback((clientY: number): number | null => {
-    const items = Array.from(
-      listRef.current?.querySelectorAll<HTMLElement>('.queue-item[data-queue-idx]') ?? []
-    );
-    clearIndicators();
+  const updateIndicator = useCallback(
+    (clientY: number): number | null => {
+      const items = Array.from(
+        listRef.current?.querySelectorAll<HTMLElement>(
+          '.queue-item[data-queue-idx]'
+        ) ?? []
+      );
 
-    // Mark the source item
-    const ds = dragRef.current;
-    if (!ds) return null;
-    const srcEl = listRef.current?.querySelector<HTMLElement>(
-      `.queue-item[data-queue-idx="${ds.srcQueueIndex}"]`
-    );
-    srcEl?.classList.add('dnd-src');
+      clearIndicators();
 
-    if (items.length === 0) return null;
+      const ds = dragRef.current;
+      if (!ds) return null;
 
-    for (let i = 0; i < items.length; i++) {
-      const itemEl  = items[i];
-      const qIdx    = Number(itemEl.dataset.queueIdx);
-      if (qIdx === ds.srcQueueIndex) continue; // skip the item being dragged
+      const srcEl = listRef.current?.querySelector<HTMLElement>(
+        `.queue-item[data-queue-idx="${ds.srcQueueIndex}"]`
+      );
 
-      const rect = itemEl.getBoundingClientRect();
-      const mid  = rect.top + rect.height / 2;
+      srcEl?.classList.add('dnd-src');
 
-      if (clientY < mid) {
-        // insert BEFORE this item
-        itemEl.classList.add('dnd-insert-above');
-        return qIdx;
+      if (items.length === 0) return null;
+
+      for (let i = 0; i < items.length; i++) {
+        const itemEl = items[i];
+        const qIdx = Number(itemEl.dataset.queueIdx);
+
+        if (qIdx === ds.srcQueueIndex) continue;
+
+        const rect = itemEl.getBoundingClientRect();
+        const mid = rect.top + rect.height / 2;
+
+        if (clientY < mid) {
+          itemEl.classList.add('dnd-insert-above');
+          return qIdx;
+        }
       }
-    }
 
-    // Pointer is below all items — append at end
-    items[items.length - 1]?.classList.add('dnd-insert-below');
-    return null; // null = append to end
-  }, [clearIndicators]);
+      items[items.length - 1]?.classList.add('dnd-insert-below');
 
-  // ---------------------------------------------------------------------------
-  // Pointer event handlers (attached to the drag handle)
-  // ---------------------------------------------------------------------------
-  const onHandlePointerDown = useCallback((
-    e: React.PointerEvent<HTMLDivElement>,
-    queueIndex: number,
-  ) => {
-    // Only primary button (left click / touch)
-    if (e.button !== 0 && e.pointerType === 'mouse') return;
-
-    e.preventDefault();
-    e.stopPropagation();
-
-    // Capture pointer so we receive pointermove/pointerup even if cursor leaves
-    (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId);
-
-    dragRef.current = {
-      active: true,
-      srcQueueIndex: queueIndex,
-      startY: e.clientY,
-      currentY: e.clientY,
-      thresholdMet: false,
-      ghostEl: null,
-      insertBeforeQueueIndex: null,
-      pointerId: e.pointerId,
-    };
-
-    // Store a ref to the row we cloned for the ghost
-    (e.currentTarget as HTMLElement).dataset.dragRowEl = 'true';
-  }, []);
-
-  const onHandlePointerMove = useCallback((
-    e: React.PointerEvent<HTMLDivElement>,
-    rowEl: HTMLElement,
-  ) => {
-    const ds = dragRef.current;
-    if (!ds || !ds.active) return;
-    e.preventDefault();
-
-    const dy = Math.abs(e.clientY - ds.startY);
-
-    if (!ds.thresholdMet) {
-      if (dy < DRAG_THRESHOLD_PX) return;
-      // Cross threshold — create ghost and start visual drag
-      ds.thresholdMet = true;
-      ds.ghostEl = createGhost(rowEl, e.clientY);
-    }
-
-    ds.currentY = e.clientY;
-
-    // Throttle updates to animation frames
-    if (frameRef.current) cancelAnimationFrame(frameRef.current);
-    frameRef.current = requestAnimationFrame(() => {
-      if (!ds.ghostEl || !ds.active) return;
-      moveGhost(ds.ghostEl, ds.currentY, rowEl);
-      ds.insertBeforeQueueIndex = updateIndicator(ds.currentY);
-    });
-  }, [createGhost, moveGhost, updateIndicator]);
-
-  const onHandlePointerUp = useCallback((
-    e: React.PointerEvent<HTMLDivElement>,
-  ) => {
-    const ds = dragRef.current;
-    if (!ds || !ds.active) return;
-    e.preventDefault();
-    e.stopPropagation();
-
-    // Release capture
-    try { (e.currentTarget as HTMLElement).releasePointerCapture(ds.pointerId); } catch {}
-
-    // Cancel animation frame
-    if (frameRef.current) { cancelAnimationFrame(frameRef.current); frameRef.current = 0; }
-
-    // Remove ghost
-    if (ds.ghostEl) removeGhost(ds.ghostEl);
-
-    // Clear DOM indicators
-    clearIndicators();
-
-    const fromIdx = ds.srcQueueIndex;
-    dragRef.current = null;
-
-    if (!ds.thresholdMet) return; // Didn't actually drag — treat as nothing
-
-    // Determine destination index
-    let toIdx: number;
-    if (ds.insertBeforeQueueIndex === null) {
-      // Append at end of upcoming queue
-      toIdx = playbackQueue.length - 1;
-    } else {
-      toIdx = ds.insertBeforeQueueIndex;
-      // If we're moving DOWN, the insertion-before index needs to be decremented
-      // because removing the source shifts everything above it
-      if (fromIdx < toIdx) toIdx = toIdx - 1;
-    }
-
-    // Clamp to valid upcoming range (can't move before currentIndex+1 or past end)
-    const minIdx = currentIndex + 1;
-    const maxIdx = playbackQueue.length - 1;
-    toIdx = Math.max(minIdx, Math.min(maxIdx, toIdx));
-
-    if (fromIdx !== toIdx) {
-      reorderQueue(fromIdx, toIdx);
-    }
-  }, [playbackQueue.length, currentIndex, reorderQueue, removeGhost, clearIndicators]);
-
-  const onHandlePointerCancel = useCallback((
-    e: React.PointerEvent<HTMLDivElement>,
-  ) => {
-    const ds = dragRef.current;
-    if (!ds) return;
-    try { (e.currentTarget as HTMLElement).releasePointerCapture(ds.pointerId); } catch {}
-    if (frameRef.current) { cancelAnimationFrame(frameRef.current); frameRef.current = 0; }
-    if (ds.ghostEl) removeGhost(ds.ghostEl);
-    clearIndicators();
-    dragRef.current = null;
-  }, [removeGhost, clearIndicators]);
+      return null;
+    },
+    [clearIndicators]
+  );
 
   // ---------------------------------------------------------------------------
-  // Cleanup on unmount / close
+  // Pointer event handlers
+  // ---------------------------------------------------------------------------
+  const onHandlePointerDown = useCallback(
+    (
+      e: React.PointerEvent<HTMLDivElement>,
+      queueIndex: number
+    ) => {
+      if (e.button !== 0 && e.pointerType === 'mouse') return;
+
+      e.preventDefault();
+      e.stopPropagation();
+
+      (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId);
+
+      dragRef.current = {
+        active: true,
+        srcQueueIndex: queueIndex,
+        startY: e.clientY,
+        currentY: e.clientY,
+        thresholdMet: false,
+        ghostEl: null,
+        insertBeforeQueueIndex: null,
+        pointerId: e.pointerId,
+      };
+
+      (e.currentTarget as HTMLElement).dataset.dragRowEl = 'true';
+    },
+    []
+  );
+
+  const onHandlePointerMove = useCallback(
+    (
+      e: React.PointerEvent<HTMLDivElement>,
+      rowEl: HTMLElement
+    ) => {
+      const ds = dragRef.current;
+
+      if (!ds || !ds.active) return;
+
+      e.preventDefault();
+
+      const dy = Math.abs(e.clientY - ds.startY);
+
+      if (!ds.thresholdMet) {
+        if (dy < DRAG_THRESHOLD_PX) return;
+
+        ds.thresholdMet = true;
+        ds.ghostEl = createGhost(rowEl, e.clientY);
+      }
+
+      ds.currentY = e.clientY;
+
+      if (frameRef.current) {
+        cancelAnimationFrame(frameRef.current);
+      }
+
+      frameRef.current = requestAnimationFrame(() => {
+        if (!ds.ghostEl || !ds.active) return;
+
+        moveGhost(ds.ghostEl, ds.currentY, rowEl);
+        ds.insertBeforeQueueIndex = updateIndicator(ds.currentY);
+      });
+    },
+    [createGhost, moveGhost, updateIndicator]
+  );
+
+  const onHandlePointerUp = useCallback(
+    (e: React.PointerEvent<HTMLDivElement>) => {
+      const ds = dragRef.current;
+
+      if (!ds || !ds.active) return;
+
+      e.preventDefault();
+      e.stopPropagation();
+
+      try {
+        (e.currentTarget as HTMLElement).releasePointerCapture(
+          ds.pointerId
+        );
+      } catch {}
+
+      if (frameRef.current) {
+        cancelAnimationFrame(frameRef.current);
+        frameRef.current = 0;
+      }
+
+      if (ds.ghostEl) {
+        removeGhost(ds.ghostEl);
+      }
+
+      clearIndicators();
+
+      const fromIdx = ds.srcQueueIndex;
+      const thresholdMet = ds.thresholdMet;
+      const insertBeforeQueueIndex = ds.insertBeforeQueueIndex;
+
+      dragRef.current = null;
+
+      if (!thresholdMet) return;
+
+      let toIdx: number;
+
+      if (insertBeforeQueueIndex === null) {
+        toIdx = playbackQueue.length - 1;
+      } else {
+        toIdx = insertBeforeQueueIndex;
+
+        if (fromIdx < toIdx) {
+          toIdx = toIdx - 1;
+        }
+      }
+
+      const minIdx = currentIndex + 1;
+      const maxIdx = playbackQueue.length - 1;
+
+      toIdx = Math.max(minIdx, Math.min(maxIdx, toIdx));
+
+      if (fromIdx !== toIdx) {
+        reorderQueue(fromIdx, toIdx);
+      }
+    },
+    [
+      playbackQueue.length,
+      currentIndex,
+      reorderQueue,
+      removeGhost,
+      clearIndicators,
+    ]
+  );
+
+  const onHandlePointerCancel = useCallback(
+    (e: React.PointerEvent<HTMLDivElement>) => {
+      const ds = dragRef.current;
+
+      if (!ds) return;
+
+      try {
+        (e.currentTarget as HTMLElement).releasePointerCapture(
+          ds.pointerId
+        );
+      } catch {}
+
+      if (frameRef.current) {
+        cancelAnimationFrame(frameRef.current);
+        frameRef.current = 0;
+      }
+
+      if (ds.ghostEl) {
+        removeGhost(ds.ghostEl);
+      }
+
+      clearIndicators();
+      dragRef.current = null;
+    },
+    [removeGhost, clearIndicators]
+  );
+
+  // ---------------------------------------------------------------------------
+  // Cleanup on unmount
   // ---------------------------------------------------------------------------
   useEffect(() => {
     return () => {
-      if (dragRef.current?.ghostEl) removeGhost(dragRef.current.ghostEl);
+      if (dragRef.current?.ghostEl) {
+        removeGhost(dragRef.current.ghostEl);
+      }
+
       clearIndicators();
-      if (frameRef.current) cancelAnimationFrame(frameRef.current);
+
+      if (frameRef.current) {
+        cancelAnimationFrame(frameRef.current);
+      }
     };
   }, [removeGhost, clearIndicators]);
 
@@ -272,28 +424,36 @@ export const QueueDrawer: React.FC = () => {
     .map((track, idx) => ({ track, idx }))
     .filter(({ idx }) => idx < currentIndex);
 
-  // ---------------------------------------------------------------------------
-  // Render
-  // ---------------------------------------------------------------------------
   return (
     <div
       className="queue-drawer-backdrop"
       onClick={(e) => {
-        if (panelRef.current && !panelRef.current.contains(e.target as Node)) {
+        if (
+          panelRef.current &&
+          !panelRef.current.contains(e.target as Node)
+        ) {
           setIsQueueOpen(false);
         }
       }}
     >
-      <div className="queue-drawer-panel" ref={panelRef} role="dialog" aria-label="Play Queue">
-
-        {/* ── Header ── */}
+      <div
+        className="queue-drawer-panel"
+        ref={panelRef}
+        role="dialog"
+        aria-modal="true"
+        aria-label="Play Queue"
+      >
+        {/* Header */}
         <header className="queue-header">
           <div className="queue-header-left">
             <h2 className="queue-title">Queue</h2>
+
             <span className="queue-badge">
-              {playbackQueue.length} {playbackQueue.length === 1 ? 'song' : 'songs'}
+              {playbackQueue.length}{' '}
+              {playbackQueue.length === 1 ? 'song' : 'songs'}
             </span>
           </div>
+
           <div className="queue-header-actions">
             {upcomingTracks.length > 0 && (
               <button
@@ -305,7 +465,9 @@ export const QueueDrawer: React.FC = () => {
                 Clear Upcoming
               </button>
             )}
+
             <IconButton
+              ref={closeButtonRef}
               icon={<X size={18} />}
               aria-label="Close queue"
               tooltip="Close (Esc)"
@@ -315,19 +477,30 @@ export const QueueDrawer: React.FC = () => {
           </div>
         </header>
 
-        {/* ── Body ── */}
+        {/* Body */}
         <div className="queue-body">
-
-          {/* 1. NOW PLAYING */}
+          {/* NOW PLAYING */}
           {currentTrack ? (
             <section className="queue-section">
               <div className="queue-section-label">Now Playing</div>
+
               <div className="queue-now-playing-card">
-                <TrackArtwork artworkHash={currentTrack.artwork_hash} alt={currentTrack.title} size="md" />
+                <TrackArtwork
+                  artworkHash={currentTrack.artwork_hash}
+                  alt={currentTrack.title}
+                  size="md"
+                />
+
                 <div className="queue-card-meta">
-                  <span className="queue-card-title truncate">{currentTrack.title}</span>
-                  <span className="queue-card-artist truncate">{currentTrack.artist}</span>
+                  <span className="queue-card-title truncate">
+                    {currentTrack.title}
+                  </span>
+
+                  <span className="queue-card-artist truncate">
+                    {currentTrack.artist}
+                  </span>
                 </div>
+
                 {isPlaying && (
                   <div className="queue-equalizer" title="Playing">
                     <span className="queue-eq-bar" />
@@ -341,28 +514,34 @@ export const QueueDrawer: React.FC = () => {
             <div className="queue-empty-state">
               <ListMusic size={36} className="queue-empty-icon" />
               <span className="queue-empty-title">Nothing Playing</span>
-              <span className="queue-empty-desc">Select any song in your library to start playback.</span>
+              <span className="queue-empty-desc">
+                Select any song in your library to start playback.
+              </span>
             </div>
           )}
 
-          {/* 2. UP NEXT */}
+          {/* UP NEXT */}
           <section className="queue-section">
             <div className="queue-section-label">
-              Up Next {upcomingTracks.length > 0 && `(${upcomingTracks.length})`}
+              Up Next{' '}
+              {upcomingTracks.length > 0 &&
+                `(${upcomingTracks.length})`}
             </div>
 
             {upcomingTracks.length === 0 ? (
               <div className="queue-empty-state">
                 <span className="queue-empty-title">End of queue</span>
                 <span className="queue-empty-desc">
-                  Add tracks via "Play Next" or "Add to Queue" in any song menu.
+                  Add tracks via "Play Next" or "Add to Queue" in any song
+                  menu.
                 </span>
               </div>
             ) : (
               <div className="queue-list" ref={listRef} role="list">
                 {upcomingTracks.map(({ track, idx }) => {
                   const isFirstUpcoming = idx === currentIndex + 1;
-                  const isLastUpcoming  = idx === playbackQueue.length - 1;
+                  const isLastUpcoming =
+                    idx === playbackQueue.length - 1;
 
                   return (
                     <div
@@ -371,22 +550,25 @@ export const QueueDrawer: React.FC = () => {
                       role="listitem"
                       data-queue-idx={idx}
                       onClick={() => {
-                        // Only play if we weren't dragging
-                        if (!dragRef.current?.thresholdMet) playQueueItem(idx);
+                        if (!dragRef.current?.thresholdMet) {
+                          playQueueItem(idx);
+                        }
                       }}
                       title="Click to play, or drag the handle to reorder"
                     >
-                      {/* ── Drag handle (pointer events only) ── */}
                       <div
                         className="queue-item-drag-handle"
                         title="Drag to reorder"
-                        // Prevent click from propagating to the row's onClick (no play)
                         onClick={(e) => e.stopPropagation()}
                         onPointerDown={(e) => {
                           onHandlePointerDown(e, idx);
                         }}
                         onPointerMove={(e) => {
-                          const rowEl = e.currentTarget.closest<HTMLElement>('.queue-item')!;
+                          const rowEl =
+                            e.currentTarget.closest<HTMLElement>(
+                              '.queue-item'
+                            )!;
+
                           onHandlePointerMove(e, rowEl);
                         }}
                         onPointerUp={onHandlePointerUp}
@@ -395,16 +577,26 @@ export const QueueDrawer: React.FC = () => {
                         <GripVertical size={16} />
                       </div>
 
-                      <TrackArtwork artworkHash={track.artwork_hash} alt={track.title} size="sm" />
+                      <TrackArtwork
+                        artworkHash={track.artwork_hash}
+                        alt={track.title}
+                        size="sm"
+                      />
 
                       <div className="queue-item-meta">
-                        <span className="queue-item-title truncate">{track.title}</span>
-                        <span className="queue-item-artist truncate">{track.artist}</span>
+                        <span className="queue-item-title truncate">
+                          {track.title}
+                        </span>
+
+                        <span className="queue-item-artist truncate">
+                          {track.artist}
+                        </span>
                       </div>
 
-                      <span className="queue-item-duration">{formatDuration(track.duration)}</span>
+                      <span className="queue-item-duration">
+                        {formatDuration(track.duration)}
+                      </span>
 
-                      {/* ── Action buttons ── */}
                       <div
                         className="queue-item-actions"
                         onClick={(e) => e.stopPropagation()}
@@ -415,23 +607,32 @@ export const QueueDrawer: React.FC = () => {
                           tooltip="Move up one position"
                           size="sm"
                           disabled={isFirstUpcoming}
-                          onClick={() => reorderQueue(idx, idx - 1)}
+                          onClick={() =>
+                            reorderQueue(idx, idx - 1)
+                          }
                         />
+
                         <IconButton
                           icon={<ChevronDown size={15} />}
                           aria-label="Move down"
                           tooltip="Move down one position"
                           size="sm"
                           disabled={isLastUpcoming}
-                          onClick={() => reorderQueue(idx, idx + 1)}
+                          onClick={() =>
+                            reorderQueue(idx, idx + 1)
+                          }
                         />
+
                         <IconButton
-                          icon={<Play size={14} fill="currentColor" />}
+                          icon={
+                            <Play size={14} fill="currentColor" />
+                          }
                           aria-label={`Play ${track.title}`}
                           tooltip="Play now"
                           size="sm"
                           onClick={() => playQueueItem(idx)}
                         />
+
                         <IconButton
                           icon={<Trash2 size={14} />}
                           aria-label="Remove from queue"
@@ -447,13 +648,20 @@ export const QueueDrawer: React.FC = () => {
             )}
           </section>
 
-          {/* 3. PREVIOUSLY PLAYED */}
+          {/* PREVIOUSLY PLAYED */}
           {previousTracks.length > 0 && (
             <section className="queue-section">
-              <div className="queue-section-label" style={{ opacity: 0.6 }}>
+              <div
+                className="queue-section-label"
+                style={{ opacity: 0.6 }}
+              >
                 Previously Played ({previousTracks.length})
               </div>
-              <div className="queue-list" style={{ opacity: 0.7 }}>
+
+              <div
+                className="queue-list"
+                style={{ opacity: 0.7 }}
+              >
                 {previousTracks.map(({ track, idx }) => (
                   <div
                     key={`${track.id}_${idx}`}
@@ -461,18 +669,37 @@ export const QueueDrawer: React.FC = () => {
                     onClick={() => playQueueItem(idx)}
                     title="Play again"
                   >
-                    <TrackArtwork artworkHash={track.artwork_hash} alt={track.title} size="sm" />
+                    <TrackArtwork
+                      artworkHash={track.artwork_hash}
+                      alt={track.title}
+                      size="sm"
+                    />
+
                     <div className="queue-item-meta">
-                      <span className="queue-item-title truncate">{track.title}</span>
-                      <span className="queue-item-artist truncate">{track.artist}</span>
+                      <span className="queue-item-title truncate">
+                        {track.title}
+                      </span>
+
+                      <span className="queue-item-artist truncate">
+                        {track.artist}
+                      </span>
                     </div>
-                    <span className="queue-item-duration">{formatDuration(track.duration)}</span>
+
+                    <span className="queue-item-duration">
+                      {formatDuration(track.duration)}
+                    </span>
+
                     <IconButton
-                      icon={<Play size={14} fill="currentColor" />}
+                      icon={
+                        <Play size={14} fill="currentColor" />
+                      }
                       aria-label={`Replay ${track.title}`}
                       tooltip="Play"
                       size="sm"
-                      onClick={(e) => { e.stopPropagation(); playQueueItem(idx); }}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        playQueueItem(idx);
+                      }}
                     />
                   </div>
                 ))}

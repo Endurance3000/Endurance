@@ -206,8 +206,11 @@ mod tests {
         let lrc_content = "[00:12.50]Strumming the chords\n[00:16.80]A gentle whisper in the wind\n";
         std::fs::write(&lrc_path, lrc_content.as_bytes()).expect("Write lrc");
 
-        let found = find_and_read_lrc(&audio_path.to_string_lossy());
-        assert_eq!(found, Some(lrc_content.to_string()));
+        let found = find_and_read_lrc(&audio_path.to_string_lossy()).expect("Resolution should succeed");
+        assert!(found.is_some());
+        let resolved = found.unwrap();
+        assert_eq!(resolved.file_path, lrc_path.to_string_lossy());
+        assert_eq!(resolved.content, lrc_content);
 
         // Case insensitivity test
         let upper_audio = temp_dir.join("UPPERCASE_SONG.M4A");
@@ -215,8 +218,11 @@ mod tests {
         std::fs::write(&upper_audio, b"dummy").expect("Write audio");
         std::fs::write(&lower_lrc, b"[00:05.00]Uppercase test\n").expect("Write lrc");
 
-        let found_case = find_and_read_lrc(&upper_audio.to_string_lossy());
-        assert_eq!(found_case, Some("[00:05.00]Uppercase test\n".to_string()));
+        let found_case = find_and_read_lrc(&upper_audio.to_string_lossy()).expect("Resolution should succeed");
+        assert!(found_case.is_some());
+        let resolved_case = found_case.unwrap();
+        assert_eq!(resolved_case.file_path, lower_lrc.to_string_lossy());
+        assert_eq!(resolved_case.content, "[00:05.00]Uppercase test\n");
 
         // UTF-8 with BOM test
         let bom_audio = temp_dir.join("bom_song.mp3");
@@ -226,10 +232,39 @@ mod tests {
         bom_bytes.extend_from_slice(b"[00:01.00]BOM lyrics line\n");
         std::fs::write(&bom_lrc, &bom_bytes).expect("Write BOM lrc");
 
-        let found_bom = find_and_read_lrc(&bom_audio.to_string_lossy());
-        assert_eq!(found_bom, Some("[00:01.00]BOM lyrics line\n".to_string()));
+        let found_bom = find_and_read_lrc(&bom_audio.to_string_lossy()).expect("Resolution should succeed");
+        assert!(found_bom.is_some());
+        let resolved_bom = found_bom.unwrap();
+        assert_eq!(resolved_bom.file_path, bom_lrc.to_string_lossy());
+        assert_eq!(resolved_bom.content, "[00:01.00]BOM lyrics line\n");
 
         // Cleanup
         let _ = std::fs::remove_dir_all(&temp_dir);
+    }
+
+    #[test]
+    fn test_show_in_folder_nonexistent_file() {
+        let res = crate::commands::show_in_folder("non_existent_file_endurance_test_xyz.mp3".to_string());
+        assert!(res.is_err());
+        assert!(res.unwrap_err().contains("File does not exist"));
+    }
+
+    #[test]
+    fn test_get_system_info_reports_dynamic_platform() {
+        let info = crate::get_system_info();
+        assert_eq!(info["app_name"], "Endurance");
+        assert_eq!(info["version"], "0.1.0");
+        assert_eq!(info["platform"], std::env::consts::OS);
+        assert_eq!(info["status"], "ready");
+        assert_eq!(info["offline"], true);
+
+        #[cfg(target_os = "windows")]
+        assert_eq!(info["platform"], "windows");
+
+        #[cfg(target_os = "macos")]
+        assert_eq!(info["platform"], "macos");
+
+        #[cfg(target_os = "linux")]
+        assert_eq!(info["platform"], "linux");
     }
 }

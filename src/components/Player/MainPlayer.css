@@ -21,6 +21,7 @@
     opacity: 0;
     transform: translateY(20px) scale(0.99);
   }
+
   to {
     opacity: 1;
     transform: translateY(0) scale(1);
@@ -35,12 +36,10 @@
   width: 80%;
   height: 80%;
   border-radius: 50%;
-  background: radial-gradient(
-    circle,
-    var(--md-sys-color-primary) 0%,
-    var(--md-sys-color-secondary) 25%,
-    transparent 70%
-  );
+  background: radial-gradient(circle,
+      var(--md-sys-color-primary) 0%,
+      var(--md-sys-color-secondary) 25%,
+      transparent 70%);
   opacity: 0.12;
   filter: blur(80px);
   pointer-events: none;
@@ -72,8 +71,13 @@
   outline: none;
   box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
   transition: background-color var(--motion-duration-short-2) var(--motion-easing-standard),
-              transform var(--motion-duration-short-1) var(--motion-easing-standard),
-              box-shadow var(--motion-duration-short-2) var(--motion-easing-standard);
+    transform var(--motion-duration-short-1) var(--motion-easing-standard),
+    box-shadow var(--motion-duration-short-2) var(--motion-easing-standard);
+}
+
+.main-player-collapse-btn:focus-visible {
+  outline: 2px solid var(--md-sys-color-focus-ring);
+  outline-offset: 2px;
 }
 
 .main-player-collapse-btn:hover {
@@ -143,9 +147,9 @@
   align-items: center;
   justify-content: center;
   transition: width var(--motion-duration-medium-2) var(--motion-easing-standard),
-              height var(--motion-duration-medium-2) var(--motion-easing-standard),
-              box-shadow var(--motion-duration-medium-2) var(--motion-easing-standard),
-              transform var(--motion-duration-medium-2) var(--motion-easing-standard);
+    height var(--motion-duration-medium-2) var(--motion-easing-standard),
+    box-shadow var(--motion-duration-medium-2) var(--motion-easing-standard),
+    transform var(--motion-duration-medium-2) var(--motion-easing-standard);
 }
 
 .main-player-artwork-wrap.artwork-standard {
@@ -175,6 +179,7 @@
     opacity: 0;
     transform: scale(0.95);
   }
+
   to {
     opacity: 1;
     transform: scale(1);
@@ -235,20 +240,16 @@
   padding: 180px 0;
   scroll-behavior: smooth;
   user-select: none;
-  mask-image: linear-gradient(
-    to bottom,
-    transparent 0%,
-    black 15%,
-    black 85%,
-    transparent 100%
-  );
-  -webkit-mask-image: linear-gradient(
-    to bottom,
-    transparent 0%,
-    black 15%,
-    black 85%,
-    transparent 100%
-  );
+  mask-image: linear-gradient(to bottom,
+      transparent 0%,
+      black 15%,
+      black 85%,
+      transparent 100%);
+  -webkit-mask-image: linear-gradient(to bottom,
+      transparent 0%,
+      black 15%,
+      black 85%,
+      transparent 100%);
 }
 
 .lyrics-scroll-container::-webkit-scrollbar {
@@ -266,9 +267,9 @@
   transform: scale(0.97);
   transform-origin: left center;
   transition: color var(--motion-duration-medium-2) var(--motion-easing-standard),
-              opacity var(--motion-duration-medium-2) var(--motion-easing-standard),
-              transform var(--motion-duration-medium-2) var(--motion-easing-emphasized-decelerate),
-              text-shadow var(--motion-duration-medium-2) var(--motion-easing-standard);
+    opacity var(--motion-duration-medium-2) var(--motion-easing-standard),
+    transform var(--motion-duration-medium-2) var(--motion-easing-emphasized-decelerate),
+    text-shadow var(--motion-duration-medium-2) var(--motion-easing-standard);
   cursor: pointer;
   border-radius: var(--radius-lg);
 }
@@ -298,20 +299,16 @@
   user-select: text;
   display: flex;
   flex-direction: column;
-  mask-image: linear-gradient(
-    to bottom,
-    transparent 0%,
-    black 4%,
-    black 96%,
-    transparent 100%
-  );
-  -webkit-mask-image: linear-gradient(
-    to bottom,
-    transparent 0%,
-    black 4%,
-    black 96%,
-    transparent 100%
-  );
+  mask-image: linear-gradient(to bottom,
+      transparent 0%,
+      black 4%,
+      black 96%,
+      transparent 100%);
+  -webkit-mask-image: linear-gradient(to bottom,
+      transparent 0%,
+      black 4%,
+      black 96%,
+      transparent 100%);
 }
 
 .plain-lyrics-scroll-container::-webkit-scrollbar {
@@ -379,6 +376,7 @@
 
 /* Responsive adjustments */
 @media (max-width: 900px) {
+
   .main-player-body,
   .main-player-body.has-lyrics,
   .main-player-body.no-lyrics {
@@ -386,10 +384,12 @@
     gap: var(--space-lg);
     overflow-y: auto;
   }
+
   .main-player-artwork-wrap.artwork-standard {
     width: 220px;
     height: 220px;
   }
+
   .main-player-artwork-wrap.artwork-expanded {
     width: min(320px, 45vh);
     height: min(320px, 45vh);

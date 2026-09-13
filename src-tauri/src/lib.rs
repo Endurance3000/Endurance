@@ -3,6 +3,7 @@ pub mod commands;
 pub mod db;
 pub mod lyrics;
 pub mod metadata;
+pub mod mini_player;
 pub mod models;
 pub mod scanner;
 #[cfg(test)]
@@ -12,14 +13,14 @@ use artwork::ArtworkCache;
 use commands::AppState;
 use db::Database;
 use scanner::LibraryScanner;
-use tauri::Manager;
+use tauri::{Manager, RunEvent};
 
 #[tauri::command]
 fn get_system_info() -> serde_json::Value {
     serde_json::json!({
         "app_name": "Endurance",
         "version": "0.1.0",
-        "platform": "windows",
+        "platform": std::env::consts::OS,
         "status": "ready",
         "offline": true
     })
@@ -55,6 +56,8 @@ pub fn run() {
         })
         .invoke_handler(tauri::generate_handler![
             get_system_info,
+            mini_player::open_mini_player,
+            mini_player::set_mini_player_always_on_top,
             commands::pick_music_folder,
             commands::get_library_folders,
             commands::add_library_folder,
@@ -64,12 +67,24 @@ pub fn run() {
             commands::toggle_track_favorite,
             commands::get_track_artwork,
             commands::get_track_lyrics,
+            commands::save_lyrics_file,
             commands::record_playback_history,
             commands::get_playback_history,
             commands::get_user_preferences,
             commands::set_user_preference,
-            commands::show_in_folder
+            commands::show_in_folder,
+            commands::close_splashscreen
         ])
-        .run(tauri::generate_context!())
-        .expect("error while running endurance application");
+        .build(tauri::generate_context!())
+        .expect("error while building endurance application")
+        .run(|app_handle, event| match event {
+            RunEvent::WindowEvent { label, event, .. } => {
+                if label == "main"
+                    && matches!(&event, tauri::WindowEvent::CloseRequested { .. })
+                {
+                    mini_player::close_mini_player(app_handle);
+                }
+            }
+            _ => {}
+        });
 }

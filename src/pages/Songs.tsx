@@ -1,5 +1,15 @@
-import React, { useState, useEffect } from 'react';
-import { Music, FolderPlus, Heart, MoreHorizontal, Play, Pause, RefreshCw, Loader2, Shuffle } from 'lucide-react';
+import React, { useState, useEffect, useRef } from 'react';
+import {
+  Music,
+  FolderPlus,
+  Heart,
+  MoreHorizontal,
+  Play,
+  Pause,
+  RefreshCw,
+  Loader2,
+  Shuffle,
+} from 'lucide-react';
 import { Button } from '../components/Common/Button';
 import { IconButton } from '../components/Common/IconButton';
 import { SearchField } from '../components/Common/SearchField';
@@ -39,16 +49,24 @@ export const Songs: React.FC<SongsProps> = ({
   const [menuTrack, setMenuTrack] = useState<Track | null>(null);
   const [menuPosition, setMenuPosition] = useState<{ x: number; y: number }>({ x: 0, y: 0 });
 
+  // Stores the actual button that opened the current menu.
+  // This is intentionally not attached to the button itself because the
+  // menu can also be opened through the row's context menu.
+  const menuTriggerRef = useRef<HTMLButtonElement | null>(null);
+
   const { currentTrack, isPlaying, playTrack, togglePlay, shuffleAll } = usePlayback();
 
   // Load persisted view preferences on mount with fallback
   useEffect(() => {
     preferencesService.loadAll().then((prefs) => {
       const savedFilter = prefs.get('songs_filter');
+
       if (savedFilter === 'all' || savedFilter === 'recent' || savedFilter === 'favorites') {
         setSelectedFilter(savedFilter);
       }
+
       const savedSort = prefs.get('songs_sort');
+
       if (savedSort && (VALID_SORT_OPTIONS as string[]).includes(savedSort)) {
         setSelectedSort(savedSort as SortOption);
       } else {
@@ -70,8 +88,11 @@ export const Songs: React.FC<SongsProps> = ({
   // 1. Search and category filter
   const filteredTracks = tracks.filter((track) => {
     if (selectedFilter === 'favorites' && !track.is_favorite) return false;
+
     if (searchQuery.trim() === '') return true;
+
     const query = searchQuery.toLowerCase();
+
     return (
       track.title.toLowerCase().includes(query) ||
       track.artist.toLowerCase().includes(query) ||
@@ -79,19 +100,26 @@ export const Songs: React.FC<SongsProps> = ({
     );
   });
 
-  // 2. Sort order (only Title A-Z, Title Z-A, Recently Added, Oldest Added)
+  // 2. Sort order
   const displayTracks = [...filteredTracks].sort((a, b) => {
-    const activeSort = selectedFilter === 'recent' && selectedSort === 'title-asc' ? 'date-desc' : selectedSort;
+    const activeSort =
+      selectedFilter === 'recent' && selectedSort === 'title-asc'
+        ? 'date-desc'
+        : selectedSort;
 
     switch (activeSort) {
       case 'title-asc':
         return a.title.localeCompare(b.title, undefined, { sensitivity: 'base' });
+
       case 'title-desc':
         return b.title.localeCompare(a.title, undefined, { sensitivity: 'base' });
+
       case 'date-desc':
         return (parseInt(b.date_added, 10) || 0) - (parseInt(a.date_added, 10) || 0);
+
       case 'date-asc':
         return (parseInt(a.date_added, 10) || 0) - (parseInt(b.date_added, 10) || 0);
+
       default:
         return a.title.localeCompare(b.title, undefined, { sensitivity: 'base' });
     }
@@ -103,7 +131,8 @@ export const Songs: React.FC<SongsProps> = ({
         <div className="songs-header-top">
           <h1 className="page-title">Songs</h1>
           <p className="page-subtitle">
-            {tracks.length === 1 ? '1 track' : `${tracks.length} tracks`} in your local offline library
+            {tracks.length === 1 ? '1 track' : `${tracks.length} tracks`} in your local offline
+            library
           </p>
         </div>
 
@@ -116,17 +145,25 @@ export const Songs: React.FC<SongsProps> = ({
               placeholder="Search songs, artists, albums..."
             />
           </div>
+
           <div className="songs-header-buttons">
             <Button
               variant="tonal"
               size="md"
-              icon={isScanning ? <Loader2 size={16} className="spin-animation" /> : <RefreshCw size={16} />}
+              icon={
+                isScanning ? (
+                  <Loader2 size={16} className="spin-animation" />
+                ) : (
+                  <RefreshCw size={16} />
+                )
+              }
               onClick={onRescan}
               disabled={isScanning || folders.length === 0}
               title="Rescan configured folders for new or changed music"
             >
               {isScanning ? 'Scanning...' : 'Rescan'}
             </Button>
+
             <Button
               variant="tonal"
               size="md"
@@ -149,25 +186,29 @@ export const Songs: React.FC<SongsProps> = ({
             >
               All Tracks ({tracks.length})
             </Chip>
+
             <Chip
               selected={selectedFilter === 'recent'}
               onClick={() => handleFilterChange('recent')}
             >
               Recently Added
             </Chip>
+
             <Chip
               selected={selectedFilter === 'favorites'}
               onClick={() => handleFilterChange('favorites')}
-              icon={<Heart size={14} fill={selectedFilter === 'favorites' ? 'currentColor' : 'none'} />}
+              icon={
+                <Heart
+                  size={14}
+                  fill={selectedFilter === 'favorites' ? 'currentColor' : 'none'}
+                />
+              }
             >
               Favorites ({tracks.filter((t) => t.is_favorite).length})
             </Chip>
           </div>
 
-          <SortMenu
-            value={selectedSort}
-            onChange={handleSortChange}
-          />
+          <SortMenu value={selectedSort} onChange={handleSortChange} />
         </div>
       </header>
 
@@ -175,12 +216,14 @@ export const Songs: React.FC<SongsProps> = ({
       {isScanning && (
         <div className="library-scanning-banner">
           <Loader2 size={18} className="spin-animation scan-spinner" />
+
           <div className="scan-banner-info">
             <span className="scan-banner-title">
               {scanProgress?.phase === 'indexing'
                 ? `Indexing audio files... (${scanProgress.processed_count} / ${scanProgress.total_discovered})`
                 : 'Traversing directories and discovering audio files...'}
             </span>
+
             {scanProgress?.current_file && (
               <span className="scan-banner-file truncate">{scanProgress.current_file}</span>
             )}
@@ -237,34 +280,55 @@ export const Songs: React.FC<SongsProps> = ({
                 }
               };
 
-              const handleOpenMenu = (e: React.MouseEvent) => {
+              const handleOpenMenu = (e: React.MouseEvent<HTMLButtonElement>) => {
                 e.preventDefault();
                 e.stopPropagation();
+
+                // Remember exactly which button opened the menu.
+                menuTriggerRef.current = e.currentTarget;
+
                 const rect = e.currentTarget.getBoundingClientRect();
-                setMenuPosition({ x: rect.right, y: rect.bottom + 4 });
+
+                setMenuPosition({
+                  x: rect.right,
+                  y: rect.bottom + 4,
+                });
+
+                setMenuTrack(track);
+              };
+
+              const handleContextMenu = (e: React.MouseEvent<HTMLDivElement>) => {
+                e.preventDefault();
+
+                // Context-menu opening has no button trigger to restore focus to.
+                menuTriggerRef.current = null;
+
+                setMenuPosition({
+                  x: e.clientX,
+                  y: e.clientY,
+                });
+
                 setMenuTrack(track);
               };
 
               return (
                 <div
                   key={track.id}
-                  className={`song-row ${isCurrentTrack ? 'song-row-active' : ''} ${
-                    isMissing ? 'song-row-unavailable' : ''
-                  }`}
+                  className={`song-row ${isCurrentTrack ? 'song-row-active' : ''} ${isMissing ? 'song-row-unavailable' : ''
+                    }`}
                   role="listitem"
                   tabIndex={0}
                   onClick={handleSelectTrack}
                   onKeyDown={(e) => {
-                    if (e.key === 'Enter') handleSelectTrack();
+                    if (e.key === 'Enter' && e.target === e.currentTarget) {
+                      handleSelectTrack();
+                    }
                   }}
-                  onContextMenu={(e) => {
-                    e.preventDefault();
-                    setMenuPosition({ x: e.clientX, y: e.clientY });
-                    setMenuTrack(track);
-                  }}
+                  onContextMenu={handleContextMenu}
                 >
                   <div className="col-index">
                     <span className="index-number">{idx + 1}</span>
+
                     <button
                       type="button"
                       className="index-play-btn"
@@ -289,11 +353,14 @@ export const Songs: React.FC<SongsProps> = ({
                       alt={track.album || track.title}
                       size="sm"
                     />
+
                     <div className="song-title-group">
                       <div style={{ display: 'flex', alignItems: 'center' }}>
                         <span className="song-row-title truncate">{track.title}</span>
+
                         {isMissing && <span className="unavailable-badge">Missing</span>}
                       </div>
+
                       <span className="song-row-artist truncate">{track.artist}</span>
                     </div>
                   </div>
@@ -316,16 +383,23 @@ export const Songs: React.FC<SongsProps> = ({
                         <Heart
                           size={16}
                           fill={track.is_favorite ? 'currentColor' : 'none'}
-                          color={track.is_favorite ? 'var(--md-sys-color-tertiary)' : 'currentColor'}
+                          color={
+                            track.is_favorite
+                              ? 'var(--md-sys-color-tertiary)'
+                              : 'currentColor'
+                          }
                         />
                       }
-                      aria-label={track.is_favorite ? 'Remove from favorites' : 'Add to favorites'}
+                      aria-label={
+                        track.is_favorite ? 'Remove from favorites' : 'Add to favorites'
+                      }
                       onClick={(e) => {
                         e.stopPropagation();
                         onToggleFavorite(track.id);
                       }}
                       size="sm"
                     />
+
                     <IconButton
                       icon={<MoreHorizontal size={16} />}
                       aria-label="More options"
@@ -357,6 +431,7 @@ export const Songs: React.FC<SongsProps> = ({
           isOpen={true}
           onClose={() => setMenuTrack(null)}
           position={menuPosition}
+          triggerRef={menuTriggerRef}
         />
       )}
     </div>

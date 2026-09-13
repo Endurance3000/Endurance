@@ -13,10 +13,15 @@
   outline: none;
   position: relative;
   transition: transform var(--motion-duration-short-2) var(--motion-easing-standard-decelerate),
-              background-color var(--motion-duration-short-3) var(--motion-easing-standard),
-              color var(--motion-duration-short-3) var(--motion-easing-standard),
-              border-color var(--motion-duration-short-3) var(--motion-easing-standard),
-              box-shadow var(--motion-duration-short-3) var(--motion-easing-standard);
+    background-color var(--motion-duration-short-3) var(--motion-easing-standard),
+    color var(--motion-duration-short-3) var(--motion-easing-standard),
+    border-color var(--motion-duration-short-3) var(--motion-easing-standard),
+    box-shadow var(--motion-duration-short-3) var(--motion-easing-standard);
+}
+
+.m3-btn:focus-visible {
+  outline: 2px solid var(--md-sys-color-focus-ring);
+  outline-offset: 2px;
 }
 
 .m3-btn:active:not(:disabled) {

@@ -22,7 +22,20 @@
         "fullscreen": false,
         "decorations": false,
         "transparent": false,
-        "center": true
+        "center": true,
+        "visible": false
+      },
+      {
+        "label": "splashscreen",
+        "title": "Endurance",
+        "url": "splash.html",
+        "width": 360,
+        "height": 240,
+        "resizable": false,
+        "fullscreen": false,
+        "decorations": false,
+        "center": true,
+        "alwaysOnTop": true
       }
     ],
     "security": {

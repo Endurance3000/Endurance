@@ -13,12 +13,14 @@ import {
   Loader2,
   FileText,
   ListMusic,
+  PictureInPicture2,
 } from 'lucide-react';
 import { IconButton } from '../Common/IconButton';
 import { TrackArtwork } from '../Library/TrackArtwork';
 import { ExpressiveWaveSlider } from './ExpressiveWaveSlider';
 import { usePlayback } from '../../state/PlaybackContext';
 import { formatDuration } from '../../utils/formatters';
+import { miniPlayerService } from '../../services/window/miniPlayerService';
 import './PlayerBar.css';
 
 interface PlayerBarProps {
@@ -56,7 +58,9 @@ export const PlayerBar: React.FC<PlayerBarProps> = ({ onToggleExpand, isExpanded
   // Volume scrub handling
   const handleVolumePointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
     if (!volumeTrackRef.current) return;
+
     const rect = volumeTrackRef.current.getBoundingClientRect();
+
     const calculateVolume = (clientX: number) => {
       const ratio = Math.max(0, Math.min(1, (clientX - rect.left) / rect.width));
       return ratio;
@@ -85,10 +89,17 @@ export const PlayerBar: React.FC<PlayerBarProps> = ({ onToggleExpand, isExpanded
   };
 
   const hasTrack = currentTrack !== null;
-  const clampedCurrentTime = duration > 0 ? Math.min(duration, Math.max(0, currentTime)) : Math.max(0, currentTime);
+
+  const clampedCurrentTime =
+    duration > 0
+      ? Math.min(duration, Math.max(0, currentTime))
+      : Math.max(0, currentTime);
 
   return (
-    <footer className="player-bar m3-expressive-player-bar" aria-label="Audio Player Controls">
+    <footer
+      className="player-bar m3-expressive-player-bar"
+      aria-label="Audio Player Controls"
+    >
       {/* Left: Track Information Preview & Artwork */}
       <div
         className="player-track-info"
@@ -108,13 +119,22 @@ export const PlayerBar: React.FC<PlayerBarProps> = ({ onToggleExpand, isExpanded
             className="player-bar-artwork"
           />
         </div>
+
         <div className="player-metadata">
-          <span className="player-track-title truncate" title={currentTrack?.title}>
+          <span
+            className="player-track-title truncate"
+            title={currentTrack?.title}
+          >
             {currentTrack ? currentTrack.title : 'No Track Selected'}
           </span>
-          <span className="player-track-artist truncate" title={currentTrack?.artist}>
+
+          <span
+            className="player-track-artist truncate"
+            title={currentTrack?.artist}
+          >
             {currentTrack ? currentTrack.artist : 'Endurance Offline Player'}
           </span>
+
           {playbackError && (
             <div
               className="player-error-badge"
@@ -160,18 +180,31 @@ export const PlayerBar: React.FC<PlayerBarProps> = ({ onToggleExpand, isExpanded
           {/* Primary Expressive Play / Pause Action Button */}
           <button
             type="button"
-            className={`player-play-btn ${isPlaying ? 'playing' : 'paused'} ${isLoading ? 'loading' : ''}`}
+            className={`player-play-btn ${isPlaying ? 'playing' : 'paused'} ${
+              isLoading ? 'loading' : ''
+            }`}
             onClick={togglePlay}
             disabled={!hasTrack && !isLoading}
-            aria-label={isLoading ? 'Loading audio' : isPlaying ? 'Pause' : 'Play'}
+            aria-label={
+              isLoading ? 'Loading audio' : isPlaying ? 'Pause' : 'Play'
+            }
             title={isLoading ? 'Loading audio' : isPlaying ? 'Pause' : 'Play'}
           >
             {isLoading ? (
               <Loader2 size={22} className="spin-animation" />
             ) : isPlaying ? (
-              <Pause size={22} fill="currentColor" className="play-icon-transition" />
+              <Pause
+                size={22}
+                fill="currentColor"
+                className="play-icon-transition"
+              />
             ) : (
-              <Play size={22} fill="currentColor" style={{ marginLeft: 2 }} className="play-icon-transition" />
+              <Play
+                size={22}
+                fill="currentColor"
+                style={{ marginLeft: 2 }}
+                className="play-icon-transition"
+              />
             )}
           </button>
 
@@ -195,14 +228,23 @@ export const PlayerBar: React.FC<PlayerBarProps> = ({ onToggleExpand, isExpanded
               selected={repeatMode !== 'off'}
               onClick={toggleRepeat}
               size="sm"
-              className={`player-repeat-btn ${repeatMode !== 'off' ? 'active' : ''}`}
+              className={`player-repeat-btn ${
+                repeatMode !== 'off' ? 'active' : ''
+              }`}
             />
-            {repeatMode === 'one' && <span className="player-repeat-one-badge">1</span>}
+
+            {repeatMode === 'one' && (
+              <span className="player-repeat-one-badge">1</span>
+            )}
           </div>
         </div>
 
         {/* Expressive Sine-Wave Timeline */}
-        <div className="player-timeline-cluster" role="group" aria-label="Seek Bar">
+        <div
+          className="player-timeline-cluster"
+          role="group"
+          aria-label="Seek Bar"
+        >
           <span className="timeline-time timeline-time-left">
             {formatDuration(clampedCurrentTime)}
           </span>
@@ -228,22 +270,36 @@ export const PlayerBar: React.FC<PlayerBarProps> = ({ onToggleExpand, isExpanded
         <IconButton
           icon={<ListMusic size={18} />}
           aria-label="Play Queue"
-          tooltip={isQueueOpen ? "Close Queue" : "Play Queue"}
+          tooltip={isQueueOpen ? 'Close Queue' : 'Play Queue'}
           selected={isQueueOpen}
           onClick={toggleQueue}
           size="sm"
           className="player-extra-btn"
+          data-queue-trigger="true"
         />
+
         <IconButton
           icon={<FileText size={18} />}
           aria-label="Synchronized Lyrics & Now Playing"
-          tooltip={isExpanded ? "Collapse View (Esc)" : "Synchronized Lyrics"}
+          tooltip={
+            isExpanded ? 'Collapse View (Esc)' : 'Synchronized Lyrics'
+          }
           selected={isExpanded}
           onClick={onToggleExpand}
           size="sm"
           disabled={!hasTrack}
           className="player-extra-btn"
         />
+
+        <IconButton
+          icon={<PictureInPicture2 size={18} />}
+          aria-label="Open Mini Player"
+          tooltip="Open Mini Player"
+          onClick={() => void miniPlayerService.open()}
+          size="sm"
+          className="player-extra-btn"
+        />
+
         <div className="player-volume-control">
           <IconButton
             icon={getVolumeIcon()}
@@ -253,6 +309,7 @@ export const PlayerBar: React.FC<PlayerBarProps> = ({ onToggleExpand, isExpanded
             size="sm"
             className="volume-mute-btn"
           />
+
           <div
             ref={volumeTrackRef}
             className="volume-slider-track"
@@ -267,7 +324,10 @@ export const PlayerBar: React.FC<PlayerBarProps> = ({ onToggleExpand, isExpanded
               if (e.key === 'ArrowLeft' || e.key === 'ArrowDown') {
                 e.preventDefault();
                 setVolume(Math.max(0, volume - 0.05));
-              } else if (e.key === 'ArrowRight' || e.key === 'ArrowUp') {
+              } else if (
+                e.key === 'ArrowRight' ||
+                e.key === 'ArrowUp'
+              ) {
                 e.preventDefault();
                 setVolume(Math.min(1, volume + 0.05));
               }
@@ -277,6 +337,7 @@ export const PlayerBar: React.FC<PlayerBarProps> = ({ onToggleExpand, isExpanded
               className="volume-slider-fill"
               style={{ width: `${isMuted ? 0 : volume * 100}%` }}
             />
+
             <div
               className="volume-slider-thumb"
               style={{ left: `${isMuted ? 0 : volume * 100}%` }}
