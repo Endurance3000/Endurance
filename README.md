@@ -1,6 +1,8 @@
-![Endurance Logo](https://github.com/Endurance3000/Endurance/raw/main/branding/endurance-logo-master.png)
+<p align="center">
+  <img src="https://github.com/Endurance3000/Endurance/raw/main/branding/endurance-logo-master.png" alt="Endurance Logo" width="160">
+</p>
 
-# Endurance
+<h1 align="center">Endurance</h1>
 
 ### A premium, open-source, offline-first music player.
 
