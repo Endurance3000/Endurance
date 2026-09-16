@@ -1,19 +1,43 @@
-<p align="center">
-  <img src="https://github.com/Endurance3000/Endurance/raw/main/branding/endurance-logo-master.png" alt="Endurance Logo" width="160">
-</p>
+<div align="center">
 
-<h1 align="center">Endurance</h1>
+<img src="https://github.com/Endurance3000/Endurance/raw/main/branding/endurance-logo-master.png" alt="Endurance Logo" width="140">
+
+# Endurance
 
 ### A premium, open-source, offline-first music player.
 
-Beautiful local music playback. No streaming. No cloud lock-in.
+**Beautiful local music playback. No streaming. No cloud lock-in. No accounts.**
 
-[![Latest Release](https://img.shields.io/github/v/release/Endurance3000/Endurance?style=flat-square&color=c48b71&label=Release)](https://github.com/Endurance3000/Endurance/releases/latest)
-[![Platform: Windows & macOS](https://img.shields.io/badge/Platform-Windows%20%7C%20macOS-607274?style=flat-square)](https://github.com/Endurance3000/Endurance/releases/latest)
-[![GitHub Stars](https://img.shields.io/github/stars/Endurance3000/Endurance?style=flat-square&color=8a6552)](https://github.com/Endurance3000/Endurance)
-[![GitHub Issues](https://img.shields.io/github/issues/Endurance3000/Endurance?style=flat-square&color=789461)](https://github.com/Endurance3000/Endurance/issues)
+<br>
 
-[**Download**](#download) · [**Preview**](#preview) · [**Why Endurance?**](#why-endurance) · [**Features**](#features) · [**Tech Stack**](#technology-stack) · [**Architecture**](#architecture) · [**Build from Source**](#building-from-source) · [**Roadmap**](#roadmap) · [**Contributing**](#contributing)
+[![Latest Release](https://img.shields.io/github/v/release/Endurance3000/Endurance?style=for-the-badge&color=c48b71&label=Release)](https://github.com/Endurance3000/Endurance/releases/latest)
+[![Platform](https://img.shields.io/badge/Platform-Windows%20%7C%20macOS-607274?style=for-the-badge)](https://github.com/Endurance3000/Endurance/releases/latest)
+[![License](https://img.shields.io/badge/License-Pending-8a6552?style=for-the-badge)](#license)
+[![Stars](https://img.shields.io/github/stars/Endurance3000/Endurance?style=for-the-badge&color=789461)](https://github.com/Endurance3000/Endurance/stargazers)
+
+<br>
+
+<a href="https://github.com/Endurance3000/Endurance/releases/latest"><img src="https://img.shields.io/badge/⬇%20Download%20Latest%20Release-c48b71?style=for-the-badge&logoColor=white" alt="Download"></a>
+<a href="#preview"><img src="https://img.shields.io/badge/👀%20See%20Screenshots-607274?style=for-the-badge&logoColor=white" alt="Preview"></a>
+<a href="https://github.com/Endurance3000/Endurance/issues/new/choose"><img src="https://img.shields.io/badge/🐛%20Report%20a%20Bug-8a6552?style=for-the-badge&logoColor=white" alt="Report a Bug"></a>
+<a href="https://github.com/Endurance3000/Endurance/issues/new/choose"><img src="https://img.shields.io/badge/💡%20Request%20a%20Feature-789461?style=for-the-badge&logoColor=white" alt="Request a Feature"></a>
+
+</div>
+
+<br>
+
+<p align="center">
+  <a href="#download"><b>Download</b></a> ·
+  <a href="#why-endurance"><b>Why Endurance?</b></a> ·
+  <a href="#preview"><b>Preview</b></a> ·
+  <a href="#features"><b>Features</b></a> ·
+  <a href="#technology-stack"><b>Tech Stack</b></a> ·
+  <a href="#architecture"><b>Architecture</b></a> ·
+  <a href="#building-from-source"><b>Build from Source</b></a> ·
+  <a href="#roadmap"><b>Roadmap</b></a> ·
+  <a href="#contributing"><b>Contributing</b></a> ·
+  <a href="#issue-reporting--support"><b>Support</b></a>
+</p>
 
 ---
 
@@ -21,64 +45,74 @@ Beautiful local music playback. No streaming. No cloud lock-in.
 
 **Endurance** is a fast, elegant, and private desktop music player designed for people who want their music collection to live and play directly on their computer.
 
-Built with **Tauri v2**, **Rust**, **React 19**, and **SQLite**, Endurance pairs high-performance local directory scanning with a warm, Material 3-inspired user interface, an editable offline LRC lyrics experience, a floating Mini Player, and two-state shuffle queue management — now with early cross-platform support for **Windows and macOS**.
+Built with **Tauri v2**, **Rust**, **React 19**, and **SQLite**, Endurance pairs high-performance local directory scanning with a warm, Material 3-inspired interface, an editable offline LRC lyrics experience, a floating Mini Player, and two-state shuffle queue management — now with cross-platform support for **Windows and macOS**.
 
 ---
 
 ## Download
 
-### Latest Release — v0.2.0
+<div align="center">
+
+### 🚀 Latest Release — v0.2.0
 
 Endurance v0.2.0 is a major feature release focused on accessibility, an offline Lyrics Editor, a Mini Player, a native startup screen, and cross-platform desktop support.
 
-[![Download Latest Release](https://img.shields.io/badge/Download-Endurance%20v0.2.0-c48b71?style=for-the-badge)](https://github.com/Endurance3000/Endurance/releases/latest)
+<a href="https://github.com/Endurance3000/Endurance/releases/latest"><img src="https://img.shields.io/badge/Download%20for%20Windows-0078D6?style=for-the-badge&logo=windows&logoColor=white" alt="Download for Windows"></a>
+<a href="https://github.com/Endurance3000/Endurance/releases/latest"><img src="https://img.shields.io/badge/Download%20for%20macOS-000000?style=for-the-badge&logo=apple&logoColor=white" alt="Download for macOS"></a>
 
-#### Available Package Formats on the [Releases Page](https://github.com/Endurance3000/Endurance/releases/latest):
+</div>
 
-**Windows**
-- **`Endurance_0.2.0_x64-setup.exe`** — Standard NSIS setup installer (*recommended for most users*).
-- **`Endurance_0.2.0_x64_en-US.msi`** — Windows Installer package (*ideal for enterprise and managed environments*).
+#### Available Package Formats — [Releases Page →](https://github.com/Endurance3000/Endurance/releases/latest)
 
-**macOS** *(new in v0.2.0)*
-- **Apple Silicon / ARM64 `.dmg`** — for M-series Macs.
-- **Intel x64 `.dmg`** — for Intel-based Macs.
+| Platform | Package | Notes |
+| --- | --- | --- |
+| 🪟 Windows | `Endurance_0.2.0_x64-setup.exe` | Standard NSIS installer — recommended for most users |
+| 🪟 Windows | `Endurance_0.2.0_x64_en-US.msi` | MSI package — ideal for enterprise/managed environments |
+| 🍎 macOS (Apple Silicon) | `.dmg` (ARM64) | For M-series Macs *(new in v0.2.0)* |
+| 🍎 macOS (Intel) | `.dmg` (x64) | For Intel-based Macs *(new in v0.2.0)* |
 
-> **Note:** macOS packages build and install successfully on both architectures, but runtime validation on physical macOS hardware is still in progress. Windows remains the fully verified, primary platform.
+> ⚠️ **Note:** macOS packages build and install successfully on both architectures, but runtime validation on physical macOS hardware is still in progress and slated for **v0.3.0**. Windows remains the fully verified, primary platform.
 
 ---
 
 ## Why Endurance?
 
-- **Your Music Stays Yours** — Plays audio directly from your local filesystem without moving, altering, or re-encoding your files.
-- **Offline-First by Design** — No cloud accounts, remote servers, streaming lock-in, or telemetry. Every installation is self-contained.
-- **Warm, Expressive Interface** — Built on Material 3 design principles with dynamic color extraction from album art, smooth transitions, and an organic sine-wave playback scrubber.
-- **Lightweight & Fast** — Powered by a multi-threaded Rust backend with a local SQLite database that starts quickly and uses minimal system resources.
-- **Accessible by Default** — Full keyboard navigation, visible focus indicators, and platform-appropriate shortcuts (`Ctrl` on Windows, `⌘` on macOS).
-- **Open & Transparent** — Built with modern open-source technologies with a clear codebase open to community contributions.
+| | |
+| --- | --- |
+| 🔒 **Your Music Stays Yours** | Plays audio directly from your local filesystem without moving, altering, or re-encoding your files. |
+| 📡 **Offline-First by Design** | No cloud accounts, remote servers, streaming lock-in, or telemetry. Every installation is self-contained. |
+| 🎨 **Warm, Expressive Interface** | Material 3-inspired design with dynamic color extraction from album art and an organic sine-wave scrubber. |
+| ⚡ **Lightweight & Fast** | A multi-threaded Rust backend with a local SQLite database that starts quickly and uses minimal resources. |
+| ⌨️ **Accessible by Default** | Full keyboard navigation, visible focus indicators, and platform-appropriate shortcuts (`Ctrl` / `⌘`). |
+| 🌱 **Open & Transparent** | Modern open-source technologies with a clear codebase, open to community contributions. |
 
 ---
 
 ## Preview
 
+<div align="center">
+
 ### Homepage
 *Recent tracks, listening statistics, and quick navigation across your collection.*
 
-![Endurance Homepage](https://github.com/Endurance3000/Endurance/raw/main/branding/Screenshot-Homepage.png)
+<img src="https://github.com/Endurance3000/Endurance/raw/main/branding/Screenshot-Homepage.png" alt="Endurance Homepage" width="800">
+
+<br><br>
 
 ### Library View
 *Fast local collection browsing with instant search, multi-field sorting, and album artwork.*
 
-![Endurance Library](https://github.com/Endurance3000/Endurance/raw/main/branding/Screenshot-Library.png)
+<img src="https://github.com/Endurance3000/Endurance/raw/main/branding/Screenshot-Library.png" alt="Endurance Library" width="800">
 
-### Player — Light Theme
-*Full player view with synchronized LRC lyrics and ambient album art tonal colors.*
+<br><br>
 
-![Endurance Player - Light Theme](<https://github.com/Endurance3000/Endurance/raw/main/branding/Screenshot-Player (Light).png>)
+### Player — Light & Dark
+*Full player view with synchronized LRC lyrics, ambient album-art tonal colors, and the expressive sine-wave scrubber.*
 
-### Player — Dark Theme
-*Immersive dark mode with expressive sine-wave scrubbing and active line lyric emphasis.*
+<img src="https://github.com/Endurance3000/Endurance/raw/main/branding/Screenshot-Player (Light).png" alt="Endurance Player - Light Theme" width="390">
+<img src="https://github.com/Endurance3000/Endurance/raw/main/branding/Screenshot-Player (Dark).png" alt="Endurance Player - Dark Theme" width="390">
 
-![Endurance Player - Dark Theme](<https://github.com/Endurance3000/Endurance/raw/main/branding/Screenshot-Player (Dark).png>)
+</div>
 
 ---
 
@@ -149,15 +183,15 @@ Endurance is built from the ground up as an **offline-first local desktop applic
 
 ## Technology Stack
 
-| Component              | Technology                                                                        | Purpose                                                         |
-| ---------------------- | --------------------------------------------------------------------------------- | --------------------------------------------------------------- |
-| **Desktop Shell**      | [Tauri v2](https://tauri.app/)                                                    | Secure, lightweight native window and system bridge, now with multi-window (Main + Mini Player) support |
-| **Native Core**        | [Rust](https://www.rust-lang.org/)                                                | Multi-threaded file scanner, IPC handlers, tag processing, and LRC read/write |
-| **Local Database**     | [SQLite](https://sqlite.org/) via [`rusqlite`](https://crates.io/crates/rusqlite) | Local relational storage with WAL mode and versioned migrations |
-| **Audio Metadata**     | [`lofty`](https://crates.io/crates/lofty)                                         | Fast, pure Rust audio container and tag parser                  |
-| **Frontend Framework** | [React 19](https://react.dev/) + [TypeScript](https://www.typescriptlang.org/)    | Type-safe UI components and reactive state management           |
-| **Build Tooling**      | [Vite 6](https://vitejs.dev/)                                                     | Development server and production frontend bundler              |
-| **Icons & UI**         | [Lucide React](https://lucide.dev/)                                               | Clean, consistent interface iconography                         |
+| Component | Technology | Purpose |
+| --- | --- | --- |
+| **Desktop Shell** | [Tauri v2](https://tauri.app/) | Secure, lightweight native window and system bridge, with multi-window (Main + Mini Player) support |
+| **Native Core** | [Rust](https://www.rust-lang.org/) | Multi-threaded file scanner, IPC handlers, tag processing, and LRC read/write |
+| **Local Database** | [SQLite](https://sqlite.org/) via [`rusqlite`](https://crates.io/crates/rusqlite) | Local relational storage with WAL mode and versioned migrations |
+| **Audio Metadata** | [`lofty`](https://crates.io/crates/lofty) | Fast, pure Rust audio container and tag parser |
+| **Frontend Framework** | [React 19](https://react.dev/) + [TypeScript](https://www.typescriptlang.org/) | Type-safe UI components and reactive state management |
+| **Build Tooling** | [Vite 6](https://vitejs.dev/) | Development server and production frontend bundler |
+| **Icons & UI** | [Lucide React](https://lucide.dev/) | Clean, consistent interface iconography |
 
 ---
 
@@ -192,13 +226,13 @@ Endurance is built from the ground up as an **offline-first local desktop applic
 
 ## Installation & Getting Started
 
-### For End Users (Windows)
+### 🪟 For End Users (Windows)
 1. Open the [**Latest Release**](https://github.com/Endurance3000/Endurance/releases/latest) page.
 2. Download `Endurance_0.2.0_x64-setup.exe` (or the `.msi` package).
 3. Run the installer and launch **Endurance**.
 4. Click **Add Music Folder** (or navigate to **Settings → Library**) to select your local music folder.
 
-### For End Users (macOS) *(early support)*
+### 🍎 For End Users (macOS) *(early support)*
 1. Open the [**Latest Release**](https://github.com/Endurance3000/Endurance/releases/latest) page.
 2. Download the `.dmg` matching your Mac's architecture (Apple Silicon / ARM64 or Intel x64).
 3. Open the `.dmg` and drag **Endurance** into Applications.
@@ -224,23 +258,23 @@ Endurance is built from the ground up as an **offline-first local desktop applic
 - [C++ Build Tools](https://visualstudio.microsoft.com/visual-cpp-build-tools/) (MSVC toolchain on Windows) or Xcode Command Line Tools (macOS)
 
 ### 1. Clone the Repository
-```
+```bash
 git clone https://github.com/Endurance3000/Endurance.git
 cd Endurance
 ```
 
 ### 2. Install Dependencies
-```
+```bash
 npm install
 ```
 
 ### 3. Run Development Build
-```
+```bash
 npm run tauri dev
 ```
 
 ### 4. Run Test Suites
-```
+```bash
 # Run frontend unit tests (Node.js test runner)
 npm test
 
@@ -251,7 +285,7 @@ cd ..
 ```
 
 ### 5. Build Production Binaries
-```
+```bash
 npm run tauri build
 ```
 
@@ -299,16 +333,21 @@ Endurance/
 
 ## Supported Formats
 
-| Format  | Extension | Tagging Standard           | Supported Features                                              |
-| ------- | --------- | -------------------------- | --------------------------------------------------------------- |
-| **MP3** | `.mp3`    | ID3v1, ID3v2.3, ID3v2.4    | Playback, Tag extraction, Embedded artwork, LRC sync & editing   |
-| **M4A** | `.m4a`    | MP4 iTunes Metadata (ILST) | AAC / ALAC playback, Tag extraction, Embedded artwork, LRC sync & editing |
+| Format | Extension | Tagging Standard | Supported Features |
+| --- | --- | --- | --- |
+| **MP3** | `.mp3` | ID3v1, ID3v2.3, ID3v2.4 | Playback, Tag extraction, Embedded artwork, LRC sync & editing |
+| **M4A** | `.m4a` | MP4 iTunes Metadata (ILST) | AAC / ALAC playback, Tag extraction, Embedded artwork, LRC sync & editing |
 
 ---
 
 ## Roadmap
 
-### v0.1.0 — Released
+<p>
+  <a href="https://github.com/Endurance3000/Endurance/milestones"><img src="https://img.shields.io/badge/View%20Milestones%20on%20GitHub-24292F?style=flat-square&logo=github&logoColor=white" alt="View Milestones"></a>
+  <a href="https://github.com/Endurance3000/Endurance/issues"><img src="https://img.shields.io/badge/Suggest%20a%20Roadmap%20Item-24292F?style=flat-square&logo=github&logoColor=white" alt="Suggest a Roadmap Item"></a>
+</p>
+
+### v0.1.0 — ✅ Released
 - [x] Local music library scanning and indexing
 - [x] MP3 and M4A playback
 - [x] Playback queue and queue management
@@ -323,7 +362,9 @@ Endurance/
 - [x] GitHub Release with Windows installers
 - [x] README documentation and application previews
 
-### v0.2.0 — Released
+<details open>
+<summary><h3>v0.2.0 — ✅ Released</h3></summary>
+
 Endurance v0.2.0 shipped with a focus on accessibility, offline lyrics editing, the Mini Player, a native startup experience, and cross-platform support.
 
 **Playback & Controls**
@@ -367,80 +408,155 @@ Endurance v0.2.0 shipped with a focus on accessibility, offline lyrics editing, 
 - [x] macOS-native window and title-bar behavior
 - [x] Platform-appropriate keyboard shortcuts (`Ctrl` on Windows, `⌘` on macOS)
 - [x] macOS application packaging (Apple Silicon and Intel `.dmg`)
-- [ ] Runtime testing and validation on physical macOS hardware
-- [ ] macOS distribution signing/notarization
 - [x] Shared playback, library, lyrics, themes, and database functionality across platforms
+- [ ] Runtime testing and validation on physical macOS hardware *(→ moved to v0.3.0)*
+- [ ] macOS distribution signing/notarization *(→ moved to v0.3.0)*
 
-### v0.3.0 — Planned
+</details>
 
-**Online Lyrics**
-- [ ] Introduce optional online lyrics functionality
-- [ ] Research and integrate a reliable lyrics provider/API
-- [ ] Search for lyrics using song metadata
-- [ ] Fetch synchronized lyrics when available
-- [ ] Fall back to plain lyrics when synchronized lyrics are unavailable
-- [ ] Keep locally stored/user-created lyrics available offline
-- [ ] Prioritize local lyrics before attempting an online lookup
-- [ ] Handle unavailable lyrics and network failures gracefully
-- [ ] Consider local caching of successfully retrieved lyrics
-- [ ] Clearly separate online functionality from the core offline player
+<details open>
+<summary><h3>v0.3.0 — 🚧 In Planning</h3></summary>
 
-**Online & Offline Architecture**
-- [ ] Keep Endurance fully usable without an internet connection
-- [ ] Make online services optional rather than required
-- [ ] Avoid making playback dependent on online services
-- [ ] Design a clean provider abstraction for future online features
+With v0.2.0 officially released, v0.3.0 is scoped around **four pillars**: core usability, the Home experience, lyrics/music features, and platform robustness — rather than a loose backlog dump. Priority is split into **Core**, **Polish**, and **Distribution / Maintenance** tiers.
 
-**macOS Completion**
-- [ ] Complete physical hardware validation
-- [ ] Finalize signing and notarization for public distribution
+#### 🏠 Home / Library Experience — *Core*
+One of the headline features of v0.3.0.
+- [ ] Completely redesign the Home / empty-library screen
+- [ ] Remove technical/developer information from the Home screen (SQLite, supported formats, implementation details, "local-first" explanations, Material 3/Pixel references)
+- [ ] Create a proper music-player empty state
+- [ ] Add a clear **Add Music / Select Music Folder** action
+- [ ] Surface useful content once music exists — Recently Played, Recently Added, a simple listening section
+- [ ] Make the Home screen feel like part of the player, not documentation
+- [ ] Preserve Endurance's existing warm/premium visual language *(kept intentionally scoped — not a full Spotify-style homepage yet)*
+
+#### 🖱️ File Opening / Windows Integration — *Core*
+- [ ] Open `.mp3` files directly from Windows File Explorer
+- [ ] Open `.m4a` files directly from Windows File Explorer
+- [ ] Automatically select and start playback of the opened track
+- [ ] Route file-open requests to an already-running Endurance instance instead of spawning a duplicate
+- [ ] Handle paths containing spaces
+- [ ] Handle invalid/missing files gracefully without crashing
+- [ ] Handle unsupported file paths safely
+- [ ] Decide and implement behavior when multiple audio files are opened at once
+- [ ] Reuse the existing library/playback architecture rather than a separate playback path
+
+#### 🖍️ Text-Selection Behavior — *Core*
+- [ ] Disable browser-like text selection throughout the application
+- [ ] Prevent unintended text selection when dragging across the UI
+- [ ] Preserve selection/editing where it's actually useful — inputs, textareas, Lyrics Editor fields
+- [ ] Verify behavior across Main Player, song lists, sidebar, Settings, Mini Player, and Lyrics Editor
+
+#### 🎤 Online Lyrics & Local/Online Integration — *Core, Major Feature*
+Builds on the v0.2.0 Lyrics Editor rather than reworking it.
+- [ ] Design the online lyrics architecture and provider abstraction
+- [ ] Search/fetch lyrics for a track from a reliable provider/API
+- [ ] Let the user pick the correct result when multiple matches exist
+- [ ] Import fetched lyrics into the local Lyrics Editor and save as a local `.lrc`
+- [ ] Keep saved lyrics fully usable offline afterward
+- [ ] Handle no-result, error, and network-failure cases cleanly
+- [ ] Never make online lyrics mandatory for playback
+
+> **Architecture principle:** the local `.lrc` remains the persistent source of truth. Flow: **Local LRC → use immediately**, or when none exists, **online search → user picks a result → save locally → future playback uses the local file.** This keeps the online feature strictly optional and true to Endurance's offline-first design.
+
+#### ✍️ Lyrics Editor Improvements — *Polish*
+- [ ] Refine the editing workflow based on real usage
+- [ ] Improve timestamp editing and line adding/removal
+- [ ] Improve metadata editing
+- [ ] Explore a better timestamp creation workflow, potentially playback-assisted *(advanced karaoke/timing tools not committed to yet)*
+
+#### 🎧 Playback & Library Polish — *Polish*
+Investigation-first items, not all guaranteed as shipped features:
+- [ ] Improve queue management
+- [ ] Improve recently played / history experience
+- [ ] Improve library sorting, filtering, and search
+- [ ] Improve playback state persistence
+- [ ] Improve track metadata presentation and artwork cache handling
+- [ ] Review gapless / track-transition behavior and MP3/M4A playback edge cases
+
+#### 🍎 macOS Physical Validation — *Core*
+Deliberately deferred from v0.2.0, now scheduled for v0.3.0.
+- [ ] Test the ARM64 build on real Apple Silicon hardware
+- [ ] Test the Intel build where hardware is available
+- [ ] Verify native title bar and traffic-light controls
+- [ ] Verify audio playback, Mini Player, lyrics, and Lyrics Editor
+- [ ] Verify keyboard shortcuts and splash screen
+- [ ] Verify file/folder operations and file-opening behavior
+- [ ] Fix any platform-specific issues discovered during testing
+
+#### 📦 macOS Distribution — *Distribution, later*
+- [ ] Decide macOS distribution format
+- [ ] Configure Apple application signing and notarization
+- [ ] Test a signed/notarized build
+- [ ] Update GitHub Actions accordingly
+- [ ] Document the macOS installation/distribution process
+
+#### 🛠️ CI / Build Maintenance — *Maintenance*
+- [ ] Update GitHub Actions dependencies causing Node.js 20 warnings
+- [ ] Re-run Windows/macOS packaging and verify all artifacts still build
+
+#### 🌤️ Startup Polish — *Polish*
+- [ ] Investigate a brief white window/flash before the splash screen appears, so the flow is a clean **Launch → Splash → Main UI** with no artificial delay
+
+#### 🧭 Desktop-Native Polish — *Polish*
+A pass to move Endurance from "working desktop project" toward "polished desktop application":
+- [ ] Review focus behavior and keyboard navigation throughout
+- [ ] Review hover / pressed / focus states, context menus, dialogs, and overlays
+- [ ] Review window resizing and Mini Player behavior
+- [ ] Review accessibility labels
+- [ ] Review accidental text selection/dragging
+- [ ] Review empty states and error states
+
+#### 🚫 Explicitly Out of Scope for v0.3.0
+To keep the milestone realistic, the following are intentionally deferred:
+Android/iOS support · cloud synchronization · streaming music · user accounts · social features · an online database · automatic AI-generated lyrics · a full playlist system · music discovery/recommendation engine · a major database redesign · a completely new visual design system.
+
+</details>
 
 ### Future
-
 **Library & Organization**
 - [ ] Playlists and playlist management
-- [ ] Improved album browsing
-- [ ] Improved artist browsing
-- [ ] Advanced library management
-- [ ] Better sorting and filtering options
+- [ ] Improved album and artist browsing
+- [ ] Advanced library management, sorting, and filtering
 
 **Playback**
 - [ ] Sleep timer
 - [ ] Additional playback customization
-- [ ] Further audio and player improvements
 
 **Lyrics**
 - [ ] Advanced lyrics synchronization tools
-- [ ] Improved lyrics editing experience
 - [ ] Additional lyrics providers
 
 **Platform Support**
 - [ ] Continued macOS improvements
 - [ ] Evaluate additional desktop platforms
-- [ ] Platform-specific polish and native integrations
 
 ---
 
 ## Contributing
+
+<p>
+  <a href="https://github.com/Endurance3000/Endurance/fork"><img src="https://img.shields.io/badge/🍴%20Fork%20the%20Repo-24292F?style=flat-square&logo=github&logoColor=white" alt="Fork the Repo"></a>
+  <a href="https://github.com/Endurance3000/Endurance/pulls"><img src="https://img.shields.io/badge/🔀%20Open%20a%20Pull%20Request-24292F?style=flat-square&logo=github&logoColor=white" alt="Open a Pull Request"></a>
+</p>
 
 Contributions from the open-source community are welcome.
 
 ### Contribution Workflow
 1. **Fork** the repository on GitHub.
 2. **Create a Feature Branch**:
-```
-git checkout -b feature/your-feature-name
-```
+   ```bash
+   git checkout -b feature/your-feature-name
+   ```
 3. **Commit your changes**:
-```
-git commit -m "feat: describe your change"
-```
+   ```bash
+   git commit -m "feat: describe your change"
+   ```
 4. **Run Verification**:
-```
-npm test
-npx tsc --noEmit
-cd src-tauri && cargo test && cd ..
-```
+   ```bash
+   npm test
+   npx tsc --noEmit
+   cd src-tauri && cargo test && cd ..
+   ```
 5. **Open a Pull Request** explaining the intent and testing approach.
 
 ### Guidelines
@@ -452,23 +568,28 @@ cd src-tauri && cargo test && cd ..
 
 ## Issue Reporting & Support
 
-If you encounter a bug or have a suggestion:
+<p>
+  <a href="https://github.com/Endurance3000/Endurance/issues/new/choose"><img src="https://img.shields.io/badge/🐛%20Open%20a%20Bug%20Report-c62828?style=flat-square" alt="Open a Bug Report"></a>
+  <a href="https://github.com/Endurance3000/Endurance/issues/new/choose"><img src="https://img.shields.io/badge/💡%20Request%20a%20Feature-2e7d32?style=flat-square" alt="Request a Feature"></a>
+  <a href="https://github.com/Endurance3000/Endurance/issues"><img src="https://img.shields.io/badge/📋%20Browse%20All%20Issues-455a64?style=flat-square" alt="Browse All Issues"></a>
+</p>
 
-- Open an issue on the [**GitHub Issues**](https://github.com/Endurance3000/Endurance/issues) tracker.
-- In bug reports, please include:
-  * Endurance version (e.g., `v0.2.0`)
-  * Operating system and version (e.g., Windows 11 23H2, macOS Sonoma)
-  * Audio file format (e.g., MP3 / M4A)
-  * Steps to reproduce the issue and observed vs. expected behavior
+In bug reports, please include:
+- Endurance version (e.g., `v0.2.0`)
+- Operating system and version (e.g., Windows 11 23H2, macOS Sonoma)
+- Audio file format (e.g., MP3 / M4A)
+- Steps to reproduce the issue and observed vs. expected behavior
 
 ---
 
 ## Releases
 
-- [**Latest Release (v0.2.0)**](https://github.com/Endurance3000/Endurance/releases/latest)
-- [**All Releases**](https://github.com/Endurance3000/Endurance/releases)
-- The next version (v0.3.0) is under active development, focused on optional online lyrics and completing macOS distribution.
-- Feel free to suggest features to be added in upcoming versions via [Issues](https://github.com/Endurance3000/Endurance/issues).
+<p>
+  <a href="https://github.com/Endurance3000/Endurance/releases/latest"><img src="https://img.shields.io/badge/Latest%20Release%20—%20v0.2.0-c48b71?style=flat-square" alt="Latest Release"></a>
+  <a href="https://github.com/Endurance3000/Endurance/releases"><img src="https://img.shields.io/badge/All%20Releases-607274?style=flat-square" alt="All Releases"></a>
+</p>
+
+v0.3.0 is under active development, centered on the Home/Library redesign, Windows File Explorer integration, optional online lyrics, and completing macOS hardware validation and distribution. Feature suggestions are always welcome via [Issues](https://github.com/Endurance3000/Endurance/issues).
 
 ---
 
@@ -478,5 +599,12 @@ Endurance is currently being prepared as an open-source project. A formal open-s
 
 ---
 
+<div align="center">
+
 Made with care for people who still own their music.
+
 **Endurance — Local music, beautifully played.**
+
+<a href="https://github.com/Endurance3000/Endurance"><img src="https://img.shields.io/badge/⭐%20Star%20this%20repo-c48b71?style=for-the-badge" alt="Star this repo"></a>
+
+</div>
