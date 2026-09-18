@@ -429,16 +429,31 @@ One of the headline features of v0.3.0.
 - [ ] Make the Home screen feel like part of the player, not documentation
 - [ ] Preserve Endurance's existing warm/premium visual language *(kept intentionally scoped — not a full Spotify-style homepage yet)*
 
-#### 🖱️ File Opening / Windows Integration — *Core*
-- [ ] Open `.mp3` files directly from Windows File Explorer
-- [ ] Open `.m4a` files directly from Windows File Explorer
-- [ ] Automatically select and start playback of the opened track
-- [ ] Route file-open requests to an already-running Endurance instance instead of spawning a duplicate
-- [ ] Handle paths containing spaces
-- [ ] Handle invalid/missing files gracefully without crashing
-- [ ] Handle unsupported file paths safely
-- [ ] Decide and implement behavior when multiple audio files are opened at once
-- [ ] Reuse the existing library/playback architecture rather than a separate playback path
+#### File Opening / Windows Integration — *Core*
+
+- [ ] Register Endurance as a handler for supported audio file types
+- [ ] Open supported audio file types from Windows File Explorer
+- [ ] Automatically select and play the opened track
+- [ ] Handle file paths containing spaces and special characters
+- [ ] Handle missing, invalid, or unsupported files gracefully
+- [ ] Handle multiple files opened together where supported
+- [ ] Forward files to an existing Endurance instance instead of unnecessarily creating duplicate instances
+- [ ] Add equivalent file-opening support for macOS Finder
+
+#### Common Audio Format Support — *Core*
+
+- [ ] Add FLAC (`.flac`) library scanning and indexing
+- [ ] Add WAV (`.wav`) library scanning and playback
+- [ ] Add OGG Vorbis (`.ogg`) library scanning and playback
+- [ ] Add Opus (`.opus`) library scanning and playback
+- [ ] Add AAC (`.aac`) library scanning and playback
+- [ ] Add AIFF (`.aiff`, `.aif`) library scanning and playback
+- [ ] Verify metadata extraction for each supported format
+- [ ] Verify embedded artwork handling for each supported format
+- [ ] Verify seeking, queue, shuffle, repeat, volume, and playback history
+- [ ] Integrate supported formats with lyrics, Lyrics Editor, favorites, Mini Player, and dynamic artwork
+- [ ] Add automated format-specific regression tests
+- [ ] Verify supported formats on Windows and macOS
 
 #### 🖍️ Text-Selection Behavior — *Core*
 - [ ] Disable browser-like text selection throughout the application
