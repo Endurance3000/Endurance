@@ -248,7 +248,7 @@ export const Songs: React.FC<SongsProps> = ({
         <EmptyState
           icon={<Music size={38} />}
           title="No supported music found"
-          description="Endurance recursively scanned your configured folder(s), but found no .mp3 or .m4a audio files. Try adding a folder with supported music files."
+          description="Endurance recursively scanned your configured folder(s), but found no supported audio files. Try adding a folder with supported music files."
           actionLabel="Add Another Folder"
           actionIcon={<FolderPlus size={16} />}
           onAction={onAddFolder}

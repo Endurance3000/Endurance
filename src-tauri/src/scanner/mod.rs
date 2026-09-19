@@ -20,11 +20,14 @@ pub fn generate_track_id(normalized_path: &str) -> String {
     hex::encode(hasher.finalize())
 }
 
-/// Case-insensitive check for supported music formats: .mp3 and .m4a
+/// Case-insensitive check for supported music formats: mp3, m4a, flac, wav, aac, ogg, opus, aiff, aif
 pub fn is_supported_audio(path: &Path) -> bool {
     if let Some(ext) = path.extension().and_then(|s| s.to_str()) {
         let ext_lower = ext.to_lowercase();
-        ext_lower == "mp3" || ext_lower == "m4a"
+        matches!(
+            ext_lower.as_str(),
+            "mp3" | "m4a" | "flac" | "wav" | "aac" | "ogg" | "opus" | "aiff" | "aif"
+        )
     } else {
         false
     }

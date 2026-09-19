@@ -9,12 +9,29 @@ mod tests {
 
     #[test]
     fn test_supported_audio_formats() {
+        // Supported formats (lower and uppercase)
         assert!(is_supported_audio(Path::new("song.mp3")));
         assert!(is_supported_audio(Path::new("song.MP3")));
         assert!(is_supported_audio(Path::new("song.m4a")));
         assert!(is_supported_audio(Path::new("song.M4A")));
-        assert!(!is_supported_audio(Path::new("song.flac")));
-        assert!(!is_supported_audio(Path::new("song.wav")));
+        assert!(is_supported_audio(Path::new("song.flac")));
+        assert!(is_supported_audio(Path::new("song.FLAC")));
+        assert!(is_supported_audio(Path::new("song.wav")));
+        assert!(is_supported_audio(Path::new("song.WAV")));
+        assert!(is_supported_audio(Path::new("song.aac")));
+        assert!(is_supported_audio(Path::new("song.AAC")));
+        assert!(is_supported_audio(Path::new("song.ogg")));
+        assert!(is_supported_audio(Path::new("song.OGG")));
+        assert!(is_supported_audio(Path::new("song.opus")));
+        assert!(is_supported_audio(Path::new("song.OPUS")));
+        assert!(is_supported_audio(Path::new("song.aiff")));
+        assert!(is_supported_audio(Path::new("song.AIFF")));
+        assert!(is_supported_audio(Path::new("song.aif")));
+        assert!(is_supported_audio(Path::new("song.AIF")));
+
+        // Unsupported / out-of-scope extensions
+        assert!(!is_supported_audio(Path::new("song.wma")));
+        assert!(!is_supported_audio(Path::new("song.ape")));
         assert!(!is_supported_audio(Path::new("song.lrc")));
         assert!(!is_supported_audio(Path::new("song.txt")));
         assert!(!is_supported_audio(Path::new("song")));
