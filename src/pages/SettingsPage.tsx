@@ -186,9 +186,9 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({
             <div className="settings-row">
               <div>
                 <div className="setting-label">Supported Formats</div>
-                <div className="setting-sublabel">Case-insensitive offline formats: MP3 (.mp3) and AAC/M4A (.m4a)</div>
+                <div className="setting-sublabel">Case-insensitive offline formats: MP3, M4A/AAC, FLAC, WAV, OGG, Opus, AIFF</div>
               </div>
-              <span className="setting-badge">MP3 & M4A</span>
+              <span className="setting-badge">MP3, FLAC, WAV & more</span>
             </div>
 
             <div className="settings-row">

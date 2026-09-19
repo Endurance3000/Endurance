@@ -48,6 +48,21 @@ describe('LyricsService tests', () => {
     assert.strictEqual(invokeCalls[0].cmd, 'get_track_lyrics');
   });
 
+  it('getResolvedLyrics resolves sidecar file path across expanded audio formats', async () => {
+    const extensions = ['flac', 'wav', 'aac', 'ogg', 'opus', 'aiff', 'aif'];
+    for (const ext of extensions) {
+      mockResolved = {
+        filePath: `C:/Music/song.lrc`,
+        content: `[00:01.00]Lyrics for ${ext}`,
+      };
+      const res = await lyricsService.getResolvedLyrics(`C:/Music/song.${ext}`);
+      assert.deepStrictEqual(res, {
+        filePath: `C:/Music/song.lrc`,
+        content: `[00:01.00]Lyrics for ${ext}`,
+      });
+    }
+  });
+
   it('getResolvedLyrics returns null when no trackFilePath provided or no file found', async () => {
     const emptyResult = await lyricsService.getResolvedLyrics('');
     assert.strictEqual(emptyResult, null);
