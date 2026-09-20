@@ -425,7 +425,7 @@ One of the headline features of v0.3.0.
 - [ ] Remove technical/developer information from the Home screen (SQLite, supported formats, implementation details, "local-first" explanations, Material 3/Pixel references)
 - [ ] Create a proper music-player empty state
 - [ ] Add a clear **Add Music / Select Music Folder** action
-- [ ] Surface useful content once music exists — **Recently Played**, **Recently Added**, a simple listening section
+- [ ] Surface useful content once music exists, **Recently Played**, **Recently Added**, a simple listening section
 - [ ] Make the Home screen feel like part of the player, not documentation
 - [ ] Preserve Endurance's existing warm/premium visual language *(kept intentionally scoped — not a full Spotify-style homepage yet)*
 
