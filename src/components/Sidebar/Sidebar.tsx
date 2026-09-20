@@ -1,11 +1,13 @@
 import React from 'react';
 import { Home, Music, Heart, Settings } from 'lucide-react';
-import { NavigationPage } from '../../types';
+import { NavigationPage, LibraryFolder } from '../../types';
 import './Sidebar.css';
 
 interface SidebarProps {
   currentPage: NavigationPage;
   onNavigate: (page: NavigationPage) => void;
+  tracksCount?: number;
+  folders?: LibraryFolder[];
 }
 
 interface NavItem {
@@ -14,7 +16,12 @@ interface NavItem {
   icon: React.ReactNode;
 }
 
-export const Sidebar: React.FC<SidebarProps> = ({ currentPage, onNavigate }) => {
+export const Sidebar: React.FC<SidebarProps> = ({
+  currentPage,
+  onNavigate,
+  tracksCount,
+  folders,
+}) => {
   const mainNavItems: NavItem[] = [
     { id: 'home', label: 'Home', icon: <Home size={19} /> },
     { id: 'songs', label: 'Songs', icon: <Music size={19} /> },
@@ -51,6 +58,15 @@ export const Sidebar: React.FC<SidebarProps> = ({ currentPage, onNavigate }) => 
       </nav>
 
       <div className="m3-nav-footer">
+        {tracksCount !== undefined && tracksCount > 0 && (
+          <div className="sidebar-library-meta">
+            <span className="sidebar-meta-count">{tracksCount} {tracksCount === 1 ? 'track' : 'tracks'}</span>
+            <span className="sidebar-meta-folders">
+              {folders && folders.length > 0 ? `${folders.length} ${folders.length === 1 ? 'folder' : 'folders'}` : 'Local collection'}
+            </span>
+          </div>
+        )}
+
         {bottomNavItems.map((item) => {
           const isActive = currentPage === item.id;
           return (
@@ -71,3 +87,5 @@ export const Sidebar: React.FC<SidebarProps> = ({ currentPage, onNavigate }) => 
     </aside>
   );
 };
+
+export default Sidebar;

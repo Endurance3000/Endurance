@@ -10,7 +10,6 @@
   cursor: pointer;
   user-select: none;
   white-space: nowrap;
-  outline: none;
   position: relative;
   transition: transform var(--motion-duration-short-2) var(--motion-easing-standard-decelerate),
     background-color var(--motion-duration-short-3) var(--motion-easing-standard),

@@ -1,12 +1,20 @@
+/* ==========================================================================
+   SIDEBAR NAVIGATION — THE RECORD ROOM (Phase 9)
+   ========================================================================== */
+
 .m3-sidebar {
-  width: var(--sidebar-width);
-  background: var(--md-sys-color-surface-container-low);
-  border-right: 1px solid var(--md-sys-color-outline-variant);
+  width: var(--sidebar-width, 220px);
+  height: 100%;
+  background: var(--surface-raised);
+  border-right: 1px solid var(--line-subtle);
   display: flex;
   flex-direction: column;
-  padding: var(--space-md) var(--space-sm);
+  padding: var(--space-md) var(--space-sm) var(--player-bar-height, 116px);
   user-select: none;
   flex-shrink: 0;
+  box-sizing: border-box;
+  transition: background-color var(--dur-medium) var(--ease-standard),
+              border-color var(--dur-medium) var(--ease-standard);
 }
 
 .m3-sidebar-brand {
@@ -14,12 +22,12 @@
 }
 
 .m3-nav-label {
-  font-family: var(--font-family-base);
+  font-family: var(--font-ui);
   font-size: 0.6875rem;
   font-weight: 700;
   letter-spacing: 0.08em;
   text-transform: uppercase;
-  color: var(--md-sys-color-on-surface-variant);
+  color: var(--ink-tertiary);
 }
 
 .m3-nav-group {
@@ -38,27 +46,27 @@
   height: 44px;
   border: none;
   background: transparent;
-  border-radius: var(--radius-full);
+  border-radius: var(--radius-pill);
   cursor: pointer;
-  color: var(--md-sys-color-on-surface-variant);
-  font-family: var(--font-family-base);
+  color: var(--ink-secondary);
+  font-family: var(--font-ui);
   font-size: 0.875rem;
   font-weight: 500;
   text-align: left;
-  outline: none;
-  transition: color var(--motion-duration-short-2) var(--motion-easing-standard),
-    transform var(--motion-duration-short-1) var(--motion-easing-standard);
+  transition: color var(--dur-short) var(--ease-standard),
+              background-color var(--dur-short) var(--ease-standard),
+              transform var(--dur-micro) var(--ease-standard);
   overflow: hidden;
 }
 
 .m3-nav-item:focus-visible {
-  outline: 2px solid var(--md-sys-color-focus-ring);
+  outline: 2px solid var(--accent);
   outline-offset: 2px;
 }
 
 .m3-nav-item:hover {
-  color: var(--md-sys-color-on-surface);
-  background: var(--md-sys-color-surface-container);
+  color: var(--ink-primary);
+  background: var(--surface-hover);
 }
 
 .m3-nav-item:active {
@@ -66,20 +74,20 @@
 }
 
 .m3-nav-item.active {
-  color: var(--md-sys-color-on-primary-container);
+  color: var(--ink-primary);
   font-weight: 600;
 }
 
 .m3-nav-indicator {
   position: absolute;
   inset: 0;
-  border-radius: var(--radius-full);
-  background: var(--md-sys-color-primary-container);
+  border-radius: var(--radius-pill);
+  background: var(--accent-wash);
   opacity: 0;
-  transform: scale(0.92);
+  transform: scale(0.95);
   z-index: 0;
-  transition: opacity var(--motion-duration-medium-1) var(--motion-easing-emphasized-decelerate),
-    transform var(--motion-duration-medium-1) var(--motion-easing-emphasized-decelerate);
+  transition: opacity var(--dur-short) var(--ease-emphasized),
+              transform var(--dur-short) var(--ease-emphasized);
 }
 
 .m3-nav-item.active .m3-nav-indicator {
@@ -95,10 +103,36 @@
   align-items: center;
 }
 
+.m3-nav-item.active .m3-nav-icon {
+  color: var(--accent);
+}
+
 .m3-nav-footer {
   display: flex;
   flex-direction: column;
   gap: var(--space-xs);
   padding-top: var(--space-sm);
-  border-top: 1px solid var(--md-sys-color-outline-variant);
+  border-top: 1px solid var(--line-subtle);
+}
+
+.sidebar-library-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 4px var(--space-lg) var(--space-xs);
+  user-select: none;
+}
+
+.sidebar-meta-count {
+  font-family: var(--font-ui);
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--ink-secondary);
+  font-variant-numeric: tabular-nums;
+}
+
+.sidebar-meta-folders {
+  font-family: var(--font-ui);
+  font-size: 0.6875rem;
+  color: var(--ink-tertiary);
 }

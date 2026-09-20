@@ -1,14 +1,23 @@
-import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
-import { dynamicColorService } from '../services/artwork/colorExtraction';
+import React, { createContext, useContext, useState, useEffect, useCallback, useRef } from 'react';
+import { getClampedAmbientColor } from '../services/artwork/ambientClampedColor';
 import { libraryService } from '../services/library/libraryService';
 import { preferencesService } from '../services/preferences/preferencesService';
 import { Track } from '../types';
 
-export type AppTheme = 'dark' | 'light' | 'system';
+export type AppTheme =
+  | 'endurance'
+  | 'coffee'
+  | 'parchment'
+  | 'mauve'
+  | 'slate'
+  | 'ash'
+  | 'daylight'
+  | 'porcelain'
+  | 'system';
 
 export interface ThemeContextType {
   theme: AppTheme;
-  resolvedTheme: 'dark' | 'light';
+  resolvedTheme: string;
   dynamicColorEnabled: boolean;
   highContrast: boolean;
   setTheme: (theme: AppTheme) => void;
@@ -19,34 +28,20 @@ export interface ThemeContextType {
 
 const ThemeContext = createContext<ThemeContextType | null>(null);
 
-const DYNAMIC_CSS_VARS = [
-  '--md-sys-color-background',
-  '--md-sys-color-surface',
-  '--md-sys-color-surface-dim',
-  '--md-sys-color-surface-bright',
-  '--md-sys-color-surface-container-lowest',
-  '--md-sys-color-surface-container-low',
-  '--md-sys-color-surface-container',
-  '--md-sys-color-surface-container-high',
-  '--md-sys-color-surface-container-highest',
-  '--md-sys-color-primary',
-  '--md-sys-color-on-primary',
-  '--md-sys-color-primary-container',
-  '--md-sys-color-on-primary-container',
-  '--md-sys-color-secondary',
-  '--md-sys-color-secondary-container',
-  '--md-sys-color-on-surface',
-  '--md-sys-color-on-surface-variant',
-  '--md-sys-color-outline',
-  '--md-sys-color-outline-variant',
+const DYNAMIC_ACCENT_VARS = [
+  '--accent',
+  '--accent-bright',
+  '--accent-deep',
+  '--accent-wash',
+  '--accent-wash-soft',
 ];
 
 export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [theme, setThemeState] = useState<AppTheme>('dark');
-  const [dynamicColorEnabled, setDynamicColorState] = useState<boolean>(true);
+  const [theme, setThemeState] = useState<AppTheme>('endurance');
+  const [dynamicColorEnabled, setDynamicColorState] = useState<boolean>(false);
   const [highContrast, setHighContrastState] = useState<boolean>(false);
   const [systemIsDark, setSystemIsDark] = useState<boolean>(true);
-  const activeTrackRef = React.useRef<Track | null>(null);
+  const activeTrackRef = useRef<Track | null>(null);
 
   // Detect system preference
   useEffect(() => {
@@ -64,9 +59,17 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
   // Load initial preferences
   useEffect(() => {
+    // Check localStorage first for instant hydration
+    if (typeof window !== 'undefined' && window.localStorage) {
+      const cached = localStorage.getItem('endurance_theme') as AppTheme;
+      if (cached) {
+        setThemeState(cached);
+      }
+    }
+
     preferencesService.loadAll().then((prefs) => {
       const savedTheme = prefs.get('theme') as AppTheme;
-      if (savedTheme === 'dark' || savedTheme === 'light' || savedTheme === 'system') {
+      if (savedTheme) {
         setThemeState(savedTheme);
       }
       const savedDyn = prefs.get('dynamic_color');
@@ -80,12 +83,26 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     });
   }, []);
 
-  const resolvedTheme: 'dark' | 'light' = theme === 'system' ? (systemIsDark ? 'dark' : 'light') : theme;
+  // Listen for storage events across windows (e.g. Mini Player sync)
+  useEffect(() => {
+    const handleStorage = (e: StorageEvent) => {
+      if (e.key === 'endurance_theme' && e.newValue) {
+        setThemeState(e.newValue as AppTheme);
+      }
+    };
+    window.addEventListener('storage', handleStorage);
+    return () => window.removeEventListener('storage', handleStorage);
+  }, []);
+
+  const resolvedTheme =
+    theme === 'system'
+      ? (systemIsDark ? 'endurance' : 'daylight')
+      : theme;
 
   const clearDynamicStyles = useCallback(() => {
     if (typeof document === 'undefined') return;
     const root = document.documentElement;
-    for (const v of DYNAMIC_CSS_VARS) {
+    for (const v of DYNAMIC_ACCENT_VARS) {
       root.style.removeProperty(v);
     }
   }, []);
@@ -107,35 +124,28 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
           return;
         }
 
-        const isDark = resolvedTheme === 'dark';
-        const { palette } = await dynamicColorService.getArtworkPalette(dataUri, isDark);
-
+        const clamped = await getClampedAmbientColor(dataUri, track.artwork_hash);
         const root = document.documentElement;
-        root.style.setProperty('--md-sys-color-background', palette.background);
-        root.style.setProperty('--md-sys-color-surface', palette.surface);
-        root.style.setProperty('--md-sys-color-surface-dim', palette.surfaceDim);
-        root.style.setProperty('--md-sys-color-surface-bright', palette.surfaceBright);
-        root.style.setProperty('--md-sys-color-surface-container-lowest', palette.surfaceContainerLowest);
-        root.style.setProperty('--md-sys-color-surface-container-low', palette.surfaceContainerLow);
-        root.style.setProperty('--md-sys-color-surface-container', palette.surfaceContainer);
-        root.style.setProperty('--md-sys-color-surface-container-high', palette.surfaceContainerHigh);
-        root.style.setProperty('--md-sys-color-surface-container-highest', palette.surfaceContainerHighest);
-        root.style.setProperty('--md-sys-color-primary', palette.primary);
-        root.style.setProperty('--md-sys-color-on-primary', palette.onPrimary);
-        root.style.setProperty('--md-sys-color-primary-container', palette.primaryContainer);
-        root.style.setProperty('--md-sys-color-on-primary-container', palette.onPrimaryContainer);
-        root.style.setProperty('--md-sys-color-secondary', palette.secondary);
-        root.style.setProperty('--md-sys-color-secondary-container', palette.secondaryContainer);
-        root.style.setProperty('--md-sys-color-on-surface', palette.onSurface);
-        root.style.setProperty('--md-sys-color-on-surface-variant', palette.onSurfaceVariant);
-        root.style.setProperty('--md-sys-color-outline', palette.outline);
-        root.style.setProperty('--md-sys-color-outline-variant', palette.outlineVariant);
+
+        // Apply ONLY accent variables — surfaces and ink are NEVER derived from artwork
+        const { hue, saturation, lightness } = clamped;
+        const accent = `hsl(${hue}, ${saturation}%, ${lightness}%)`;
+        const accentBright = `hsl(${hue}, ${Math.min(saturation + 6, 42)}%, ${Math.min(lightness + 10, 52)}%)`;
+        const accentDeep = `hsl(${hue}, ${Math.max(saturation - 6, 16)}%, ${Math.max(lightness - 10, 22)}%)`;
+        const accentWash = `hsla(${hue}, ${saturation}%, ${lightness}%, 0.12)`;
+        const accentWashSoft = `hsla(${hue}, ${saturation}%, ${lightness}%, 0.06)`;
+
+        root.style.setProperty('--accent', accent);
+        root.style.setProperty('--accent-bright', accentBright);
+        root.style.setProperty('--accent-deep', accentDeep);
+        root.style.setProperty('--accent-wash', accentWash);
+        root.style.setProperty('--accent-wash-soft', accentWashSoft);
       } catch (err) {
         console.warn('Failed to apply dynamic colors:', err);
         clearDynamicStyles();
       }
     },
-    [dynamicColorEnabled, resolvedTheme, clearDynamicStyles]
+    [dynamicColorEnabled, clearDynamicStyles]
   );
 
   // Apply resolved theme attribute to HTML element
@@ -156,6 +166,9 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   const setTheme = (newTheme: AppTheme) => {
     setThemeState(newTheme);
     preferencesService.set('theme', newTheme);
+    if (typeof window !== 'undefined' && window.localStorage) {
+      localStorage.setItem('endurance_theme', newTheme);
+    }
   };
 
   const setDynamicColorEnabled = (enabled: boolean) => {

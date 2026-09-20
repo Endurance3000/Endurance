@@ -1,0 +1,420 @@
+/* ==========================================================================
+   ENDURANCE THE RECORD ROOM — TOKEN SYSTEM (Brief v3)
+   ========================================================================== */
+
+/* --------------------------------------------------------------------------
+   THEME 1: ENDURANCE (Warm Clay — Default)
+   -------------------------------------------------------------------------- */
+:root,
+:root[data-theme="endurance"],
+:root[data-theme="dusk"],
+:root[data-theme="dark"] {
+  --theme-id: "endurance";
+
+  /* Surfaces — warm-black, hue ~22deg */
+  --surface-base:      #14100E;
+  --surface-raised:    #1C1714;
+  --surface-panel:     #241D19;
+  --surface-hover:     #2D2520;
+  --surface-active:    #372D27;
+
+  /* Ink */
+  --ink-primary:       #FFFBE9;
+  --ink-secondary:     #CBB9A6;
+  --ink-tertiary:      #8E7D6F;
+  --ink-disabled:      #5C5048;
+
+  /* Accent */
+  --accent-deep:       #AD8B73;
+  --accent:            #CEAB93;
+  --accent-bright:     #E3CAA5;
+  --accent-wash:       rgba(206, 171, 147, 0.12);
+  --accent-wash-soft:  rgba(206, 171, 147, 0.06);
+  --accent-on-fill:    #241D19;
+
+  /* Lines */
+  --line-subtle:       rgba(255, 251, 233, 0.055);
+  --line-strong:       rgba(255, 251, 233, 0.11);
+
+  /* Shadows */
+  --shadow-sm:      0 1px 2px rgba(20, 12, 6, 0.40);
+  --shadow-md:      0 4px 16px rgba(20, 12, 6, 0.45);
+  --shadow-lg:      0 18px 48px rgba(20, 12, 6, 0.55);
+  --shadow-sleeve:  0 28px 64px -12px rgba(0, 0, 0, 0.72);
+
+  /* The Record */
+  --record-body:    #0C0A09;
+  --record-groove:  rgba(255, 251, 233, 0.045);
+  --record-sheen:   rgba(255, 251, 233, 0.065);
+  --record-edge:    rgba(255, 251, 233, 0.10);
+
+  /* Paper */
+  --grain-opacity:  0.030;
+}
+
+/* --------------------------------------------------------------------------
+   THEME 2: COFFEE (Maroon and Cream)
+   -------------------------------------------------------------------------- */
+:root[data-theme="coffee"] {
+  --theme-id: "coffee";
+  --surface-base:      #1E0E11;
+  --surface-raised:    #2C1318;
+  --surface-panel:     #561C24;
+  --surface-hover:     #6D2932;
+  --surface-active:    #7E3540;
+
+  --ink-primary:       #E8D8C4;
+  --ink-secondary:     #C7B7A3;
+  --ink-tertiary:      #9A8879;
+  --ink-disabled:      #6A5B50;
+
+  --accent-deep:       #6D2932;
+  --accent:            #C7B7A3;
+  --accent-bright:     #E8D8C4;
+  --accent-wash:       rgba(199, 183, 163, 0.12);
+  --accent-wash-soft:  rgba(199, 183, 163, 0.06);
+  --accent-on-fill:    #2C1318;
+
+  --line-subtle:       rgba(232, 216, 196, 0.06);
+  --line-strong:       rgba(232, 216, 196, 0.12);
+
+  --shadow-sm:      0 1px 2px rgba(18, 8, 10, 0.40);
+  --shadow-md:      0 4px 16px rgba(18, 8, 10, 0.45);
+  --shadow-lg:      0 18px 48px rgba(18, 8, 10, 0.55);
+  --shadow-sleeve:  0 28px 64px -12px rgba(0, 0, 0, 0.72);
+
+  --record-body:    #12080A;
+  --record-groove:  rgba(232, 216, 196, 0.045);
+  --record-sheen:   rgba(232, 216, 196, 0.065);
+  --record-edge:    rgba(232, 216, 196, 0.10);
+
+  --grain-opacity:  0.030;
+}
+
+/* --------------------------------------------------------------------------
+   THEME 3: PARCHMENT (Leather, Parchment & Midnight Blue Vinyl)
+   -------------------------------------------------------------------------- */
+:root[data-theme="parchment"] {
+  --theme-id: "parchment";
+  --surface-base:      #2A1B15;
+  --surface-raised:    #352319;
+  --surface-panel:     #46291D;
+  --surface-hover:     #603A2A;
+  --surface-active:    #6E4632;
+
+  --ink-primary:       #F2E7D2;
+  --ink-secondary:     #CDB58E;
+  --ink-tertiary:      #8E887F;
+  --ink-disabled:      #5E5A54;
+
+  --accent-deep:       #603A2A;
+  --accent:            #CDB58E;
+  --accent-bright:     #E4D2B2;
+  --accent-wash:       rgba(205, 181, 142, 0.12);
+  --accent-wash-soft:  rgba(205, 181, 142, 0.06);
+  --accent-on-fill:    #2A1B15;
+
+  --line-subtle:       rgba(242, 231, 210, 0.06);
+  --line-strong:       rgba(242, 231, 210, 0.12);
+
+  --shadow-sm:      0 1px 2px rgba(25, 14, 10, 0.40);
+  --shadow-md:      0 4px 16px rgba(25, 14, 10, 0.45);
+  --shadow-lg:      0 18px 48px rgba(25, 14, 10, 0.55);
+  --shadow-sleeve:  0 28px 64px -12px rgba(0, 0, 0, 0.72);
+
+  --record-body:    #111B2F; /* Midnight blue coloured vinyl */
+  --record-groove:  rgba(242, 231, 210, 0.045);
+  --record-sheen:   rgba(242, 231, 210, 0.075);
+  --record-edge:    rgba(242, 231, 210, 0.12);
+
+  --grain-opacity:  0.030;
+}
+
+/* --------------------------------------------------------------------------
+   THEME 4: MAUVE (Dusk Rose)
+   -------------------------------------------------------------------------- */
+:root[data-theme="mauve"] {
+  --theme-id: "mauve";
+  --surface-base:      #2A2228;
+  --surface-raised:    #3E3239;
+  --surface-panel:     #4E3F47;
+  --surface-hover:     #6B5560;
+  --surface-active:    #7A626D;
+
+  --ink-primary:       #F7EFE7;
+  --ink-secondary:     #E8D2C4;
+  --ink-tertiary:      #B79AA0;
+  --ink-disabled:      #6A565C;
+
+  --accent-deep:       #9E8189;
+  --accent:            #C7A9A3;
+  --accent-bright:     #E8D2C4;
+  --accent-wash:       rgba(199, 169, 163, 0.12);
+  --accent-wash-soft:  rgba(199, 169, 163, 0.06);
+  --accent-on-fill:    #2A2228;
+
+  --line-subtle:       rgba(247, 239, 231, 0.06);
+  --line-strong:       rgba(247, 239, 231, 0.12);
+
+  --shadow-sm:      0 1px 2px rgba(20, 14, 18, 0.40);
+  --shadow-md:      0 4px 16px rgba(20, 14, 18, 0.45);
+  --shadow-lg:      0 18px 48px rgba(20, 14, 18, 0.55);
+  --shadow-sleeve:  0 28px 64px -12px rgba(0, 0, 0, 0.72);
+
+  --record-body:    #151014;
+  --record-groove:  rgba(247, 239, 231, 0.045);
+  --record-sheen:   rgba(247, 239, 231, 0.065);
+  --record-edge:    rgba(247, 239, 231, 0.10);
+
+  --grain-opacity:  0.030;
+}
+
+/* --------------------------------------------------------------------------
+   THEME 5: SLATE (Slate and Apricot)
+   -------------------------------------------------------------------------- */
+:root[data-theme="slate"] {
+  --theme-id: "slate";
+  --surface-base:      #191A22;
+  --surface-raised:    #20212B;
+  --surface-panel:     #2A2C38;
+  --surface-hover:     #2D4354;
+  --surface-active:    #365167;
+
+  --ink-primary:       #F5E7D2;
+  --ink-secondary:     #C9C3B4;
+  --ink-tertiary:      #8C8F86;
+  --ink-disabled:      #545652;
+
+  --accent-deep:       #9E6752;
+  --accent:            #FED7A5;
+  --accent-bright:     #FFE6C2;
+  --accent-wash:       rgba(254, 215, 165, 0.12);
+  --accent-wash-soft:  rgba(254, 215, 165, 0.06);
+  --accent-on-fill:    #20212B;
+
+  --line-subtle:       rgba(245, 231, 210, 0.06);
+  --line-strong:       #73766A;
+
+  --shadow-sm:      0 1px 2px rgba(12, 13, 18, 0.40);
+  --shadow-md:      0 4px 16px rgba(12, 13, 18, 0.45);
+  --shadow-lg:      0 18px 48px rgba(12, 13, 18, 0.55);
+  --shadow-sleeve:  0 28px 64px -12px rgba(0, 0, 0, 0.72);
+
+  --record-body:    #0F1017;
+  --record-groove:  rgba(245, 231, 210, 0.045);
+  --record-sheen:   rgba(245, 231, 210, 0.065);
+  --record-edge:    rgba(245, 231, 210, 0.10);
+
+  --grain-opacity:  0.030;
+}
+
+/* --------------------------------------------------------------------------
+   THEME 6: ASH (Cool Grey and Taupe)
+   -------------------------------------------------------------------------- */
+:root[data-theme="ash"] {
+  --theme-id: "ash";
+  --surface-base:      #1D2028;
+  --surface-raised:    #272B36;
+  --surface-panel:     #333844;
+  --surface-hover:     #414754;
+  --surface-active:    #4C5360;
+
+  --ink-primary:       #D7D7D6;
+  --ink-secondary:     #B7B8BB;
+  --ink-tertiary:      #8B909A;
+  --ink-disabled:      #53565C;
+
+  --accent-deep:       #7E6A61;
+  --accent:            #A08A81;
+  --accent-bright:     #C4ABA0;
+  --accent-wash:       rgba(196, 171, 160, 0.12);
+  --accent-wash-soft:  rgba(196, 171, 160, 0.06);
+  --accent-on-fill:    #1D2028;
+
+  --line-subtle:       rgba(215, 215, 214, 0.06);
+  --line-strong:       #595D66;
+
+  --shadow-sm:      0 1px 2px rgba(15, 17, 22, 0.40);
+  --shadow-md:      0 4px 16px rgba(15, 17, 22, 0.45);
+  --shadow-lg:      0 18px 48px rgba(15, 17, 22, 0.55);
+  --shadow-sleeve:  0 28px 64px -12px rgba(0, 0, 0, 0.72);
+
+  --record-body:    #111319;
+  --record-groove:  rgba(215, 215, 214, 0.045);
+  --record-sheen:   rgba(215, 215, 214, 0.065);
+  --record-edge:    rgba(215, 215, 214, 0.10);
+
+  --grain-opacity:  0.030;
+}
+
+/* --------------------------------------------------------------------------
+   THEME 7: DAYLIGHT (Warm Cream — Light Theme)
+   -------------------------------------------------------------------------- */
+:root[data-theme="daylight"],
+:root[data-theme="light"] {
+  --theme-id: "daylight";
+  --surface-base:      #FFFBE9;
+  --surface-raised:    #F8F1DA;
+  --surface-panel:     #F2E8CF;
+  --surface-hover:     #EADCBF;
+  --surface-active:    #E3CAA5;
+
+  --ink-primary:       #241B14;
+  --ink-secondary:     #57463A;
+  --ink-tertiary:      #8A7660;
+  --ink-disabled:      #B3A28C;
+
+  --accent-deep:       #7A5A41;
+  --accent:            #96714F;
+  --accent-bright:     #AD8B73;
+  --accent-wash:       rgba(150, 113, 79, 0.12);
+  --accent-wash-soft:  rgba(150, 113, 79, 0.06);
+  --accent-on-fill:    #FFFBE9;
+
+  --line-subtle:       rgba(36, 27, 20, 0.08);
+  --line-strong:       rgba(36, 27, 20, 0.15);
+
+  --shadow-sm:      0 1px 2px rgba(90, 64, 40, 0.10);
+  --shadow-md:      0 4px 16px rgba(90, 64, 40, 0.13);
+  --shadow-lg:      0 18px 48px rgba(90, 64, 40, 0.16);
+  --shadow-sleeve:  0 24px 56px -14px rgba(90, 64, 40, 0.34);
+
+  --record-body:    #211915;
+  --record-groove:  rgba(255, 251, 233, 0.045);
+  --record-sheen:   rgba(255, 251, 233, 0.075);
+  --record-edge:    rgba(36, 27, 20, 0.14);
+
+  --grain-opacity:  0.045;
+}
+
+/* --------------------------------------------------------------------------
+   THEME 8: PORCELAIN (Rose and Bone — Light Theme)
+   -------------------------------------------------------------------------- */
+:root[data-theme="porcelain"] {
+  --theme-id: "porcelain";
+  --surface-base:      #F7EFE7;
+  --surface-raised:    #F0E4DA;
+  --surface-panel:     #E8D2C4;
+  --surface-hover:     #DCC2B6;
+  --surface-active:    #C7A9A3;
+
+  --ink-primary:       #3E3239;
+  --ink-secondary:     #6B5560;
+  --ink-tertiary:      #82666E;
+  --ink-disabled:      #BAA4AA;
+
+  --accent-deep:       #6B5560;
+  --accent:            #8C6E78;
+  --accent-bright:     #9E8189;
+  --accent-wash:       rgba(140, 110, 120, 0.12);
+  --accent-wash-soft:  rgba(140, 110, 120, 0.06);
+  --accent-on-fill:    #F7EFE7;
+
+  --line-subtle:       rgba(62, 50, 57, 0.08);
+  --line-strong:       rgba(62, 50, 57, 0.15);
+
+  --shadow-sm:      0 1px 2px rgba(80, 50, 65, 0.10);
+  --shadow-md:      0 4px 16px rgba(80, 50, 65, 0.13);
+  --shadow-lg:      0 18px 48px rgba(80, 50, 65, 0.16);
+  --shadow-sleeve:  0 24px 56px -14px rgba(80, 50, 65, 0.34);
+
+  --record-body:    #2A2228;
+  --record-groove:  rgba(247, 239, 231, 0.045);
+  --record-sheen:   rgba(247, 239, 231, 0.075);
+  --record-edge:    rgba(62, 50, 57, 0.14);
+
+  --grain-opacity:  0.045;
+}
+
+/* ==========================================================================
+   SHARED CORE GEOMETRY, MOTION & LAYOUT TOKENS
+   ========================================================================== */
+:root {
+  /* Shell measurements */
+  --titlebar-height:   48px;
+  --sidebar-width:     220px;
+  --player-bar-height: 116px;
+
+  /* Radii */
+  --radius-control: 8px;
+  --radius-row:     12px;
+  --radius-media:   18px;
+  --radius-panel:   26px;
+  --radius-pill:    999px;
+
+  /* Motion */
+  --ease-standard:   cubic-bezier(0.20, 0, 0, 1.00);
+  --ease-emphasized: cubic-bezier(0.05, 0.70, 0.10, 1.00);
+  --ease-exit:       cubic-bezier(0.30, 0, 0.80, 0.15);
+  --dur-micro:  120ms;
+  --dur-short:  200ms;
+  --dur-medium: 320ms;
+  --dur-long:   520ms;
+
+  /* Spacing */
+  --space-2xs: 2px;
+  --space-xs: 4px;
+  --space-sm: 8px;
+  --space-md: 12px;
+  --space-lg: 16px;
+  --space-xl: 20px;
+  --space-2xl: 24px;
+  --space-3xl: 32px;
+  --space-4xl: 48px;
+  --space-5xl: 64px;
+
+  --space-inset-tight: 8px;
+  --space-inset:       16px;
+  --space-inset-wide:  24px;
+  --space-stack:       12px;
+  --space-group:       32px;
+  --space-section:     72px;
+  --space-page-x:      48px;
+
+  /* Legacy Material 3 backward aliases mapped to active theme */
+  --md-sys-color-background: var(--surface-base);
+  --md-sys-color-on-background: var(--ink-primary);
+  --md-sys-color-surface: var(--surface-base);
+  --md-sys-color-surface-dim: var(--surface-base);
+  --md-sys-color-surface-bright: var(--surface-raised);
+  --md-sys-color-surface-container-lowest: var(--surface-base);
+  --md-sys-color-surface-container-low: var(--surface-raised);
+  --md-sys-color-surface-container: var(--surface-panel);
+  --md-sys-color-surface-container-high: var(--surface-hover);
+  --md-sys-color-surface-container-highest: var(--surface-active);
+
+  --md-sys-color-on-surface: var(--ink-primary);
+  --md-sys-color-on-surface-variant: var(--ink-secondary);
+  --md-sys-color-surface-variant: var(--surface-panel);
+  --md-sys-color-text-muted: var(--ink-tertiary);
+
+  --md-sys-color-outline: var(--line-strong);
+  --md-sys-color-outline-variant: var(--line-subtle);
+  --md-sys-color-outline-subtle: var(--line-subtle);
+
+  --md-sys-color-primary: var(--accent);
+  --md-sys-color-on-primary: var(--accent-on-fill);
+  --md-sys-color-primary-container: var(--accent-wash);
+  --md-sys-color-on-primary-container: var(--accent-bright);
+
+  --md-sys-color-secondary: var(--accent-deep);
+  --md-sys-color-on-secondary: var(--ink-primary);
+  --md-sys-color-secondary-container: var(--accent-wash);
+  --md-sys-color-on-secondary-container: var(--accent-bright);
+
+  --md-sys-color-tertiary: var(--accent-bright);
+  --md-sys-color-on-tertiary: var(--surface-base);
+  --md-sys-color-tertiary-container: var(--accent-wash-soft);
+  --md-sys-color-on-tertiary-container: var(--accent-bright);
+
+  --md-sys-color-focus-ring: var(--accent);
+
+  --radius-xs: 4px;
+  --radius-full: var(--radius-pill);
+}
+
+/* Smooth Root Theme Transitions */
+html {
+  transition: background-color 240ms var(--ease-standard),
+              color 240ms var(--ease-standard);
+}

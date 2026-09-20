@@ -1,372 +1,386 @@
 /* ==========================================================================
-   MATERIAL 3 EXPRESSIVE PLAYER BAR (Pixel-Inspired Desktop Music Player)
+   AUDIO PLAYER BAR — THE RECORD ROOM (Brief v3 — 2-Row Layout)
    ========================================================================== */
 
-.player-bar.m3-expressive-player-bar {
-  height: var(--player-bar-height);
-  background: var(--md-sys-color-surface-container);
-  border-top: 1px solid var(--md-sys-color-outline-variant);
-  display: grid;
-  grid-template-columns: 300px 1fr 300px;
-  align-items: center;
-  padding: 0 var(--space-xl);
+.player-bar {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: var(--player-bar-height, 116px);
+  background: var(--surface-raised);
+  border-top: 1px solid var(--line-subtle);
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  padding: 12px var(--space-page-x, 48px) 10px;
+  box-sizing: border-box;
+  z-index: 40;
   user-select: none;
-  z-index: 100;
-  flex-shrink: 0;
-  box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.15);
-  transition: background-color var(--motion-duration-medium-2) var(--motion-easing-standard),
-    border-color var(--motion-duration-medium-2) var(--motion-easing-standard);
+  transition: background-color var(--dur-medium) var(--ease-standard),
+              border-color var(--dur-medium) var(--ease-standard);
 }
 
-/* ==========================================================================
-   LEFT: TRACK INFO & ARTWORK
-   ========================================================================== */
-
-.player-track-info {
+/* --------------------------------------------------------------------------
+   ROW 1: TOP ROW (Now Playing | Window-Centred Transport | Right Utilities)
+   -------------------------------------------------------------------------- */
+.player-bar-row-top {
   display: flex;
   align-items: center;
-  gap: var(--space-md);
-  min-width: 0;
-  cursor: pointer;
-  padding: var(--space-2xs) var(--space-xs);
-  border-radius: var(--radius-lg);
-  transition: background-color var(--motion-duration-short-2) var(--motion-easing-standard);
-}
-
-.player-track-info:hover {
-  background-color: var(--md-sys-color-surface-container-high);
-}
-
-.player-artwork-container {
-  flex-shrink: 0;
-  position: relative;
-}
-
-.player-bar-artwork {
-  width: 52px;
-  height: 52px;
-  border-radius: var(--radius-md) !important;
-  box-shadow: var(--elevation-1);
-  transition: transform var(--motion-duration-short-2) var(--motion-easing-emphasized-decelerate),
-    box-shadow var(--motion-duration-short-2) var(--motion-easing-standard);
-}
-
-.player-track-info:hover .player-bar-artwork {
-  transform: scale(1.04);
-  box-shadow: var(--elevation-2);
-}
-
-.player-metadata {
-  display: flex;
-  flex-direction: column;
-  min-width: 0;
-  overflow: hidden;
-}
-
-.player-track-title {
-  font-family: var(--font-family-base);
-  font-size: 0.875rem;
-  font-weight: 600;
-  color: var(--md-sys-color-on-surface);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  letter-spacing: -0.01em;
-  transition: color var(--motion-duration-short-2) var(--motion-easing-standard);
-}
-
-.player-track-info:hover .player-track-title {
-  color: var(--md-sys-color-primary);
-}
-
-.player-track-artist {
-  font-family: var(--font-family-base);
-  font-size: 0.75rem;
-  color: var(--md-sys-color-on-surface-variant);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  margin-top: 2px;
-}
-
-/* ==========================================================================
-   CENTER: CONTROLS ISLAND & SINE-WAVE SEEKBAR
-   ========================================================================== */
-
-.player-center-controls {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 2px;
-  max-width: 600px;
-  margin: 0 auto;
+  justify-content: space-between;
   width: 100%;
+  position: relative;
+  height: 56px;
 }
 
-/* Material 3 Expressive Tonal Controls Island */
-.player-controls-island {
+/* Zone 1: Left Block (~300px) */
+.player-zone-left {
   display: flex;
   align-items: center;
   gap: var(--space-md);
-  padding: 2px var(--space-md);
-  border-radius: var(--radius-full);
-  background: var(--md-sys-color-surface-container-high);
-  border: 1px solid var(--md-sys-color-outline-subtle);
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12);
-  transition: background-color var(--motion-duration-medium-1) var(--motion-easing-standard),
-    box-shadow var(--motion-duration-medium-1) var(--motion-easing-standard);
+  width: 300px;
+  flex-shrink: 0;
 }
 
-/* Shuffle Button 2-State Colors */
-.player-shuffle-btn {
-  color: var(--md-sys-color-on-surface) !important;
-  transition: color var(--motion-duration-short-2) var(--motion-easing-standard),
-    background-color var(--motion-duration-short-2) var(--motion-easing-standard) !important;
-}
-
-.player-shuffle-btn.active,
-.player-shuffle-btn.selected {
-  color: var(--md-sys-color-primary) !important;
-  background: var(--md-sys-color-primary-container) !important;
-}
-
-/* Repeat Button Active State */
-.player-repeat-btn.active,
-.player-repeat-btn.selected {
-  color: var(--md-sys-color-primary) !important;
-  background: var(--md-sys-color-primary-container) !important;
-}
-
-.player-control-icon-btn {
-  transition: transform var(--motion-duration-short-2) var(--motion-easing-emphasized-decelerate) !important;
-}
-
-.player-control-icon-btn:hover:not(:disabled) {
-  transform: scale(1.08);
-}
-
-.player-control-icon-btn:active:not(:disabled) {
-  transform: scale(0.92);
-}
-
-/* Main Play/Pause Primary Expressive Button */
-.player-play-btn {
-  width: 44px;
-  height: 44px;
-  border-radius: var(--radius-full);
-  background: var(--md-sys-color-primary);
-  color: var(--md-sys-color-on-primary);
-  border: none;
+.player-left-interactive-group {
   display: flex;
   align-items: center;
-  justify-content: center;
+  gap: var(--space-md);
+  min-width: 0;
   cursor: pointer;
-  box-shadow: var(--elevation-2);
-  outline: none;
-  position: relative;
-  overflow: hidden;
-  transition: transform var(--motion-duration-short-2) var(--motion-easing-emphasized-decelerate),
-    background-color var(--motion-duration-short-2) var(--motion-easing-standard),
-    box-shadow var(--motion-duration-short-2) var(--motion-easing-standard),
-    filter var(--motion-duration-short-2) var(--motion-easing-standard);
+  border-radius: var(--radius-row);
+  padding: 2px;
+  transition: opacity var(--dur-micro) var(--ease-standard);
 }
 
-.player-play-btn:focus-visible {
-  outline: 2px solid var(--md-sys-color-focus-ring);
+.player-left-interactive-group:hover {
+  opacity: 0.90;
+}
+
+.player-left-interactive-group:focus-visible {
+  outline: 2px solid var(--accent);
   outline-offset: 2px;
 }
 
-.player-play-btn:hover:not(:disabled) {
-  filter: brightness(1.12);
-  transform: scale(1.06);
-  box-shadow: var(--elevation-3);
-}
-
-.player-play-btn:active:not(:disabled) {
-  transform: scale(0.92);
-}
-
-.player-play-btn:disabled {
-  opacity: 0.45;
-  cursor: not-allowed;
-  transform: none;
-}
-
-.play-icon-transition {
-  transition: transform var(--motion-duration-short-2) var(--motion-easing-emphasized-decelerate),
-    opacity var(--motion-duration-short-2) var(--motion-easing-standard);
-}
-
-/* Timeline & Sine Wave Container */
-.player-timeline-cluster {
-  display: flex;
-  align-items: center;
-  gap: var(--space-sm);
-  width: 100%;
-}
-
-.timeline-time {
-  font-family: var(--font-family-mono);
-  font-size: 0.6875rem;
-  font-weight: 500;
-  color: var(--md-sys-color-on-surface-variant);
-  width: 40px;
-  text-align: center;
-  font-variant-numeric: tabular-nums;
-}
-
-.timeline-time-left {
-  text-align: right;
-}
-
-.timeline-time-right {
-  text-align: left;
-}
-
-.timeline-wave-wrapper {
-  flex: 1;
-  min-width: 0;
-  display: flex;
-  align-items: center;
-}
-
-/* ==========================================================================
-   RIGHT: VOLUME & EXTRAS
-   ========================================================================== */
-
-.player-extras {
-  display: flex;
-  justify-content: flex-end;
-  align-items: center;
-  gap: var(--space-xs);
-}
-
-.player-extra-btn {
-  transition: transform var(--motion-duration-short-2) var(--motion-easing-emphasized-decelerate) !important;
-}
-
-.player-extra-btn:hover:not(:disabled) {
-  transform: scale(1.08);
-}
-
-.player-extra-btn:active:not(:disabled) {
-  transform: scale(0.92);
-}
-
-.player-volume-control {
-  display: flex;
-  align-items: center;
-  gap: 2px;
-  background: var(--md-sys-color-surface-container-high);
-  padding: 2px 10px 2px 4px;
-  border-radius: var(--radius-full);
-  border: 1px solid var(--md-sys-color-outline-subtle);
-}
-
-.volume-slider-track {
-  width: 80px;
-  height: 6px;
-  background: var(--md-sys-color-surface-container-highest);
-  border-radius: var(--radius-full);
+.player-artwork-btn {
   position: relative;
-  cursor: pointer;
-  outline: none;
-  transition: height var(--motion-duration-short-1) var(--motion-easing-standard);
+  width: 56px;
+  height: 56px;
+  border-radius: var(--radius-control);
+  overflow: hidden;
+  flex-shrink: 0;
+  box-shadow: var(--shadow-sm);
+  background: var(--surface-panel);
 }
 
-.volume-slider-track:hover,
-.volume-slider-track:focus-visible {
-  height: 8px;
+.player-bar-artwork {
+  width: 100% !important;
+  height: 100% !important;
+  border: none;
+  border-radius: var(--radius-control);
+  object-fit: cover;
+  transition: transform var(--dur-short) var(--ease-emphasized);
 }
 
-.volume-slider-fill {
+.player-left-interactive-group:hover .player-bar-artwork {
+  transform: scale(1.04);
+}
+
+.player-artwork-expand-overlay {
   position: absolute;
-  left: 0;
-  top: 0;
-  bottom: 0;
-  background: var(--md-sys-color-primary);
-  border-radius: var(--radius-full);
-  pointer-events: none;
-  transition: background-color var(--motion-duration-medium-1) var(--motion-easing-standard);
+  inset: 0;
+  background: rgba(20, 16, 14, 0.65);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--ink-primary);
+  opacity: 0;
+  transition: opacity var(--dur-micro) var(--ease-standard);
+  border-radius: var(--radius-control);
 }
 
-.volume-slider-thumb {
-  position: absolute;
-  top: 50%;
-  transform: translate(-50%, -50%) scale(0);
-  width: 12px;
-  height: 12px;
-  border-radius: var(--radius-full);
-  background: var(--md-sys-color-primary);
-  border: 2px solid var(--md-sys-color-surface);
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.4);
-  pointer-events: none;
-  transition: transform var(--motion-duration-short-2) var(--motion-easing-emphasized-decelerate);
+.player-left-interactive-group:hover .player-artwork-expand-overlay {
+  opacity: 1;
 }
 
-.volume-slider-track:hover .volume-slider-thumb,
-.volume-slider-track:focus-visible .volume-slider-thumb {
-  transform: translate(-50%, -50%) scale(1);
+.player-meta-group {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  gap: 2px;
 }
 
-/* ==========================================================================
-   BADGES & REPEAT INDICATOR
-   ========================================================================== */
+.player-track-title {
+  font-family: var(--font-ui);
+  font-size: 0.9375rem;
+  font-weight: 600;
+  color: var(--ink-primary);
+  line-height: 1.25;
+}
+
+.player-track-artist {
+  font-family: var(--font-ui);
+  font-size: 0.8125rem;
+  color: var(--ink-secondary);
+  line-height: 1.25;
+}
+
+.player-favorite-btn {
+  flex-shrink: 0;
+  margin-left: 2px;
+}
 
 .player-error-badge {
   display: inline-flex;
   align-items: center;
   gap: 4px;
-  background: var(--md-sys-color-error-container);
-  color: var(--md-sys-color-on-error-container);
+  background: var(--surface-panel);
+  border: 1px solid var(--line-subtle);
+  color: var(--accent);
   font-size: 0.6875rem;
-  font-family: var(--font-family-base);
   padding: 2px 6px;
-  border-radius: var(--radius-xs);
+  border-radius: var(--radius-control);
   margin-top: 2px;
-  max-width: 250px;
+  max-width: 180px;
   cursor: pointer;
-  animation: m3FadeIn var(--motion-duration-short-2) var(--motion-easing-standard);
 }
 
-.player-repeat-btn-wrap {
-  position: relative;
-  display: inline-flex;
-}
-
-.player-repeat-one-badge {
+/* Zone 2: Center Transport (Centred directly on the window) */
+.player-zone-center {
   position: absolute;
-  top: 2px;
-  right: 2px;
-  font-size: 0.5625rem;
-  font-weight: 800;
-  font-family: var(--font-family-mono);
-  color: var(--md-sys-color-primary);
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  z-index: 2;
+}
+
+.player-transport-btn {
+  width: 44px;
+  height: 44px;
+  min-width: 44px;
+  min-height: 44px;
+  border-radius: var(--radius-pill);
+  color: var(--ink-secondary);
+  transition: all var(--dur-micro) var(--ease-standard);
+}
+
+.player-transport-btn:hover {
+  color: var(--ink-primary);
+  background: var(--surface-hover);
+}
+
+.player-transport-btn.is-active {
+  color: var(--accent) !important;
+  background: var(--accent-wash) !important;
+}
+
+/* Play/Pause Button (~52px filled circle) */
+.player-control-play {
+  width: 52px;
+  height: 52px;
+  min-width: 52px;
+  min-height: 52px;
+  border-radius: 50%;
+  background: var(--accent);
+  color: var(--accent-on-fill);
+  border: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  box-shadow: var(--shadow-md);
+  transition: transform var(--dur-micro) var(--ease-standard),
+              background-color var(--dur-short) var(--ease-standard),
+              box-shadow var(--dur-short) var(--ease-standard);
+  margin: 0 4px;
+}
+
+.player-control-play:hover {
+  transform: scale(1.05);
+  box-shadow: var(--shadow-lg);
+  background: var(--accent-bright);
+}
+
+.player-control-play:active {
+  transform: scale(0.96);
+}
+
+.player-control-play:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 3px;
+}
+
+.player-control-play:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+  transform: none !important;
+}
+
+/* Zone 3: Right Utility & Volume (~300px) */
+.player-zone-right {
+  display: flex;
+  align-items: center;
+  gap: var(--space-xs);
+  width: 300px;
+  justify-content: flex-end;
+  flex-shrink: 0;
+}
+
+.player-ghost-icon-btn {
+  width: 38px;
+  height: 38px;
+  min-width: 38px;
+  min-height: 38px;
+  border-radius: var(--radius-control);
+  color: var(--ink-secondary);
+  transition: all var(--dur-micro) var(--ease-standard);
+}
+
+.player-ghost-icon-btn:hover {
+  color: var(--ink-primary);
+  background: var(--surface-hover);
+}
+
+.player-ghost-icon-btn.is-active {
+  color: var(--accent);
+  background: var(--accent-wash);
+}
+
+.player-volume-cluster {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin-left: var(--space-xs);
+}
+
+.player-volume-track {
+  position: relative;
+  width: 88px;
+  height: 4px;
+  background-color: var(--line-strong);
+  border-radius: var(--radius-pill);
+  cursor: pointer;
+  transition: height var(--dur-micro) var(--ease-standard);
+}
+
+.player-volume-track:hover,
+.player-volume-track:focus-visible {
+  height: 6px;
+}
+
+.player-volume-fill {
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  background-color: var(--ink-secondary);
+  border-radius: var(--radius-pill);
   pointer-events: none;
 }
 
-/* ==========================================================================
-   RESPONSIVE BREAKPOINTS
-   ========================================================================== */
+.player-volume-track:hover .player-volume-fill,
+.player-volume-track:focus-visible .player-volume-fill {
+  background-color: var(--accent);
+}
 
-@media (max-width: 1080px) {
-  .player-bar.m3-expressive-player-bar {
-    grid-template-columns: 240px 1fr 220px;
-    padding: 0 var(--space-md);
+.player-volume-thumb {
+  position: absolute;
+  top: 50%;
+  transform: translate(-50%, -50%) scale(0);
+  width: 12px;
+  height: 12px;
+  border-radius: var(--radius-pill);
+  background-color: var(--ink-primary);
+  border: 2px solid var(--accent);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.4);
+  pointer-events: none;
+  transition: transform var(--dur-micro) var(--ease-standard);
+}
+
+.player-volume-track:hover .player-volume-thumb,
+.player-volume-track:focus-visible .player-volume-thumb {
+  transform: translate(-50%, -50%) scale(1);
+}
+
+/* --------------------------------------------------------------------------
+   ROW 2: BOTTOM SEEKBAR ROW (Elapsed | Full-Width Wave Slider | Remaining)
+   -------------------------------------------------------------------------- */
+.player-bar-row-bottom {
+  display: flex;
+  align-items: center;
+  gap: var(--space-md);
+  width: 100%;
+  height: 28px;
+  margin-top: 2px;
+}
+
+.player-time-btn {
+  background: transparent;
+  border: none;
+  font-family: var(--font-ui);
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: var(--ink-tertiary);
+  font-variant-numeric: tabular-nums;
+  cursor: pointer;
+  padding: 2px 4px;
+  border-radius: var(--radius-control);
+  min-width: 44px;
+  text-align: center;
+  transition: color var(--dur-micro) var(--ease-standard);
+}
+
+.player-time-btn:hover {
+  color: var(--ink-primary);
+}
+
+.player-time-left {
+  text-align: left;
+}
+
+.player-time-right {
+  text-align: right;
+}
+
+.player-wave-slider-container {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  min-width: 0;
+}
+
+/* --------------------------------------------------------------------------
+   RESPONSIVE LAYOUT & REDUCED MOTION
+   -------------------------------------------------------------------------- */
+@media (max-width: 1100px) {
+  .player-zone-left {
+    width: 220px;
   }
-
-  .volume-slider-track {
-    width: 60px;
+  .player-volume-track {
+    width: 64px;
   }
 }
 
 @media (max-width: 860px) {
-  .player-bar.m3-expressive-player-bar {
-    grid-template-columns: 180px 1fr 160px;
-    padding: 0 var(--space-sm);
+  .player-zone-left {
+    width: 160px;
   }
+  .player-volume-track {
+    display: none;
+  }
+}
 
-  .volume-slider-track {
-    width: 50px;
+@media (prefers-reduced-motion: reduce) {
+  .player-bar-artwork,
+  .player-artwork-expand-overlay,
+  .player-control-play,
+  .player-transport-btn,
+  .player-ghost-icon-btn,
+  .player-volume-track,
+  .player-volume-thumb {
+    animation: none !important;
+    transition: none !important;
   }
 }

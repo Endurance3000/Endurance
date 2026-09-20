@@ -2,25 +2,24 @@
   display: flex;
   align-items: center;
   gap: var(--space-sm);
-  background: var(--md-sys-color-surface-container-high);
-  border: 1px solid var(--md-sys-color-outline-variant);
-  border-radius: var(--radius-full);
+  background: var(--surface-raised);
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius-pill, 9999px);
   padding: 0 var(--space-md);
-  height: 40px;
+  height: 42px;
   width: 100%;
-  max-width: 380px;
-  transition: all var(--motion-duration-short-2) var(--motion-easing-standard);
+  transition: all var(--dur-short) var(--ease-standard);
   position: relative;
 }
 
 .m3-search-field:focus-within {
-  background: var(--md-sys-color-surface-container-highest);
-  border-color: var(--md-sys-color-primary);
-  box-shadow: 0 0 0 2px rgba(206, 171, 147, 0.25);
+  background: var(--surface-hover);
+  border-color: var(--accent);
+  box-shadow: 0 0 0 2px var(--accent-wash, rgba(206, 171, 147, 0.25));
 }
 
 .m3-search-icon {
-  color: var(--md-sys-color-on-surface-variant);
+  color: var(--ink-tertiary);
   flex-shrink: 0;
 }
 
@@ -29,44 +28,47 @@
   background: transparent;
   border: none;
   outline: none;
-  color: var(--md-sys-color-on-surface);
-  font-family: var(--font-family-base);
-  font-size: 0.875rem;
+  box-shadow: none;
+  color: var(--ink-primary);
+  font-family: var(--font-ui);
+  font-size: 0.9375rem;
   width: 100%;
+  padding: 0;
 }
 
+.m3-search-input:focus,
 .m3-search-input:focus-visible {
-  outline: 2px solid var(--md-sys-color-focus-ring);
-  outline-offset: 2px;
+  outline: none !important;
+  border: none !important;
+  box-shadow: none !important;
 }
 
 .m3-search-input::placeholder {
-  color: var(--md-sys-color-on-surface-variant);
-  opacity: 0.75;
+  color: var(--ink-tertiary);
+  opacity: 0.85;
 }
 
 .m3-search-clear {
   background: transparent;
   border: none;
-  color: var(--md-sys-color-on-surface-variant);
+  color: var(--ink-tertiary);
   width: 24px;
   height: 24px;
-  border-radius: var(--radius-full);
+  border-radius: var(--radius-pill, 9999px);
   display: flex;
   align-items: center;
   justify-content: center;
   cursor: pointer;
-  outline: none;
   flex-shrink: 0;
-  transition: all var(--motion-duration-short-1) var(--motion-easing-standard);
+  transition: all var(--dur-micro) var(--ease-standard);
 }
 
 .m3-search-clear:focus-visible {
-  outline: 2px solid var(--md-sys-color-focus-ring);
+  outline: 2px solid var(--accent);
   outline-offset: 2px;
 }
 
 .m3-search-clear:hover {
-  background: var(--md-sys-color-surface-bright);
-  color: var(--md-sys-color-on-surface);
+  background: var(--surface-hover);
+  color: var(--ink-primary);
 }

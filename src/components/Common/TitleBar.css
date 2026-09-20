@@ -1,14 +1,16 @@
 .titlebar {
-  height: var(--titlebar-height);
-  background: var(--md-sys-color-surface-container-lowest);
+  height: var(--titlebar-height, 48px);
+  background: var(--surface-base);
   display: flex;
   align-items: center;
   justify-content: space-between;
   padding: 0 0 0 var(--space-md);
   user-select: none;
-  border-bottom: 1px solid var(--md-sys-color-outline-variant);
+  border-bottom: 1px solid var(--line-subtle);
   z-index: 1000;
   -webkit-app-region: drag;
+  transition: background-color var(--dur-medium) var(--ease-standard),
+              border-color var(--dur-medium) var(--ease-standard);
 }
 
 /* Initial macOS spacing to prevent logo/title overlap with native traffic lights.
@@ -21,7 +23,7 @@
   display: flex;
   align-items: center;
   gap: var(--space-sm);
-  color: var(--md-sys-color-on-surface);
+  color: var(--ink-primary);
   -webkit-app-region: drag;
 }
 
@@ -38,11 +40,11 @@
 }
 
 .titlebar-title {
-  font-family: var(--font-family-display);
+  font-family: var(--font-ui);
   font-size: 0.8125rem;
   font-weight: 600;
   letter-spacing: 0.04em;
-  color: var(--md-sys-color-on-surface);
+  color: var(--ink-primary);
 }
 
 .titlebar-badge {
@@ -78,7 +80,6 @@
   border: none;
   color: var(--md-sys-color-on-surface-variant);
   cursor: pointer;
-  outline: none;
   transition: background-color var(--motion-duration-short-2) var(--motion-easing-standard),
     color var(--motion-duration-short-2) var(--motion-easing-standard);
   -webkit-app-region: no-drag;

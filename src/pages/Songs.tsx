@@ -6,9 +6,9 @@ import {
   MoreHorizontal,
   Play,
   Pause,
-  RefreshCw,
   Loader2,
   Shuffle,
+  RefreshCw,
 } from 'lucide-react';
 import { Button } from '../components/Common/Button';
 import { IconButton } from '../components/Common/IconButton';
@@ -16,6 +16,7 @@ import { SearchField } from '../components/Common/SearchField';
 import { Chip } from '../components/Common/Chip';
 import { EmptyState } from '../components/Common/EmptyState';
 import { TrackArtwork } from '../components/Library/TrackArtwork';
+import { PlayingBars } from '../components/Common/PlayingBars';
 import { SongActionMenu } from '../components/Common/SongActionMenu';
 import { SortMenu, SortOption, VALID_SORT_OPTIONS } from '../components/Library/SortMenu';
 import { usePlayback } from '../state/PlaybackContext';
@@ -31,7 +32,14 @@ interface SongsProps {
   scanProgress: ScanProgressPayload | null;
   onAddFolder: () => Promise<void>;
   onToggleFavorite: (trackId: string) => Promise<void>;
-  onRescan: () => Promise<void>;
+  onRescan?: () => Promise<void>;
+}
+
+function getInitialLetter(title: string): string {
+  const trimmed = title.trim();
+  if (!trimmed) return '#';
+  const char = trimmed.charAt(0).toUpperCase();
+  return /^[A-Z]$/.test(char) ? char : '#';
 }
 
 export const Songs: React.FC<SongsProps> = ({
@@ -125,60 +133,30 @@ export const Songs: React.FC<SongsProps> = ({
     }
   });
 
+  // Track letters for sticky letter divider when sorted alphabetically A-Z
+  let lastLetter = '';
+
   return (
     <div className="page-container motion-fade-in">
       <header className="page-header">
         <div className="songs-header-top">
           <h1 className="page-title">Songs</h1>
           <p className="page-subtitle">
-            {tracks.length === 1 ? '1 track' : `${tracks.length} tracks`} in your local offline
-            library
+            {tracks.length === 1 ? '1 song' : `${tracks.length} songs`}
           </p>
         </div>
 
-        {/* Tier 1: Search field & Rescan + Shuffle All buttons */}
-        <div className="songs-search-action-row">
-          <div className="songs-search-wrapper">
-            <SearchField
-              value={searchQuery}
-              onChange={setSearchQuery}
-              placeholder="Search songs, artists, albums..."
-            />
-          </div>
-
-          <div className="songs-header-buttons">
-            <Button
-              variant="tonal"
-              size="md"
-              icon={
-                isScanning ? (
-                  <Loader2 size={16} className="spin-animation" />
-                ) : (
-                  <RefreshCw size={16} />
-                )
-              }
-              onClick={onRescan}
-              disabled={isScanning || folders.length === 0}
-              title="Rescan configured folders for new or changed music"
-            >
-              {isScanning ? 'Scanning...' : 'Rescan'}
-            </Button>
-
-            <Button
-              variant="tonal"
-              size="md"
-              icon={<Shuffle size={16} />}
-              onClick={() => shuffleAll(tracks)}
-              disabled={tracks.length === 0}
-              title="Shuffle and play all songs in your library"
-            >
-              Shuffle All
-            </Button>
-          </div>
+        {/* Full-width Search Bar (Phase 5.4) */}
+        <div className="songs-search-bar-row">
+          <SearchField
+            value={searchQuery}
+            onChange={setSearchQuery}
+            placeholder="Search songs, artists, albums..."
+          />
         </div>
 
-        {/* Tier 2: Filter Chips & Material 3 Sort Popover */}
-        <div className="songs-filter-sort-row">
+        {/* Filter Chips (left) & Sort / Shuffle All (right) */}
+        <div className="songs-controls-row">
           <div className="chips-bar">
             <Chip
               selected={selectedFilter === 'all'}
@@ -208,7 +186,32 @@ export const Songs: React.FC<SongsProps> = ({
             </Chip>
           </div>
 
-          <SortMenu value={selectedSort} onChange={handleSortChange} />
+          <div className="songs-controls-actions">
+            <Button
+              variant="filled"
+              size="sm"
+              icon={<Shuffle size={15} />}
+              onClick={() => shuffleAll(tracks)}
+              disabled={tracks.length === 0}
+              title="Shuffle and play all songs"
+            >
+              Shuffle All
+            </Button>
+
+            {onRescan && (
+              <IconButton
+                icon={isScanning ? <Loader2 size={16} className="spin-animation" /> : <RefreshCw size={16} />}
+                aria-label={isScanning ? 'Scanning library...' : 'Rescan library'}
+                tooltip={isScanning ? 'Scanning...' : 'Rescan library'}
+                onClick={onRescan}
+                disabled={isScanning || folders.length === 0}
+                size="sm"
+                className="songs-rescan-btn"
+              />
+            )}
+
+            <SortMenu value={selectedSort} onChange={handleSortChange} />
+          </div>
         </div>
       </header>
 
@@ -236,7 +239,7 @@ export const Songs: React.FC<SongsProps> = ({
         <EmptyState
           icon={<FolderPlus size={38} />}
           title="No music folder configured"
-          description="Select one or more folders on your computer containing MP3 or M4A files to populate your Endurance library."
+          description="Select one or more folders on your computer containing audio files to populate your Endurance library."
           actionLabel="Add Music Folder"
           actionIcon={<FolderPlus size={16} />}
           onAction={onAddFolder}
@@ -271,6 +274,13 @@ export const Songs: React.FC<SongsProps> = ({
               const isCurrentTrack = currentTrack?.id === track.id;
               const isRowPlaying = isCurrentTrack && isPlaying;
               const isMissing = track.is_available === false;
+
+              // Check for alphabetical anchor divider
+              const letter = getInitialLetter(track.title);
+              const showDivider = selectedSort === 'title-asc' && letter !== lastLetter;
+              if (showDivider) {
+                lastLetter = letter;
+              }
 
               const handleSelectTrack = () => {
                 if (isCurrentTrack) {
@@ -312,102 +322,135 @@ export const Songs: React.FC<SongsProps> = ({
               };
 
               return (
-                <div
-                  key={track.id}
-                  className={`song-row ${isCurrentTrack ? 'song-row-active' : ''} ${isMissing ? 'song-row-unavailable' : ''
-                    }`}
-                  role="listitem"
-                  tabIndex={0}
-                  onClick={handleSelectTrack}
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter' && e.target === e.currentTarget) {
-                      handleSelectTrack();
-                    }
-                  }}
-                  onContextMenu={handleContextMenu}
-                >
-                  <div className="col-index">
-                    <span className="index-number">{idx + 1}</span>
-
-                    <button
-                      type="button"
-                      className="index-play-btn"
-                      aria-label={isRowPlaying ? `Pause ${track.title}` : `Play ${track.title}`}
-                      title={isRowPlaying ? `Pause ${track.title}` : `Play ${track.title}`}
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleSelectTrack();
-                      }}
-                    >
-                      {isRowPlaying ? (
-                        <Pause size={14} fill="currentColor" />
-                      ) : (
-                        <Play size={14} fill="currentColor" />
-                      )}
-                    </button>
-                  </div>
-
-                  <div className="col-title">
-                    <TrackArtwork
-                      artworkHash={track.artwork_hash}
-                      alt={track.album || track.title}
-                      size="sm"
-                    />
-
-                    <div className="song-title-group">
-                      <div style={{ display: 'flex', alignItems: 'center' }}>
-                        <span className="song-row-title truncate">{track.title}</span>
-
-                        {isMissing && <span className="unavailable-badge">Missing</span>}
-                      </div>
-
-                      <span className="song-row-artist truncate">{track.artist}</span>
+                <React.Fragment key={track.id}>
+                  {showDivider && (
+                    <div className="songs-letter-divider" key={`divider-${letter}`}>
+                      <span className="songs-letter-anchor">{letter}</span>
+                      <span className="songs-letter-rule" />
                     </div>
-                  </div>
-
-                  <div className="col-album">
-                    <span className="song-row-album truncate">{track.album}</span>
-                  </div>
-
-                  <div className="col-duration">
-                    <span className="song-row-time">{formatDuration(track.duration)}</span>
-                  </div>
+                  )}
 
                   <div
-                    className="col-actions"
-                    onClick={(e) => e.stopPropagation()}
-                    onMouseDown={(e) => e.stopPropagation()}
+                    className={`song-row ${isCurrentTrack ? 'song-row-active' : ''} ${
+                      isMissing ? 'song-row-unavailable' : ''
+                    }`}
+                    role="listitem"
+                    tabIndex={0}
+                    onClick={handleSelectTrack}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' && e.target === e.currentTarget) {
+                        handleSelectTrack();
+                      }
+                    }}
+                    onContextMenu={handleContextMenu}
                   >
-                    <IconButton
-                      icon={
-                        <Heart
-                          size={16}
-                          fill={track.is_favorite ? 'currentColor' : 'none'}
-                          color={
-                            track.is_favorite
-                              ? 'var(--md-sys-color-tertiary)'
-                              : 'currentColor'
-                          }
-                        />
-                      }
-                      aria-label={
-                        track.is_favorite ? 'Remove from favorites' : 'Add to favorites'
-                      }
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        onToggleFavorite(track.id);
-                      }}
-                      size="sm"
-                    />
+                    <div className="col-index">
+                      {isCurrentTrack ? (
+                        <button
+                          type="button"
+                          className="index-playing-btn"
+                          aria-label={isRowPlaying ? `Pause ${track.title}` : `Play ${track.title}`}
+                          title={isRowPlaying ? `Pause ${track.title}` : `Play ${track.title}`}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleSelectTrack();
+                          }}
+                        >
+                          <span className="index-playing-bars">
+                            <PlayingBars isPlaying={isPlaying} size="sm" />
+                          </span>
+                          <span className="index-playing-icon">
+                            {isRowPlaying ? (
+                              <Pause size={13} fill="currentColor" />
+                            ) : (
+                              <Play size={13} fill="currentColor" />
+                            )}
+                          </span>
+                        </button>
+                      ) : (
+                        <>
+                          <span className="index-number">{idx + 1}</span>
 
-                    <IconButton
-                      icon={<MoreHorizontal size={16} />}
-                      aria-label="More options"
-                      size="sm"
-                      onClick={handleOpenMenu}
-                    />
+                          <button
+                            type="button"
+                            className="index-play-btn"
+                            aria-label={`Play ${track.title}`}
+                            title={`Play ${track.title}`}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleSelectTrack();
+                            }}
+                          >
+                            <Play size={13} fill="currentColor" />
+                          </button>
+                        </>
+                      )}
+                    </div>
+
+                    <div className="col-title">
+                      <TrackArtwork
+                        artworkHash={track.artwork_hash}
+                        alt={track.album || track.title}
+                        size="md"
+                        className="song-row-artwork"
+                      />
+
+                      <div className="song-title-group">
+                        <div style={{ display: 'flex', alignItems: 'center' }}>
+                          <span className="song-row-title truncate">{track.title}</span>
+
+                          {isMissing && <span className="unavailable-badge">Missing</span>}
+                        </div>
+
+                        <span className="song-row-artist truncate">{track.artist}</span>
+                      </div>
+                    </div>
+
+                    <div className="col-album">
+                      <span className="song-row-album truncate">{track.album || '—'}</span>
+                    </div>
+
+                    <div className="col-duration">
+                      <span className="song-row-time">{formatDuration(track.duration)}</span>
+                    </div>
+
+                    <div
+                      className={`col-actions ${track.is_favorite ? 'has-favorite' : ''}`}
+                      onClick={(e) => e.stopPropagation()}
+                      onMouseDown={(e) => e.stopPropagation()}
+                    >
+                      <IconButton
+                        className={`action-favorite-btn ${track.is_favorite ? 'is-favorite' : ''}`}
+                        icon={
+                          <Heart
+                            size={16}
+                            fill={track.is_favorite ? 'currentColor' : 'none'}
+                            color={
+                              track.is_favorite
+                                ? 'var(--accent)'
+                                : 'currentColor'
+                            }
+                          />
+                        }
+                        aria-label={
+                          track.is_favorite ? 'Remove from favorites' : 'Add to favorites'
+                        }
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          onToggleFavorite(track.id);
+                        }}
+                        size="sm"
+                      />
+
+                      <IconButton
+                        icon={<MoreHorizontal size={16} />}
+                        aria-label="More options"
+                        size="sm"
+                        onClick={handleOpenMenu}
+                      />
+                    </div>
                   </div>
-                </div>
+                </React.Fragment>
               );
             })}
           </div>

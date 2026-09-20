@@ -23,7 +23,6 @@
   cursor: pointer;
   user-select: none;
   transition: all var(--motion-duration-short-2) var(--motion-easing-standard);
-  outline: none;
 }
 
 .sort-menu-trigger:hover {
@@ -101,7 +100,6 @@
   width: 100%;
   transition: background-color var(--motion-duration-short-1) var(--motion-easing-standard),
     color var(--motion-duration-short-1) var(--motion-easing-standard);
-  outline: none;
 }
 
 .sort-menu-item:hover,

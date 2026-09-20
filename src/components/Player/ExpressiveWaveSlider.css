@@ -1,5 +1,5 @@
 /* ==========================================================================
-   EXPRESSIVE SINE-WAVE PROGRESS SLIDER (Material 3 Expressive / Pixel)
+   EXPRESSIVE SINE-WAVE PROGRESS SLIDER (The Record Room — Brief v3)
    ========================================================================== */
 
 .m3-expressive-wave-slider {
@@ -9,9 +9,21 @@
   display: flex;
   align-items: center;
   cursor: pointer;
-  outline: none;
   user-select: none;
   touch-action: none;
+}
+
+/* Flat 20px hit area band centred on the wave's mean line */
+.m3-expressive-wave-slider::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  height: 20px;
+  background: transparent;
+  z-index: 1;
 }
 
 .m3-expressive-wave-slider.disabled {
@@ -24,49 +36,73 @@
   height: 24px;
   overflow: visible;
   display: block;
+  position: relative;
+  z-index: 2;
 }
 
-/* Unplayed straight horizontal bar */
+/* Unplayed flat track */
 .wave-unplayed-track {
-  stroke: var(--md-sys-color-outline-variant);
-  stroke-width: 4px;
+  stroke: var(--line-strong);
+  stroke-width: 3.5px;
   stroke-linecap: round;
-  transition: stroke var(--motion-duration-short-2) var(--motion-easing-standard);
+  transition: stroke var(--dur-micro) var(--ease-standard);
 }
 
 .m3-expressive-wave-slider:hover .wave-unplayed-track,
 .m3-expressive-wave-slider:focus-visible .wave-unplayed-track {
-  stroke: var(--md-sys-color-outline);
+  stroke: var(--ink-tertiary);
 }
 
 /* Played portion: organic animated sine-wave */
 .wave-played-track {
-  stroke: var(--md-sys-color-primary);
-  stroke-width: 4px;
+  stroke: var(--accent);
+  stroke-width: 3.5px;
   stroke-linecap: round;
   stroke-linejoin: round;
   fill: none;
-  filter: drop-shadow(0 1px 4px rgba(0, 0, 0, 0.25));
-  transition: stroke var(--motion-duration-medium-1) var(--motion-easing-standard);
+  filter: drop-shadow(0 1px 3px rgba(0, 0, 0, 0.3));
+  transition: stroke var(--dur-short) var(--ease-standard);
 }
 
-/* Playhead Thumb */
+/* Playhead Thumb (Pinned to mean line) */
 .wave-thumb {
-  fill: var(--md-sys-color-on-background);
-  stroke: var(--md-sys-color-surface);
+  fill: var(--ink-primary);
+  stroke: var(--accent);
   stroke-width: 2px;
-  filter: drop-shadow(0 2px 5px rgba(0, 0, 0, 0.4));
-  transition: r var(--motion-duration-short-2) var(--motion-easing-emphasized-decelerate),
-              fill var(--motion-duration-medium-1) var(--motion-easing-standard);
+  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.4));
+  transition: r var(--dur-micro) var(--ease-emphasized),
+              fill var(--dur-short) var(--ease-standard);
 }
 
 .m3-expressive-wave-slider:hover .wave-thumb,
 .m3-expressive-wave-slider.scrubbing .wave-thumb {
   filter: drop-shadow(0 2px 8px rgba(0, 0, 0, 0.5));
+  stroke: var(--accent-bright);
+}
+
+/* Time hover tooltip */
+.wave-slider-tooltip {
+  position: absolute;
+  bottom: calc(100% + 8px);
+  transform: translateX(-50%);
+  background: var(--surface-hover);
+  color: var(--ink-primary);
+  border: 1px solid var(--line-strong);
+  font-family: var(--font-ui);
+  font-size: 0.75rem;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  padding: 3px 8px;
+  border-radius: var(--radius-control);
+  box-shadow: var(--shadow-sm);
+  pointer-events: none;
+  z-index: 10;
+  white-space: nowrap;
 }
 
 /* Focus Indicator Ring for Accessibility */
 .m3-expressive-wave-slider:focus-visible {
-  border-radius: var(--radius-sm);
-  box-shadow: 0 0 0 2px var(--md-sys-color-focus-ring);
+  border-radius: var(--radius-control);
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
 }

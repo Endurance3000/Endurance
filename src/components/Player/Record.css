@@ -1,0 +1,278 @@
+/* ==========================================================================
+   THE RECORD — Authentic LP Vinyl Experience (Brief v3 / Phase 6)
+   ========================================================================== */
+
+.record-container {
+  position: absolute;
+  width: var(--record-size, clamp(520px, 78vh, 860px));
+  height: var(--record-size, clamp(520px, 78vh, 860px));
+  border-radius: 50%;
+  pointer-events: none;
+  user-select: none;
+  contain: layout paint;
+  z-index: 1;
+}
+
+/* 10. Contact Shadow beneath the disc */
+.record-contact-shadow {
+  position: absolute;
+  inset: -4%;
+  border-radius: 50%;
+  background: radial-gradient(
+    ellipse at 50% 55%,
+    rgba(10, 8, 7, 0.6) 0%,
+    rgba(10, 8, 7, 0.35) 45%,
+    transparent 72%
+  );
+  filter: blur(28px);
+  z-index: 0;
+  pointer-events: none;
+}
+
+/* --------------------------------------------------------------------------
+   ROTATING DISC ASSEMBLY
+   -------------------------------------------------------------------------- */
+.record-rotating-disc {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  background: radial-gradient(
+    circle at center,
+    #120e0c 0%,
+    #100d0b 24%,
+    var(--record-body, #0a0807) 100%
+  );
+  box-shadow: var(--shadow-lg, 0 20px 50px rgba(10, 8, 7, 0.6));
+  will-change: transform;
+  contain: layout paint;
+  animation: record-spin 7.5s linear infinite;
+  z-index: 1;
+}
+
+@keyframes record-spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.record-rotating-disc[data-playing="false"] {
+  animation-play-state: paused;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .record-rotating-disc {
+    animation: none;
+  }
+}
+
+/* 1. Rim Lip: Two concentric rings at 99% and 97% radius */
+.record-rim-lip-outer {
+  position: absolute;
+  inset: 0.5%;
+  border-radius: 50%;
+  border: 1.5px solid var(--record-edge, rgba(255, 251, 233, 0.40));
+  pointer-events: none;
+}
+
+.record-rim-lip-inner {
+  position: absolute;
+  inset: 1.5%;
+  border-radius: 50%;
+  border: 1px solid var(--record-edge, rgba(255, 251, 233, 0.20));
+  pointer-events: none;
+}
+
+/* Light Theme Disc Adjustment: 1px rim and 92% opacity */
+[data-theme="daylight"] .record-rotating-disc,
+[data-theme="porcelain"] .record-rotating-disc {
+  border: 1px solid var(--line-strong, rgba(36, 27, 20, 0.25));
+  opacity: 0.94;
+}
+
+/* 2, 3, 5. Lead-in groove (96% to 92%), Groove field (92% to 34%), Run-out groove (34% to 31%) */
+.record-disc-grooves {
+  position: absolute;
+  inset: 4%;
+  border-radius: 50%;
+  background: repeating-radial-gradient(
+    circle at center,
+    transparent 0px,
+    transparent 2px,
+    var(--record-groove, rgba(255, 251, 233, 0.085)) 2px,
+    var(--record-groove, rgba(255, 251, 233, 0.085)) 3.4px
+  );
+  mask-image: radial-gradient(
+    circle at center,
+    transparent 0%,
+    transparent 31%,
+    black 34%,
+    black 92%,
+    transparent 96%
+  );
+  -webkit-mask-image: radial-gradient(
+    circle at center,
+    transparent 0%,
+    transparent 31%,
+    black 34%,
+    black 92%,
+    transparent 96%
+  );
+  pointer-events: none;
+}
+
+/* 4. Five Land Bands (gaps between tracks on LP at 88%, 76%, 64%, 52%, 40% radius) */
+.record-land-band {
+  position: absolute;
+  border-radius: 50%;
+  pointer-events: none;
+  border-style: solid;
+  border-color: var(--record-groove, rgba(255, 251, 233, 0.12));
+}
+
+.record-land-band.band-88 {
+  inset: 6%;
+  border-width: 2px;
+  opacity: 0.95;
+}
+
+.record-land-band.band-76 {
+  inset: 12%;
+  border-width: 1.5px;
+  opacity: 0.9;
+}
+
+.record-land-band.band-64 {
+  inset: 18%;
+  border-width: 2px;
+  opacity: 0.95;
+}
+
+.record-land-band.band-52 {
+  inset: 24%;
+  border-width: 1.5px;
+  opacity: 0.9;
+}
+
+.record-land-band.band-40 {
+  inset: 30%;
+  border-width: 2px;
+  opacity: 0.95;
+}
+
+/* 8. Dust & Wear Streaks (Faint radial streaks ~1.5% opacity) */
+.record-dust-wear {
+  position: absolute;
+  inset: 4%;
+  border-radius: 50%;
+  pointer-events: none;
+  opacity: 0.018;
+  background: conic-gradient(
+    from 35deg at 50% 50%,
+    transparent 0deg,
+    #fff 12deg,
+    transparent 28deg,
+    #fff 85deg,
+    transparent 110deg,
+    #fff 190deg,
+    transparent 240deg,
+    #fff 310deg,
+    transparent 360deg
+  );
+  mix-blend-mode: overlay;
+}
+
+/* 6. Center Label (30% diameter, circular crop of current artwork, NO rotating text) */
+.record-center-label {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 30%;
+  height: 30%;
+  transform: translate(-50%, -50%);
+  border-radius: 50%;
+  border: 1px solid var(--record-edge, rgba(255, 251, 233, 0.15));
+  box-shadow: inset 0 0 14px rgba(0, 0, 0, 0.65), 0 0 8px rgba(0, 0, 0, 0.4);
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.record-label-artwork {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 50%;
+  opacity: 0.85;
+  filter: saturate(0.9) contrast(1.05);
+}
+
+.record-label-fallback-art {
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  background: radial-gradient(
+    circle at center,
+    var(--surface-panel) 0%,
+    var(--surface-raised) 70%,
+    var(--surface-base) 100%
+  );
+  opacity: 0.85;
+}
+
+.record-label-grain {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  pointer-events: none;
+  opacity: 0.035;
+  mix-blend-mode: overlay;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
+}
+
+.record-label-ring {
+  position: absolute;
+  inset: 8px;
+  border-radius: 50%;
+  border: 1px solid var(--line-subtle, rgba(255, 251, 233, 0.12));
+  pointer-events: none;
+}
+
+/* 7. Center Spindle Hole (12px, bevel ring & inner shadow) */
+.record-spindle-hole {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 12px;
+  height: 12px;
+  transform: translate(-50%, -50%);
+  border-radius: 50%;
+  background: var(--surface-base, #14100E);
+  border: 1px solid var(--record-edge, rgba(255, 251, 233, 0.3));
+  box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.95), 0 0 2px rgba(255, 255, 255, 0.15);
+  z-index: 3;
+}
+
+/* --------------------------------------------------------------------------
+   9. STATIONARY SPECULAR SHEEN OVERLAY (Fixed 112deg, ~18% width, DOES NOT ROTATE)
+   -------------------------------------------------------------------------- */
+.record-fixed-sheen {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  pointer-events: none;
+  background: linear-gradient(
+    112deg,
+    transparent 0%,
+    transparent 41%,
+    var(--record-sheen, rgba(255, 251, 233, 0.08)) 50%,
+    transparent 59%,
+    transparent 100%
+  );
+  mix-blend-mode: screen;
+  z-index: 2;
+  contain: layout paint;
+}

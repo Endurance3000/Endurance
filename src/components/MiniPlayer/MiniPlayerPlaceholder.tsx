@@ -9,17 +9,23 @@ import {
   Volume1,
   Volume2,
   VolumeX,
+  Shuffle,
+  Heart,
+  Maximize2,
 } from "lucide-react";
 import { invoke } from "@tauri-apps/api/core";
+import { getCurrentWindow } from "@tauri-apps/api/window";
 import { IconButton } from "../Common/IconButton";
 import { TrackArtwork } from "../Library/TrackArtwork";
 import { ExpressiveWaveSlider } from "../Player/ExpressiveWaveSlider";
 import { formatDuration } from "../../utils/formatters";
 import { PlaybackSnapshot } from "../../services/playback/playbackProtocol";
+import { libraryService } from "../../services/library/libraryService";
 import {
   connectMiniPlayerBridge,
   sendMiniPlayerCommand,
 } from "./miniPlayerBridge";
+import "./MiniPlayerPlaceholder.css";
 
 interface MiniPlayerVolumeProps {
   volume: number;
@@ -82,23 +88,25 @@ const MiniPlayerVolume: React.FC<MiniPlayerVolumeProps> = ({
 
   const volumeIcon =
     isMuted || volume === 0 ? (
-      <VolumeX size={16} />
+      <VolumeX size={15} />
     ) : volume < 0.5 ? (
-      <Volume1 size={16} />
+      <Volume1 size={15} />
     ) : (
-      <Volume2 size={16} />
+      <Volume2 size={15} />
     );
 
   return (
     <div className="mini-player-volume">
-      <IconButton
-        icon={volumeIcon}
-        aria-label={isMuted ? "Unmute" : "Mute"}
-        tooltip={isMuted ? "Unmute" : "Mute"}
+      <button
+        type="button"
+        className="mini-player-vol-icon-btn"
         onClick={onToggleMute}
         disabled={disabled}
-        size="sm"
-      />
+        aria-label={isMuted ? "Unmute" : "Mute"}
+        title={isMuted ? "Unmute" : "Mute"}
+      >
+        {volumeIcon}
+      </button>
       <div
         ref={volumeTrackRef}
         className="mini-player-volume-track"
@@ -128,7 +136,8 @@ export const MiniPlayerView: React.FC<{
   snapshot: PlaybackSnapshot | null;
 }> = ({ snapshot }) => {
   const [alwaysOnTop, setAlwaysOnTop] = useState(false);
-  const [alwaysOnTopError, setAlwaysOnTopError] = useState(false);
+  const [backdropUri, setBackdropUri] = useState<string | null>(null);
+  const [isFavorite, setIsFavorite] = useState(false);
 
   const currentTrack = snapshot?.currentTrack ?? null;
   const hasTrack = currentTrack !== null;
@@ -140,66 +149,128 @@ export const MiniPlayerView: React.FC<{
       ? Math.min(duration, Math.max(0, currentTime))
       : Math.max(0, currentTime);
 
+  const remainingTime = Math.max(0, duration - clampedCurrentTime);
+
+  // Load blurred backdrop artwork URI
+  useEffect(() => {
+    let isMounted = true;
+    if (!currentTrack?.artworkHash) {
+      setBackdropUri(null);
+      return;
+    }
+
+    libraryService.getTrackArtwork(currentTrack.artworkHash).then((uri) => {
+      if (isMounted && uri) {
+        setBackdropUri(uri);
+      }
+    });
+
+    return () => {
+      isMounted = false;
+    };
+  }, [currentTrack?.artworkHash]);
+
   const handleAlwaysOnTopToggle = async () => {
     const nextValue = !alwaysOnTop;
-
     try {
       await invoke("set_mini_player_always_on_top", {
         alwaysOnTop: nextValue,
       });
-
       setAlwaysOnTop(nextValue);
-      setAlwaysOnTopError(false);
     } catch (error: unknown) {
       console.warn("Failed to change Mini Player always-on-top state:", error);
-      setAlwaysOnTopError(true);
+    }
+  };
+
+  const handleFocusMainWindow = async () => {
+    try {
+      await invoke("focus_main_window");
+    } catch {
+      // Fallback
+      try {
+        const appWindow = getCurrentWindow();
+        await appWindow.setFocus();
+      } catch (err) {
+        console.warn("Focus main window failed:", err);
+      }
+    }
+  };
+
+  const handleToggleFavorite = async () => {
+    if (!currentTrack) return;
+    try {
+      const newState = await invoke<boolean>("toggle_track_favorite", {
+        trackId: currentTrack.id,
+      });
+      setIsFavorite(newState);
+    } catch (err) {
+      console.warn("Could not toggle favorite:", err);
     }
   };
 
   return (
     <main aria-label="Mini Player" className="mini-player-placeholder">
-      <section className="mini-player-now-playing" aria-label="Now playing">
-        <TrackArtwork
-          artworkHash={currentTrack?.artworkHash}
-          alt={
-            currentTrack?.album || currentTrack?.title || "No track selected"
-          }
-          size="lg"
-          className="mini-player-artwork"
+      {/* Blurred Artwork Backdrop (~18% opacity, darkened) */}
+      {backdropUri && (
+        <div
+          className="mini-player-backdrop-img"
+          style={{ backgroundImage: `url(${backdropUri})` }}
+          aria-hidden="true"
         />
+      )}
+      <div className="mini-player-surface-overlay" aria-hidden="true" />
+      <div className="mini-player-grain" aria-hidden="true" />
 
-        <div className="mini-player-metadata">
+      {/* Top row: Artwork (72px), Title/Artist (clickable), and Window Actions */}
+      <section className="mini-player-now-playing" aria-label="Now playing">
+        <div
+          className="mini-player-artwork-wrap"
+          onClick={handleFocusMainWindow}
+          role="button"
+          tabIndex={0}
+          title="Click to raise main window"
+        >
+          <TrackArtwork
+            artworkHash={currentTrack?.artworkHash}
+            alt={currentTrack?.album || currentTrack?.title || "No track selected"}
+            size="lg"
+            className="mini-player-artwork"
+          />
+        </div>
+
+        <div
+          className="mini-player-metadata"
+          onClick={handleFocusMainWindow}
+          role="button"
+          tabIndex={0}
+          title="Click to raise main window"
+        >
           {hasTrack ? (
             <>
-              <strong
+              <div
                 className="mini-player-title truncate"
                 title={currentTrack.title}
               >
                 {currentTrack.title}
-              </strong>
+              </div>
 
-              <span
+              <div
                 className="mini-player-artist truncate"
                 title={currentTrack.artist}
               >
                 {currentTrack.artist}
-              </span>
+              </div>
             </>
           ) : (
             <>
-              <strong className="mini-player-title">
-                No Track Selected
-              </strong>
-
-              <span className="mini-player-artist">
-                Endurance Offline Player
-              </span>
+              <div className="mini-player-title">No Track Selected</div>
+              <div className="mini-player-artist">Endurance Offline Player</div>
             </>
           )}
 
           {snapshot?.isLoading && (
             <span className="mini-player-status" aria-live="polite">
-              <Loader2 size={13} className="spin-animation" />
+              <Loader2 size={12} className="spin-animation" />
               Loading audio
             </span>
           )}
@@ -209,15 +280,29 @@ export const MiniPlayerView: React.FC<{
               {snapshot.playbackError}
             </span>
           )}
+        </div>
 
-          {alwaysOnTopError && (
-            <span className="mini-player-error" role="alert">
-              Unable to change Always on Top
-            </span>
-          )}
+        {/* Window Controls: Always on Top, Expand to Main Window */}
+        <div className="mini-player-window-actions">
+          <IconButton
+            icon={<Pin size={14} fill={alwaysOnTop ? "currentColor" : "none"} />}
+            aria-label={alwaysOnTop ? "Disable Always on Top" : "Enable Always on Top"}
+            tooltip={alwaysOnTop ? "Always on Top (On)" : "Always on Top"}
+            onClick={() => void handleAlwaysOnTopToggle()}
+            size="sm"
+            className={alwaysOnTop ? "mini-player-always-on-top-active" : undefined}
+          />
+          <IconButton
+            icon={<Maximize2 size={14} />}
+            aria-label="Expand to full application"
+            tooltip="Open main window"
+            onClick={handleFocusMainWindow}
+            size="sm"
+          />
         </div>
       </section>
 
+      {/* Progress row: scaled wave slider with elapsed and remaining */}
       <div
         className="mini-player-progress"
         role="group"
@@ -238,31 +323,38 @@ export const MiniPlayerView: React.FC<{
         />
 
         <span className="timeline-time">
-          {duration > 0 ? formatDuration(duration) : "0:00"}
+          {duration > 0 ? `-${formatDuration(remainingTime)}` : "-0:00"}
         </span>
       </div>
 
+      {/* Bottom row: transport, favourite, shuffle, and volume */}
       <footer
         className="mini-player-controls"
         aria-label="Playback controls"
       >
         <IconButton
-          icon={<SkipBack size={17} />}
+          icon={<Shuffle size={15} />}
+          aria-label={snapshot?.shuffleEnabled ? "Shuffle On" : "Shuffle Off"}
+          tooltip={snapshot?.shuffleEnabled ? "Shuffle On" : "Shuffle"}
+          onClick={() => sendMiniPlayerCommand({ type: "toggle-shuffle" })}
+          selected={snapshot?.shuffleEnabled}
+          size="sm"
+          className={snapshot?.shuffleEnabled ? "mini-player-toggle-active" : undefined}
+        />
+
+        <IconButton
+          icon={<SkipBack size={16} />}
           aria-label="Previous track"
           tooltip="Previous"
-          onClick={() =>
-            sendMiniPlayerCommand({ type: "previous-track" })
-          }
+          onClick={() => sendMiniPlayerCommand({ type: "previous-track" })}
           disabled={!hasTrack}
           size="sm"
         />
 
         <button
           type="button"
-          className="player-play-btn mini-player-play-btn"
-          onClick={() =>
-            sendMiniPlayerCommand({ type: "toggle-play" })
-          }
+          className="mini-player-play-btn"
+          onClick={() => sendMiniPlayerCommand({ type: "toggle-play" })}
           disabled={!hasTrack && !(snapshot?.isLoading ?? false)}
           aria-label={
             snapshot?.isLoading
@@ -280,27 +372,31 @@ export const MiniPlayerView: React.FC<{
           }
         >
           {snapshot?.isLoading ? (
-            <Loader2 size={19} className="spin-animation" />
+            <Loader2 size={18} className="spin-animation" />
           ) : snapshot?.isPlaying ? (
-            <Pause size={19} fill="currentColor" />
+            <Pause size={18} fill="currentColor" />
           ) : (
-            <Play
-              size={19}
-              fill="currentColor"
-              style={{ marginLeft: 2 }}
-            />
+            <Play size={18} fill="currentColor" style={{ marginLeft: 2 }} />
           )}
         </button>
 
         <IconButton
-          icon={<SkipForward size={17} />}
+          icon={<SkipForward size={16} />}
           aria-label="Next track"
           tooltip="Next"
-          onClick={() =>
-            sendMiniPlayerCommand({ type: "next-track" })
-          }
+          onClick={() => sendMiniPlayerCommand({ type: "next-track" })}
           disabled={!hasTrack}
           size="sm"
+        />
+
+        <IconButton
+          icon={<Heart size={15} fill={isFavorite ? "currentColor" : "none"} />}
+          aria-label={isFavorite ? "In favorites" : "Add to favorites"}
+          tooltip={isFavorite ? "In favorites" : "Favorite"}
+          onClick={() => void handleToggleFavorite()}
+          disabled={!hasTrack}
+          size="sm"
+          color={isFavorite ? "var(--accent-bright)" : "currentColor"}
         />
 
         <MiniPlayerVolume
@@ -310,35 +406,7 @@ export const MiniPlayerView: React.FC<{
           onVolumeChange={(volume) =>
             sendMiniPlayerCommand({ type: "set-volume", volume })
           }
-          onToggleMute={() =>
-            sendMiniPlayerCommand({ type: "toggle-mute" })
-          }
-        />
-
-        <IconButton
-          icon={
-            <Pin
-              size={16}
-              fill={alwaysOnTop ? "currentColor" : "none"}
-            />
-          }
-          aria-label={
-            alwaysOnTop
-              ? "Disable Always on Top"
-              : "Enable Always on Top"
-          }
-          tooltip={
-            alwaysOnTop
-              ? "Disable Always on Top"
-              : "Always on Top"
-          }
-          onClick={() => void handleAlwaysOnTopToggle()}
-          size="sm"
-          className={
-            alwaysOnTop
-              ? "mini-player-always-on-top-active"
-              : undefined
-          }
+          onToggleMute={() => sendMiniPlayerCommand({ type: "toggle-mute" })}
         />
       </footer>
     </main>
@@ -346,8 +414,24 @@ export const MiniPlayerView: React.FC<{
 };
 
 export const MiniPlayer: React.FC = () => {
-  const [snapshot, setSnapshot] =
-    useState<PlaybackSnapshot | null>(null);
+  const [snapshot, setSnapshot] = useState<PlaybackSnapshot | null>(null);
+
+  // Sync theme with document element
+  useEffect(() => {
+    const applyStoredTheme = () => {
+      const savedTheme = localStorage.getItem("endurance_theme") || "endurance";
+      document.documentElement.setAttribute("data-theme", savedTheme);
+    };
+    applyStoredTheme();
+
+    const handleStorage = (e: StorageEvent) => {
+      if (e.key === "endurance_theme" && e.newValue) {
+        document.documentElement.setAttribute("data-theme", e.newValue);
+      }
+    };
+    window.addEventListener("storage", handleStorage);
+    return () => window.removeEventListener("storage", handleStorage);
+  }, []);
 
   useEffect(() => {
     let disposed = false;
@@ -362,10 +446,7 @@ export const MiniPlayer: React.FC = () => {
       })
       .catch((error: unknown) => {
         if (!disposed) {
-          console.warn(
-            "Mini Player bridge unavailable:",
-            error,
-          );
+          console.warn("Mini Player bridge unavailable:", error);
         }
       });
 

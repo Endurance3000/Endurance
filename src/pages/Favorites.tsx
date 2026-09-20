@@ -1,8 +1,10 @@
 import React, { useRef, useState } from 'react';
-import { Heart, Music2, Play, Pause, MoreHorizontal } from 'lucide-react';
+import { Heart, Music2, Play, Pause, MoreHorizontal, Shuffle } from 'lucide-react';
 import { EmptyState } from '../components/Common/EmptyState';
+import { Button } from '../components/Common/Button';
 import { IconButton } from '../components/Common/IconButton';
 import { TrackArtwork } from '../components/Library/TrackArtwork';
+import { PlayingBars } from '../components/Common/PlayingBars';
 import { SongActionMenu } from '../components/Common/SongActionMenu';
 import { usePlayback } from '../state/PlaybackContext';
 import { formatDuration } from '../utils/formatters';
@@ -21,7 +23,8 @@ export const Favorites: React.FC<FavoritesProps> = ({
   onBrowseSongs,
 }) => {
   const favoriteTracks = tracks.filter((t) => t.is_favorite);
-  const { currentTrack, isPlaying, playTrack, togglePlay } = usePlayback();
+  const stackTracks = favoriteTracks.slice(0, 4);
+  const { currentTrack, isPlaying, playTrack, togglePlay, shuffleAll } = usePlayback();
 
   const [menuTrack, setMenuTrack] = useState<Track | null>(null);
   const [menuPosition, setMenuPosition] = useState<{ x: number; y: number }>({
@@ -32,6 +35,18 @@ export const Favorites: React.FC<FavoritesProps> = ({
   // Stores the exact More Options button that opened the current menu.
   // This is cleared when the menu is opened through right-click/context menu.
   const menuTriggerRef = useRef<HTMLButtonElement | null>(null);
+
+  const handlePlayAll = () => {
+    if (favoriteTracks.length > 0) {
+      playTrack(favoriteTracks[0], favoriteTracks);
+    }
+  };
+
+  const handleShuffle = () => {
+    if (favoriteTracks.length > 0) {
+      shuffleAll(favoriteTracks);
+    }
+  };
 
   const handleOpenMenu = (
     e: React.MouseEvent<HTMLButtonElement>,
@@ -72,28 +87,68 @@ export const Favorites: React.FC<FavoritesProps> = ({
 
   return (
     <div className="page-container motion-fade-in">
-      <header className="page-header">
-        <h1 className="page-title">Favorites</h1>
-
-        <p className="page-subtitle">
-          {favoriteTracks.length === 1
-            ? '1 loved song in your collection'
-            : `${favoriteTracks.length} loved songs in your collection`}
-        </p>
-      </header>
-
       {favoriteTracks.length === 0 ? (
         <EmptyState
-          icon={<Heart size={38} color="var(--md-sys-color-tertiary)" />}
-          title="Your Favorite Songs"
-          description="Tracks you mark with a heart while browsing will be saved locally to your Endurance SQLite database and gathered here for quick listening."
-          actionLabel="Explore Your Library"
+          icon={<Heart size={42} color="var(--accent)" />}
+          title="Favorites"
+          description="Heart any song while listening or browsing to collect your favorite music here."
+          actionLabel="Browse library"
           actionIcon={<Music2 size={16} />}
-          actionVariant="tonal"
+          actionVariant="filled"
           onAction={onBrowseSongs}
         />
       ) : (
         <>
+          {/* Editorial Band & Fanned Stack (Phase 6.1) */}
+          <div className="favorites-editorial-band">
+            {/* Fanned Artwork Stack */}
+            <div className="favorites-stack" aria-hidden="true">
+              {stackTracks.map((track, i) => (
+                <div
+                  key={track.id}
+                  className={`favorites-stack-card favorites-stack-card-${i}`}
+                >
+                  <TrackArtwork
+                    artworkHash={track.artwork_hash}
+                    alt={track.title}
+                    size="lg"
+                  />
+                </div>
+              ))}
+            </div>
+
+            {/* Editorial Text Block */}
+            <div className="favorites-editorial-info">
+              <h1 className="favorites-editorial-title">Favorites</h1>
+              <p className="favorites-editorial-count">
+                {favoriteTracks.length === 1 ? '1 song' : `${favoriteTracks.length} songs`}
+              </p>
+
+              <div className="favorites-editorial-actions">
+                <Button
+                  variant="filled"
+                  size="md"
+                  icon={<Play size={16} fill="currentColor" />}
+                  onClick={handlePlayAll}
+                  title="Play all favorites from start"
+                >
+                  Play all
+                </Button>
+
+                <Button
+                  variant="outlined"
+                  size="md"
+                  icon={<Shuffle size={16} />}
+                  onClick={handleShuffle}
+                  title="Shuffle all favorites"
+                >
+                  Shuffle
+                </Button>
+              </div>
+            </div>
+          </div>
+
+          {/* Table Header & Rows */}
           <div className="songs-table-header">
             <span className="col-index">#</span>
             <span className="col-title">Title</span>
@@ -119,8 +174,9 @@ export const Favorites: React.FC<FavoritesProps> = ({
               return (
                 <div
                   key={track.id}
-                  className={`song-row ${isCurrentTrack ? 'song-row-active' : ''} ${isMissing ? 'song-row-unavailable' : ''
-                    }`}
+                  className={`song-row ${isCurrentTrack ? 'song-row-active' : ''} ${
+                    isMissing ? 'song-row-unavailable' : ''
+                  }`}
                   role="listitem"
                   tabIndex={0}
                   onClick={handleSelectTrack}
@@ -132,39 +188,54 @@ export const Favorites: React.FC<FavoritesProps> = ({
                   onContextMenu={(e) => handleContextMenu(e, track)}
                 >
                   <div className="col-index">
-                    <span className="index-number">{idx + 1}</span>
+                    {isCurrentTrack ? (
+                      <button
+                        type="button"
+                        className="index-playing-btn"
+                        aria-label={isRowPlaying ? `Pause ${track.title}` : `Play ${track.title}`}
+                        title={isRowPlaying ? `Pause ${track.title}` : `Play ${track.title}`}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleSelectTrack();
+                        }}
+                      >
+                        <span className="index-playing-bars">
+                          <PlayingBars isPlaying={isPlaying} size="sm" />
+                        </span>
+                        <span className="index-playing-icon">
+                          {isRowPlaying ? (
+                            <Pause size={13} fill="currentColor" />
+                          ) : (
+                            <Play size={13} fill="currentColor" />
+                          )}
+                        </span>
+                      </button>
+                    ) : (
+                      <>
+                        <span className="index-number">{idx + 1}</span>
 
-                    <button
-                      type="button"
-                      className="index-play-btn"
-                      aria-label={
-                        isRowPlaying
-                          ? `Pause ${track.title}`
-                          : `Play ${track.title}`
-                      }
-                      title={
-                        isRowPlaying
-                          ? `Pause ${track.title}`
-                          : `Play ${track.title}`
-                      }
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleSelectTrack();
-                      }}
-                    >
-                      {isRowPlaying ? (
-                        <Pause size={14} fill="currentColor" />
-                      ) : (
-                        <Play size={14} fill="currentColor" />
-                      )}
-                    </button>
+                        <button
+                          type="button"
+                          className="index-play-btn"
+                          aria-label={`Play ${track.title}`}
+                          title={`Play ${track.title}`}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleSelectTrack();
+                          }}
+                        >
+                          <Play size={13} fill="currentColor" />
+                        </button>
+                      </>
+                    )}
                   </div>
 
                   <div className="col-title">
                     <TrackArtwork
                       artworkHash={track.artwork_hash}
                       alt={track.album || track.title}
-                      size="sm"
+                      size="md"
+                      className="song-row-artwork"
                     />
 
                     <div className="song-title-group">
@@ -186,7 +257,7 @@ export const Favorites: React.FC<FavoritesProps> = ({
 
                   <div className="col-album">
                     <span className="song-row-album truncate">
-                      {track.album}
+                      {track.album || '—'}
                     </span>
                   </div>
 
@@ -197,16 +268,17 @@ export const Favorites: React.FC<FavoritesProps> = ({
                   </div>
 
                   <div
-                    className="col-actions"
+                    className="col-actions has-favorite"
                     onClick={(e) => e.stopPropagation()}
                     onMouseDown={(e) => e.stopPropagation()}
                   >
                     <IconButton
+                      className="action-favorite-btn is-favorite"
                       icon={
                         <Heart
                           size={16}
                           fill="currentColor"
-                          color="var(--md-sys-color-tertiary)"
+                          color="var(--accent)"
                         />
                       }
                       aria-label="Remove from favorites"

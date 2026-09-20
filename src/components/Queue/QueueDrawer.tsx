@@ -11,6 +11,7 @@ import {
 import { usePlayback } from '../../state/PlaybackContext';
 import { TrackArtwork } from '../Library/TrackArtwork';
 import { IconButton } from '../Common/IconButton';
+import { PlayingBars } from '../Common/PlayingBars';
 import { formatDuration } from '../../utils/formatters';
 import './QueueDrawer.css';
 
@@ -437,6 +438,7 @@ export const QueueDrawer: React.FC = () => {
       }}
     >
       <div
+        id="queue-drawer-panel"
         className="queue-drawer-panel"
         ref={panelRef}
         role="dialog"
@@ -455,17 +457,6 @@ export const QueueDrawer: React.FC = () => {
           </div>
 
           <div className="queue-header-actions">
-            {upcomingTracks.length > 0 && (
-              <button
-                type="button"
-                className="queue-clear-btn"
-                onClick={clearUpcomingQueue}
-                title="Clear upcoming songs from queue"
-              >
-                Clear Upcoming
-              </button>
-            )}
-
             <IconButton
               ref={closeButtonRef}
               icon={<X size={18} />}
@@ -482,7 +473,7 @@ export const QueueDrawer: React.FC = () => {
           {/* NOW PLAYING */}
           {currentTrack ? (
             <section className="queue-section">
-              <div className="queue-section-label">Now Playing</div>
+              <div className="queue-section-label">Now playing</div>
 
               <div className="queue-now-playing-card">
                 <TrackArtwork
@@ -501,29 +492,25 @@ export const QueueDrawer: React.FC = () => {
                   </span>
                 </div>
 
-                {isPlaying && (
-                  <div className="queue-equalizer" title="Playing">
-                    <span className="queue-eq-bar" />
-                    <span className="queue-eq-bar" />
-                    <span className="queue-eq-bar" />
-                  </div>
-                )}
+                <div className="queue-playing-indicator">
+                  <PlayingBars isPlaying={isPlaying} size="sm" />
+                </div>
               </div>
             </section>
           ) : (
             <div className="queue-empty-state">
               <ListMusic size={36} className="queue-empty-icon" />
-              <span className="queue-empty-title">Nothing Playing</span>
+              <span className="queue-empty-title">Nothing playing</span>
               <span className="queue-empty-desc">
                 Select any song in your library to start playback.
               </span>
             </div>
           )}
 
-          {/* UP NEXT */}
+          {/* NEXT UP */}
           <section className="queue-section">
             <div className="queue-section-label">
-              Up Next{' '}
+              Next up{' '}
               {upcomingTracks.length > 0 &&
                 `(${upcomingTracks.length})`}
             </div>
@@ -537,114 +524,128 @@ export const QueueDrawer: React.FC = () => {
                 </span>
               </div>
             ) : (
-              <div className="queue-list" ref={listRef} role="list">
-                {upcomingTracks.map(({ track, idx }) => {
-                  const isFirstUpcoming = idx === currentIndex + 1;
-                  const isLastUpcoming =
-                    idx === playbackQueue.length - 1;
+              <>
+                <div className="queue-list" ref={listRef} role="list">
+                  {upcomingTracks.map(({ track, idx }) => {
+                    const isFirstUpcoming = idx === currentIndex + 1;
+                    const isLastUpcoming =
+                      idx === playbackQueue.length - 1;
 
-                  return (
-                    <div
-                      key={`${track.id}_${idx}`}
-                      className="queue-item"
-                      role="listitem"
-                      data-queue-idx={idx}
-                      onClick={() => {
-                        if (!dragRef.current?.thresholdMet) {
-                          playQueueItem(idx);
-                        }
-                      }}
-                      title="Click to play, or drag the handle to reorder"
-                    >
+                    return (
                       <div
-                        className="queue-item-drag-handle"
-                        title="Drag to reorder"
-                        onClick={(e) => e.stopPropagation()}
-                        onPointerDown={(e) => {
-                          onHandlePointerDown(e, idx);
+                        key={`${track.id}_${idx}`}
+                        className="queue-item"
+                        role="listitem"
+                        data-queue-idx={idx}
+                        onClick={() => {
+                          if (!dragRef.current?.thresholdMet) {
+                            playQueueItem(idx);
+                          }
                         }}
-                        onPointerMove={(e) => {
-                          const rowEl =
-                            e.currentTarget.closest<HTMLElement>(
-                              '.queue-item'
-                            )!;
-
-                          onHandlePointerMove(e, rowEl);
-                        }}
-                        onPointerUp={onHandlePointerUp}
-                        onPointerCancel={onHandlePointerCancel}
+                        title="Click to play, or drag the handle to reorder"
                       >
-                        <GripVertical size={16} />
-                      </div>
+                        <div
+                          className="queue-item-drag-handle"
+                          title="Drag to reorder"
+                          onClick={(e) => e.stopPropagation()}
+                          onPointerDown={(e) => {
+                            onHandlePointerDown(e, idx);
+                          }}
+                          onPointerMove={(e) => {
+                            const rowEl =
+                              e.currentTarget.closest<HTMLElement>(
+                                '.queue-item'
+                              )!;
 
-                      <TrackArtwork
-                        artworkHash={track.artwork_hash}
-                        alt={track.title}
-                        size="sm"
-                      />
+                            onHandlePointerMove(e, rowEl);
+                          }}
+                          onPointerUp={onHandlePointerUp}
+                          onPointerCancel={onHandlePointerCancel}
+                        >
+                          <GripVertical size={15} />
+                        </div>
 
-                      <div className="queue-item-meta">
-                        <span className="queue-item-title truncate">
-                          {track.title}
+                        <TrackArtwork
+                          artworkHash={track.artwork_hash}
+                          alt={track.title}
+                          size="sm"
+                        />
+
+                        <div className="queue-item-meta">
+                          <span className="queue-item-title truncate">
+                            {track.title}
+                          </span>
+
+                          <span className="queue-item-artist truncate">
+                            {track.artist}
+                          </span>
+                        </div>
+
+                        <span className="queue-item-duration">
+                          {formatDuration(track.duration)}
                         </span>
 
-                        <span className="queue-item-artist truncate">
-                          {track.artist}
-                        </span>
+                        <div
+                          className="queue-item-actions"
+                          onClick={(e) => e.stopPropagation()}
+                        >
+                          <IconButton
+                            icon={<ChevronUp size={14} />}
+                            aria-label="Move up"
+                            tooltip="Move up one position"
+                            size="sm"
+                            disabled={isFirstUpcoming}
+                            onClick={() =>
+                              reorderQueue(idx, idx - 1)
+                            }
+                          />
+
+                          <IconButton
+                            icon={<ChevronDown size={14} />}
+                            aria-label="Move down"
+                            tooltip="Move down one position"
+                            size="sm"
+                            disabled={isLastUpcoming}
+                            onClick={() =>
+                              reorderQueue(idx, idx + 1)
+                            }
+                          />
+
+                          <IconButton
+                            icon={
+                              <Play size={13} fill="currentColor" />
+                            }
+                            aria-label={`Play ${track.title}`}
+                            tooltip="Play now"
+                            size="sm"
+                            onClick={() => playQueueItem(idx)}
+                          />
+
+                          <IconButton
+                            icon={<X size={14} />}
+                            aria-label="Remove from queue"
+                            tooltip="Remove"
+                            size="sm"
+                            onClick={() => removeFromQueue(idx)}
+                          />
+                        </div>
                       </div>
+                    );
+                  })}
+                </div>
 
-                      <span className="queue-item-duration">
-                        {formatDuration(track.duration)}
-                      </span>
-
-                      <div
-                        className="queue-item-actions"
-                        onClick={(e) => e.stopPropagation()}
-                      >
-                        <IconButton
-                          icon={<ChevronUp size={15} />}
-                          aria-label="Move up"
-                          tooltip="Move up one position"
-                          size="sm"
-                          disabled={isFirstUpcoming}
-                          onClick={() =>
-                            reorderQueue(idx, idx - 1)
-                          }
-                        />
-
-                        <IconButton
-                          icon={<ChevronDown size={15} />}
-                          aria-label="Move down"
-                          tooltip="Move down one position"
-                          size="sm"
-                          disabled={isLastUpcoming}
-                          onClick={() =>
-                            reorderQueue(idx, idx + 1)
-                          }
-                        />
-
-                        <IconButton
-                          icon={
-                            <Play size={14} fill="currentColor" />
-                          }
-                          aria-label={`Play ${track.title}`}
-                          tooltip="Play now"
-                          size="sm"
-                          onClick={() => playQueueItem(idx)}
-                        />
-
-                        <IconButton
-                          icon={<Trash2 size={14} />}
-                          aria-label="Remove from queue"
-                          tooltip="Remove"
-                          size="sm"
-                          onClick={() => removeFromQueue(idx)}
-                        />
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
+                <div className="queue-actions-footer">
+                  <button
+                    type="button"
+                    className="queue-clear-ghost-btn"
+                    onClick={clearUpcomingQueue}
+                    title="Clear upcoming songs from queue"
+                  >
+                    <Trash2 size={13} />
+                    <span>Clear queue</span>
+                  </button>
+                </div>
+              </>
             )}
           </section>
 
@@ -655,7 +656,7 @@ export const QueueDrawer: React.FC = () => {
                 className="queue-section-label"
                 style={{ opacity: 0.6 }}
               >
-                Previously Played ({previousTracks.length})
+                Previously played ({previousTracks.length})
               </div>
 
               <div

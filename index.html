@@ -5,6 +5,25 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Endurance</title>
     <link rel="icon" type="image/png" href="/logo.png" />
+    <script>
+      (function() {
+        try {
+          var validThemes = ['endurance', 'coffee', 'parchment', 'mauve', 'slate', 'ash', 'daylight', 'porcelain'];
+          var stored = localStorage.getItem('endurance_theme');
+          var theme = 'endurance';
+          if (stored && validThemes.indexOf(stored) !== -1) {
+            theme = stored;
+          } else if (stored === 'daylight' || stored === 'light') {
+            theme = 'daylight';
+          } else if (stored === 'system') {
+            theme = (window.matchMedia && window.matchMedia('(prefers-color-scheme: light)').matches) ? 'daylight' : 'endurance';
+          } else if (window.matchMedia && window.matchMedia('(prefers-color-scheme: light)').matches) {
+            theme = 'daylight';
+          }
+          document.documentElement.setAttribute('data-theme', theme);
+        } catch (e) {}
+      })();
+    </script>
   </head>
   <body>
     <div id="root"></div>

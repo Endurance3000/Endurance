@@ -1,29 +1,29 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect } from "react";
 import {
   Palette,
-  PlaySquare,
   FolderCog,
   FileText,
-  Volume2,
   Keyboard,
   Info,
-  ShieldCheck,
   FolderPlus,
   Trash2,
   RefreshCw,
   Loader2,
   Folder,
-} from 'lucide-react';
-import { Card } from '../components/Common/Card';
-import { Chip } from '../components/Common/Chip';
-import { Button } from '../components/Common/Button';
-import { IconButton } from '../components/Common/IconButton';
-import { formatDate } from '../utils/formatters';
-import { SystemInfo, LibraryFolder } from '../types';
-import { useTheme } from '../state/ThemeContext';
-import { preferencesService } from '../services/preferences/preferencesService';
-import { getPrimaryModifierLabel } from '../services/audio/shortcutHelper';
-import './Pages.css';
+  Check,
+  ExternalLink,
+  Play,
+  Volume2,
+} from "lucide-react";
+import { Chip } from "../components/Common/Chip";
+import { Button } from "../components/Common/Button";
+import { IconButton } from "../components/Common/IconButton";
+import { formatDate } from "../utils/formatters";
+import { SystemInfo, LibraryFolder } from "../types";
+import { useTheme, AppTheme } from "../state/ThemeContext";
+import { usePlayback } from "../state/PlaybackContext";
+import { getPrimaryModifierLabel } from "../services/audio/shortcutHelper";
+import "./Pages.css";
 
 interface SettingsPageProps {
   systemInfo: SystemInfo | null;
@@ -35,10 +35,102 @@ interface SettingsPageProps {
   onRescan: () => Promise<void>;
 }
 
-type SettingsCategory = 'appearance' | 'playback' | 'library' | 'lyrics' | 'audio' | 'shortcuts' | 'about';
+type SettingsCategory =
+  | "library"
+  | "appearance"
+  | "playback"
+  | "audio"
+  | "lyrics"
+  | "shortcuts"
+  | "about";
+
+interface ThemeCardOption {
+  id: AppTheme;
+  name: string;
+  subtitle: string;
+  surfaceBase: string;
+  surfacePanel: string;
+  inkPrimary: string;
+  accent: string;
+}
+
+const THEME_OPTIONS: ThemeCardOption[] = [
+  {
+    id: "endurance",
+    name: "Endurance",
+    subtitle: "Warm Clay (Default)",
+    surfaceBase: "#14100E",
+    surfacePanel: "#241D19",
+    inkPrimary: "#FFFBE9",
+    accent: "#CEAB93",
+  },
+  {
+    id: "coffee",
+    name: "Coffee",
+    subtitle: "Maroon & Cream",
+    surfaceBase: "#1E0E11",
+    surfacePanel: "#561C24",
+    inkPrimary: "#E8D8C4",
+    accent: "#C7B7A3",
+  },
+  {
+    id: "parchment",
+    name: "Parchment",
+    subtitle: "Leather & Blue Vinyl",
+    surfaceBase: "#2A1B15",
+    surfacePanel: "#46291D",
+    inkPrimary: "#F2E7D2",
+    accent: "#CDB58E",
+  },
+  {
+    id: "mauve",
+    name: "Mauve",
+    subtitle: "Dusk Rose",
+    surfaceBase: "#2A2228",
+    surfacePanel: "#4E3F47",
+    inkPrimary: "#F7EFE7",
+    accent: "#C7A9A3",
+  },
+  {
+    id: "slate",
+    name: "Slate",
+    subtitle: "Slate & Apricot",
+    surfaceBase: "#191A22",
+    surfacePanel: "#2A2C38",
+    inkPrimary: "#F5E7D2",
+    accent: "#FED7A5",
+  },
+  {
+    id: "ash",
+    name: "Ash",
+    subtitle: "Cool Grey & Taupe",
+    surfaceBase: "#1D2028",
+    surfacePanel: "#333844",
+    inkPrimary: "#D7D7D6",
+    accent: "#A08A81",
+  },
+  {
+    id: "daylight",
+    name: "Daylight",
+    subtitle: "Warm Cream (Light)",
+    surfaceBase: "#FFFBE9",
+    surfacePanel: "#F2E8CF",
+    inkPrimary: "#241B14",
+    accent: "#96714F",
+  },
+  {
+    id: "porcelain",
+    name: "Porcelain",
+    subtitle: "Rose & Bone (Light)",
+    surfaceBase: "#F7EFE7",
+    surfacePanel: "#E8D2C4",
+    inkPrimary: "#3E3239",
+    accent: "#8C6E78",
+  },
+];
 
 export const SettingsPage: React.FC<SettingsPageProps> = ({
-  systemInfo,
+  systemInfo: _systemInfo,
   folders,
   tracksCount,
   isScanning,
@@ -46,65 +138,69 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({
   onRemoveFolder,
   onRescan,
 }) => {
-  const [activeCategory, setActiveCategory] = useState<SettingsCategory>('library');
-  const { theme, setTheme, dynamicColorEnabled, setDynamicColorEnabled, highContrast, setHighContrast } = useTheme();
+  const [activeCategory, setActiveCategory] =
+    useState<SettingsCategory>("library");
+  const { theme, setTheme, dynamicColorEnabled, setDynamicColorEnabled } =
+    useTheme();
+  const { currentTrack } = usePlayback();
+  const [deletingFolderPath, setDeletingFolderPath] = useState<string | null>(
+    null,
+  );
 
-  // Interactive toggle states with local persistence
-  const [gaplessPlayback, setGaplessPlaybackState] = useState(true);
-  const [showLyricsOnRight, setShowLyricsOnRightState] = useState(true);
-  const [hardwareAcceleration, setHardwareAccelerationState] = useState(true);
+  const [prefersReducedMotion, setPrefersReducedMotion] =
+    useState<boolean>(false);
 
   useEffect(() => {
-    preferencesService.loadAll().then((prefs) => {
-      const savedGapless = prefs.get('gapless_playback');
-      if (savedGapless !== undefined && savedGapless !== '') {
-        setGaplessPlaybackState(savedGapless === 'true');
-      }
-      const savedLyricsRight = prefs.get('show_lyrics_right');
-      if (savedLyricsRight !== undefined && savedLyricsRight !== '') {
-        setShowLyricsOnRightState(savedLyricsRight === 'true');
-      }
-      const savedHw = prefs.get('hardware_acceleration');
-      if (savedHw !== undefined && savedHw !== '') {
-        setHardwareAccelerationState(savedHw === 'true');
-      }
-    });
+    if (typeof window !== "undefined") {
+      const mq = window.matchMedia("(prefers-reduced-motion: reduce)");
+      setPrefersReducedMotion(mq.matches);
+      const listener = (e: MediaQueryListEvent) =>
+        setPrefersReducedMotion(e.matches);
+      mq.addEventListener("change", listener);
+      return () => mq.removeEventListener("change", listener);
+    }
   }, []);
 
-  const setGaplessPlayback = (val: boolean) => {
-    setGaplessPlaybackState(val);
-    preferencesService.set('gapless_playback', val ? 'true' : 'false');
+  const handleOpenLyricsEditor = () => {
+    if (currentTrack) {
+      window.dispatchEvent(
+        new CustomEvent("endurance:open-lyrics-editor", {
+          detail: { track: currentTrack },
+        }),
+      );
+    }
   };
 
-  const setShowLyricsOnRight = (val: boolean) => {
-    setShowLyricsOnRightState(val);
-    preferencesService.set('show_lyrics_right', val ? 'true' : 'false');
-  };
-
-  const setHardwareAcceleration = (val: boolean) => {
-    setHardwareAccelerationState(val);
-    preferencesService.set('hardware_acceleration', val ? 'true' : 'false');
+  const handleConfirmRemoveFolder = async (path: string) => {
+    await onRemoveFolder(path);
+    setDeletingFolderPath(null);
   };
 
   const categories = [
-    { id: 'library', label: 'Library', icon: <FolderCog size={16} /> },
-    { id: 'appearance', label: 'Appearance', icon: <Palette size={16} /> },
-    { id: 'playback', label: 'Playback', icon: <PlaySquare size={16} /> },
-    { id: 'lyrics', label: 'Lyrics', icon: <FileText size={16} /> },
-    { id: 'audio', label: 'Audio', icon: <Volume2 size={16} /> },
-    { id: 'shortcuts', label: 'Shortcuts', icon: <Keyboard size={16} /> },
-    { id: 'about', label: 'About', icon: <Info size={16} /> },
+    { id: "library", label: "Library", icon: <FolderCog size={16} /> },
+    { id: "appearance", label: "Appearance", icon: <Palette size={16} /> },
+    { id: "playback", label: "Playback", icon: <Play size={16} /> },
+    { id: "audio", label: "Audio", icon: <Volume2 size={16} /> },
+    { id: "lyrics", label: "Lyrics", icon: <FileText size={16} /> },
+    { id: "shortcuts", label: "Shortcuts", icon: <Keyboard size={16} /> },
+    { id: "about", label: "About", icon: <Info size={16} /> },
   ] as const;
 
   return (
-    <div className="page-container motion-fade-in">
-      <header className="page-header">
+    <div className="page-container motion-fade-in settings-lean-container">
+      <header className="page-header settings-page-header">
         <h1 className="page-title">Settings</h1>
-        <p className="page-subtitle">Configure Endurance appearance, audio behavior, and local storage</p>
+        <p className="page-subtitle">
+          Configure Endurance library, themes, and audio behavior
+        </p>
       </header>
 
       {/* Category Filter Chips Bar */}
-      <div className="chips-bar settings-chips-bar" role="tablist" aria-label="Settings Categories">
+      <div
+        className="chips-bar settings-chips-bar"
+        role="tablist"
+        aria-label="Settings Categories"
+      >
         {categories.map((cat) => (
           <Chip
             key={cat.id}
@@ -120,25 +216,35 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({
       </div>
 
       <div className="settings-content-area">
-        {/* Library Settings */}
-        {activeCategory === 'library' && (
-          <Card variant="filled" padding="lg" className="settings-section-card motion-fade-in">
+        {/* TAB 1: LIBRARY */}
+        {activeCategory === "library" && (
+          <div className="settings-section-lean motion-fade-in">
             <div className="settings-header-action-row">
               <div>
-                <h2 className="settings-section-title">Music Library Folders</h2>
+                <h2 className="settings-section-title">
+                  Music Library Folders
+                </h2>
                 <p className="settings-section-desc">
-                  Manage indexed directories on your Windows computer ({folders.length} configured, {tracksCount} tracks indexed)
+                  {folders.length} {folders.length === 1 ? "folder" : "folders"}{" "}
+                  configured · {tracksCount}{" "}
+                  {tracksCount === 1 ? "track" : "tracks"} indexed
                 </p>
               </div>
               <div className="settings-header-buttons">
                 <Button
                   variant="tonal"
                   size="sm"
-                  icon={isScanning ? <Loader2 size={15} className="spin-animation" /> : <RefreshCw size={15} />}
+                  icon={
+                    isScanning ? (
+                      <Loader2 size={15} className="spin-animation" />
+                    ) : (
+                      <RefreshCw size={15} />
+                    )
+                  }
                   onClick={onRescan}
                   disabled={isScanning || folders.length === 0}
                 >
-                  {isScanning ? 'Scanning...' : 'Rescan All'}
+                  {isScanning ? "Scanning..." : "Rescan All"}
                 </Button>
                 <Button
                   variant="filled"
@@ -156,8 +262,11 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({
             <div className="folders-list">
               {folders.length === 0 ? (
                 <div className="folders-empty-notice">
-                  <Folder size={24} className="folders-empty-icon" />
-                  <span>No music folders added yet. Click &quot;Add Folder&quot; to pick your music directory.</span>
+                  <Folder size={20} className="folders-empty-icon" />
+                  <span>
+                    No music folders added yet. Click &ldquo;Add Folder&rdquo;
+                    to select a music directory.
+                  </span>
                 </div>
               ) : (
                 folders.map((folder) => (
@@ -166,18 +275,47 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({
                       <Folder size={18} />
                     </div>
                     <div className="folder-item-details">
-                      <span className="folder-item-path truncate">{folder.path}</span>
+                      <span className="folder-item-path truncate">
+                        {folder.path}
+                      </span>
                       <span className="folder-item-meta">
-                        Last scanned: {folder.last_scanned ? formatDate(folder.last_scanned) : 'Never'}
+                        Last scanned:{" "}
+                        {folder.last_scanned
+                          ? formatDate(folder.last_scanned)
+                          : "Never"}
                       </span>
                     </div>
-                    <IconButton
-                      icon={<Trash2 size={16} />}
-                      aria-label={`Remove folder ${folder.path}`}
-                      tooltip="Remove folder from library"
-                      onClick={() => onRemoveFolder(folder.path)}
-                      size="sm"
-                    />
+
+                    {deletingFolderPath === folder.path ? (
+                      <div className="folder-delete-confirm-group">
+                        <span className="folder-delete-confirm-text">
+                          Remove?
+                        </span>
+                        <Button
+                          variant="filled"
+                          size="sm"
+                          onClick={() => handleConfirmRemoveFolder(folder.path)}
+                          className="folder-confirm-btn"
+                        >
+                          Yes
+                        </Button>
+                        <Button
+                          variant="text"
+                          size="sm"
+                          onClick={() => setDeletingFolderPath(null)}
+                        >
+                          Cancel
+                        </Button>
+                      </div>
+                    ) : (
+                      <IconButton
+                        icon={<Trash2 size={16} />}
+                        aria-label={`Remove folder ${folder.path}`}
+                        tooltip="Remove folder from library"
+                        onClick={() => setDeletingFolderPath(folder.path)}
+                        size="sm"
+                      />
+                    )}
                   </div>
                 ))
               )}
@@ -185,182 +323,282 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({
 
             <div className="settings-row">
               <div>
-                <div className="setting-label">Supported Formats</div>
-                <div className="setting-sublabel">Case-insensitive offline formats: MP3, M4A/AAC, FLAC, WAV, OGG, Opus, AIFF</div>
+                <div className="setting-label">Supported Audio Formats</div>
+                <div className="setting-sublabel">
+                  FLAC, WAV, MP3, M4A, AAC, OGG, Opus, AIFF, AIF (offline
+                  read-only)
+                </div>
               </div>
-              <span className="setting-badge">MP3, FLAC, WAV & more</span>
             </div>
 
             <div className="settings-row">
               <div>
                 <div className="setting-label">File Safety Principle</div>
                 <div className="setting-sublabel">
-                  Endurance never moves, renames, or modifies your local audio files. Scanning is strictly read-only.
+                  Endurance never moves, renames, or modifies your local audio
+                  files. Scanning is strictly read-only.
                 </div>
               </div>
-              <span className="setting-badge setting-badge-success">Read-Only Safe</span>
+              <span className="setting-badge-accent-wash">Read-Only Safe</span>
             </div>
-          </Card>
+          </div>
         )}
 
-        {/* Appearance Settings */}
-        {activeCategory === 'appearance' && (
-          <Card variant="filled" padding="lg" className="settings-section-card motion-fade-in">
-            <h2 className="settings-section-title">Appearance & Theme</h2>
-            <p className="settings-section-desc">Customize how Endurance looks on your Windows desktop</p>
+        {/* TAB 2: APPEARANCE */}
+        {activeCategory === "appearance" && (
+          <div className="settings-section-lean motion-fade-in">
+            <h2 className="settings-section-title">Theme System</h2>
+            <p className="settings-section-desc">
+              Choose a curated atmosphere for The Record Room
+            </p>
 
-            <div className="settings-row">
-              <div>
-                <div className="setting-label">Theme Mode</div>
-                <div className="setting-sublabel">Choose between Dark, Light, or automatic System theme matching Windows</div>
-              </div>
-              <div className="theme-toggle-group" role="group" aria-label="Theme Mode Selection">
-                <button
-                  type="button"
-                  className={`setting-badge ${theme === 'dark' ? 'setting-badge-active' : ''}`}
-                  onClick={() => setTheme('dark')}
-                >
-                  Dark
-                </button>
-                <button
-                  type="button"
-                  className={`setting-badge ${theme === 'light' ? 'setting-badge-active' : ''}`}
-                  onClick={() => setTheme('light')}
-                >
-                  Light
-                </button>
-                <button
-                  type="button"
-                  className={`setting-badge ${theme === 'system' ? 'setting-badge-active' : ''}`}
-                  onClick={() => setTheme('system')}
-                >
-                  System
-                </button>
-              </div>
+            {/* 8 Live Miniature Theme Cards Grid */}
+            <div
+              className="theme-grid"
+              role="radiogroup"
+              aria-label="Theme Selection"
+            >
+              {THEME_OPTIONS.map((opt) => {
+                const isSelected = theme === opt.id;
+                return (
+                  <button
+                    key={opt.id}
+                    type="button"
+                    className={`theme-card ${isSelected ? "is-selected" : ""}`}
+                    onClick={() => setTheme(opt.id)}
+                    role="radio"
+                    aria-checked={isSelected}
+                    tabIndex={0}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter" || e.key === " ") {
+                        e.preventDefault();
+                        setTheme(opt.id);
+                      }
+                    }}
+                  >
+                    {/* Live miniature preview viewport */}
+                    <div
+                      className="theme-card-preview"
+                      style={{ backgroundColor: opt.surfaceBase }}
+                    >
+                      <div
+                        className="theme-preview-sleeve"
+                        style={{ backgroundColor: opt.surfacePanel }}
+                      />
+                      <div className="theme-preview-lines">
+                        <div
+                          className="theme-preview-text-line"
+                          style={{ backgroundColor: opt.inkPrimary }}
+                        />
+                        <div
+                          className="theme-preview-accent-pill"
+                          style={{ backgroundColor: opt.accent }}
+                        />
+                      </div>
+                    </div>
+
+                    <div className="theme-card-footer">
+                      <div className="theme-card-info">
+                        <span className="theme-card-name">{opt.name}</span>
+                        <span className="theme-card-sub">{opt.subtitle}</span>
+                      </div>
+                      {isSelected && (
+                        <div className="theme-card-check" aria-hidden="true">
+                          <Check size={14} />
+                        </div>
+                      )}
+                    </div>
+                  </button>
+                );
+              })}
             </div>
 
-            <div className="settings-row">
+            {/* Adapt to Album Art Toggle */}
+            <div
+              className="settings-row"
+              style={{ marginTop: "var(--space-2xl)" }}
+            >
               <div>
-                <div className="setting-label">Dynamic Album Color Palette</div>
-                <div className="setting-sublabel">Extract harmonious tonal accents from the active playing album artwork</div>
+                <div className="setting-label">Adapt colours to album art</div>
+                <div className="setting-sublabel">
+                  Accents and ambient glow follow the current cover art;
+                  surfaces and text remain fixed for high contrast.
+                </div>
               </div>
               <button
                 type="button"
-                className={`m3-switch ${dynamicColorEnabled ? 'active' : ''}`}
+                className={`m3-switch ${dynamicColorEnabled ? "active" : ""}`}
                 onClick={() => setDynamicColorEnabled(!dynamicColorEnabled)}
-                aria-label="Toggle Dynamic Album Color Palette"
+                aria-label="Toggle dynamic album art colors"
               >
                 <span className="m3-switch-thumb" />
               </button>
             </div>
 
+            {/* Match System Theme Toggle */}
             <div className="settings-row">
               <div>
-                <div className="setting-label">High Contrast Text</div>
-                <div className="setting-sublabel">Enhance border and typography contrast for accessibility</div>
+                <div className="setting-label">Match system theme</div>
+                <div className="setting-sublabel">
+                  Automatically select Endurance (dark) or Daylight (light)
+                  based on your OS preference.
+                </div>
               </div>
               <button
                 type="button"
-                className={`m3-switch ${highContrast ? 'active' : ''}`}
-                onClick={() => setHighContrast(!highContrast)}
-                aria-label="Toggle High Contrast Text"
+                className={`m3-switch ${theme === "system" ? "active" : ""}`}
+                onClick={() =>
+                  setTheme(theme === "system" ? "endurance" : "system")
+                }
+                aria-label="Toggle match system theme"
               >
                 <span className="m3-switch-thumb" />
               </button>
             </div>
-          </Card>
+
+            {/* Reduced Motion System Info */}
+            <div className="settings-row">
+              <div>
+                <div className="setting-label">Reduced Motion</div>
+                <div className="setting-sublabel">
+                  Operating system accessibility preference:{" "}
+                  {prefersReducedMotion
+                    ? "Active (Animations minimized)"
+                    : "Inactive"}
+                </div>
+              </div>
+              <span className="setting-badge">
+                {prefersReducedMotion ? "Reduced Motion ON" : "Standard Motion"}
+              </span>
+            </div>
+          </div>
         )}
 
-        {/* Playback Settings */}
-        {activeCategory === 'playback' && (
-          <Card variant="filled" padding="lg" className="settings-section-card motion-fade-in">
-            <h2 className="settings-section-title">Playback Engine</h2>
-            <p className="settings-section-desc">Audio transitions, repeat modes, and seek behavior</p>
+        {/* TAB 3: LYRICS */}
+        {activeCategory === "lyrics" && (
+          <div className="settings-section-lean motion-fade-in">
+            <h2 className="settings-section-title">Synchronized Lyrics</h2>
+            <p className="settings-section-desc">
+              Endurance resolves matching sidecar <code>.lrc</code> files
+              located alongside your audio tracks.
+            </p>
+
+            <div className="settings-row">
+              <div>
+                <div className="setting-label">Sidecar LRC Editor</div>
+                <div className="setting-sublabel">
+                  Edit, adjust timestamps, and save synchronized lyrics directly
+                  to disk for the active song.
+                </div>
+              </div>
+              <Button
+                variant="filled"
+                size="sm"
+                icon={<FileText size={15} />}
+                onClick={handleOpenLyricsEditor}
+                disabled={!currentTrack}
+              >
+                {currentTrack
+                  ? "Edit Current Song Lyrics"
+                  : "Play a Song to Edit"}
+              </Button>
+            </div>
+          </div>
+        )}
+
+        {/* TAB 4: PLAYBACK */}
+        {activeCategory === "playback" && (
+          <div className="settings-section-lean motion-fade-in">
+            <h2 className="settings-section-title">Playback Behavior</h2>
+            <p className="settings-section-desc">
+              Control how Endurance transitions between tracks
+            </p>
 
             <div className="settings-row">
               <div>
                 <div className="setting-label">Gapless Playback</div>
-                <div className="setting-sublabel">Pre-buffer upcoming track in queue to avoid silence between songs</div>
+                <div className="setting-sublabel">
+                  Seamlessly cross from one track to the next with no silence
+                  gap (for continuous albums and mixes).
+                </div>
               </div>
-              <button
-                type="button"
-                className={`m3-switch ${gaplessPlayback ? 'active' : ''}`}
-                onClick={() => setGaplessPlayback(!gaplessPlayback)}
-                aria-label="Toggle Gapless Playback"
-              >
-                <span className="m3-switch-thumb" />
-              </button>
+              <span className="setting-badge-accent-wash">Enabled</span>
             </div>
 
             <div className="settings-row">
               <div>
-                <div className="setting-label">Seek Step Interval</div>
-                <div className="setting-sublabel">Duration skipped when using Left/Right arrow keys</div>
+                <div className="setting-label">Crossfade Duration</div>
+                <div className="setting-sublabel">
+                  Blend audio output between consecutive tracks. Set to 0 to
+                  disable.
+                </div>
               </div>
-              <span className="setting-badge">5 seconds</span>
+              <span className="setting-badge">0 ms</span>
             </div>
-          </Card>
+
+            <div className="settings-row">
+              <div>
+                <div className="setting-label">Remember Playback Position</div>
+                <div className="setting-sublabel">
+                  Resume long tracks (audiobooks, podcasts) from where you left
+                  off.
+                </div>
+              </div>
+              <span className="setting-badge">Off</span>
+            </div>
+          </div>
         )}
 
-        {/* Lyrics Settings */}
-        {activeCategory === 'lyrics' && (
-          <Card variant="filled" padding="lg" className="settings-section-card motion-fade-in">
-            <h2 className="settings-section-title">Synchronized Lyrics</h2>
-            <p className="settings-section-desc">Layout rules and .lrc file synchronization</p>
-
-            <div className="settings-row">
-              <div>
-                <div className="setting-label">Right-Hand Lyrics Layout</div>
-                <div className="setting-sublabel">Adheres to Master Layout: Artwork LEFT, Lyrics RIGHT</div>
-              </div>
-              <button
-                type="button"
-                className={`m3-switch ${showLyricsOnRight ? 'active' : ''}`}
-                onClick={() => setShowLyricsOnRight(!showLyricsOnRight)}
-                aria-label="Toggle Right-Hand Lyrics Layout"
-              >
-                <span className="m3-switch-thumb" />
-              </button>
-            </div>
-
-            <div className="settings-row">
-              <div>
-                <div className="setting-label">No-Lyrics Fallback</div>
-                <div className="setting-sublabel">Displays Title and Artist on the right when synchronized lyrics are absent</div>
-              </div>
-              <span className="setting-badge">Intentional Design State</span>
-            </div>
-          </Card>
-        )}
-
-        {/* Audio Settings */}
-        {activeCategory === 'audio' && (
-          <Card variant="filled" padding="lg" className="settings-section-card motion-fade-in">
+        {/* TAB 5: AUDIO */}
+        {activeCategory === "audio" && (
+          <div className="settings-section-lean motion-fade-in">
             <h2 className="settings-section-title">Audio Output</h2>
-            <p className="settings-section-desc">Windows audio device routing and volume behavior</p>
+            <p className="settings-section-desc">
+              Output device routing and volume normalization
+            </p>
 
             <div className="settings-row">
               <div>
-                <div className="setting-label">Hardware Acceleration</div>
-                <div className="setting-sublabel">Use Windows hardware audio processing where supported</div>
+                <div className="setting-label">Output Device</div>
+                <div className="setting-sublabel">
+                  Endurance uses the system default audio output. Change output
+                  in your OS sound settings.
+                </div>
               </div>
-              <button
-                type="button"
-                className={`m3-switch ${hardwareAcceleration ? 'active' : ''}`}
-                onClick={() => setHardwareAcceleration(!hardwareAcceleration)}
-                aria-label="Toggle Hardware Acceleration"
-              >
-                <span className="m3-switch-thumb" />
-              </button>
+              <span className="setting-badge">System Default</span>
             </div>
-          </Card>
+
+            <div className="settings-row">
+              <div>
+                <div className="setting-label">Volume Normalization</div>
+                <div className="setting-sublabel">
+                  Automatically level track volumes using ReplayGain metadata
+                  when available.
+                </div>
+              </div>
+              <span className="setting-badge">Off</span>
+            </div>
+
+            <div className="settings-row">
+              <div>
+                <div className="setting-label">Bit-perfect Output</div>
+                <div className="setting-sublabel">
+                  Bypass the OS audio mixer for direct hardware output (requires
+                  exclusive device access).
+                </div>
+              </div>
+              <span className="setting-badge">Unavailable</span>
+            </div>
+          </div>
         )}
 
-        {/* Shortcuts Settings */}
-        {activeCategory === 'shortcuts' && (
-          <Card variant="filled" padding="lg" className="settings-section-card motion-fade-in">
+        {/* TAB 6: SHORTCUTS */}
+        {activeCategory === "shortcuts" && (
+          <div className="settings-section-lean motion-fade-in">
             <h2 className="settings-section-title">Keyboard Shortcuts</h2>
-            <p className="settings-section-desc">Quick desktop control shortcuts</p>
+            <p className="settings-section-desc">
+              Desktop controls for rapid navigation and playback
+            </p>
 
             <div className="settings-row">
               <span className="setting-label">Play / Pause</span>
@@ -375,7 +613,9 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({
               <kbd className="m3-kbd">{getPrimaryModifierLabel()} + Right</kbd>
             </div>
             <div className="settings-row">
-              <span className="setting-label">Seek Backward / Forward</span>
+              <span className="setting-label">
+                Seek Backward / Forward (5s)
+              </span>
               <kbd className="m3-kbd">Left / Right</kbd>
             </div>
             <div className="settings-row">
@@ -386,52 +626,61 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({
               <span className="setting-label">Toggle Mute</span>
               <kbd className="m3-kbd">M</kbd>
             </div>
-          </Card>
+          </div>
         )}
 
-        {/* About Section */}
-        {activeCategory === 'about' && (
-          <Card variant="filled" padding="lg" className="settings-section-card motion-fade-in">
+        {/* TAB 5: ABOUT */}
+        {activeCategory === "about" && (
+          <div className="settings-section-lean motion-fade-in">
             <h2 className="settings-section-title">About Endurance</h2>
-            <p className="settings-section-desc">Architecture and local runtime diagnostics</p>
+            <p className="settings-section-desc">
+              Endurance is a high-fidelity, offline-first music sanctuary with
+              the tactile soul of a record room.
+            </p>
 
             <div className="settings-row">
               <div>
-                <div className="setting-label">Desktop Shell</div>
-                <div className="setting-sublabel">Tauri v2 + Rust MSVC backend</div>
+                <div className="setting-label">Version</div>
+                <div className="setting-sublabel">
+                  Endurance v0.3 — The Record Room Edition
+                </div>
               </div>
-              <span className="setting-badge">v0.1.0</span>
-            </div>
-
-            <div className="settings-row">
-              <div>
-                <div className="setting-label">Frontend Stack</div>
-                <div className="setting-sublabel">React 19 + TypeScript + Vite 6</div>
-              </div>
-              <span className="setting-badge">Vite Production</span>
-            </div>
-
-            <div className="settings-row">
-              <div>
-                <div className="setting-label">Backend IPC Bridge</div>
-                <div className="setting-sublabel">Bi-directional Tauri Command Handlers</div>
-              </div>
-              <span className="setting-badge setting-badge-success">
-                <ShieldCheck size={12} style={{ display: 'inline', marginRight: 4 }} />
-                {systemInfo?.status === 'ready' ? 'Connected (Rust IPC Active)' : 'Connecting...'}
-              </span>
+              <span className="setting-badge">v0.3.0</span>
             </div>
 
             <div className="settings-row">
               <div>
                 <div className="setting-label">Offline Integrity</div>
-                <div className="setting-sublabel">Zero remote cloud APIs or external telemetry</div>
+                <div className="setting-sublabel">
+                  Strictly zero remote network calls, tracking, or cloud
+                  dependencies
+                </div>
               </div>
-              <span className="setting-badge">100% Offline</span>
+              <span className="setting-badge-accent-wash">100% Offline</span>
             </div>
-          </Card>
+
+            <div className="settings-row">
+              <div>
+                <div className="setting-label">Source Repository</div>
+                <div className="setting-sublabel">
+                  Explore open-source development and release notes
+                </div>
+              </div>
+              <a
+                href="https://github.com/Endurance3000/Endurance"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="settings-link"
+              >
+                <span>GitHub</span>
+                <ExternalLink size={14} />
+              </a>
+            </div>
+          </div>
         )}
       </div>
     </div>
   );
 };
+
+export default SettingsPage;

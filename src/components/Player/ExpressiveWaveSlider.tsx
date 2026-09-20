@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
+import { formatDuration } from '../../utils/formatters';
 import './ExpressiveWaveSlider.css';
 
 interface ExpressiveWaveSliderProps {
@@ -25,6 +26,8 @@ export const ExpressiveWaveSlider: React.FC<ExpressiveWaveSliderProps> = ({
   const [isScrubbing, setIsScrubbing] = useState(false);
   const [scrubTime, setScrubTime] = useState(0);
   const [isHovered, setIsHovered] = useState(false);
+  const [hoverTime, setHoverTime] = useState<number | null>(null);
+  const [hoverX, setHoverX] = useState<number>(0);
 
   // Animation and layout refs
   const phaseRef = useRef<number>(0);
@@ -54,10 +57,14 @@ export const ExpressiveWaveSlider: React.FC<ExpressiveWaveSliderProps> = ({
   }, [updateWidth]);
 
   // Construct SVG Wave path string
-  const generateWavePath = useCallback((width: number, ratio: number, phase: number, active: boolean) => {
+  const generateWavePath = useCallback((width: number, ratio: number, phase: number, active: boolean, hovered: boolean) => {
     const height = 24;
     const centerY = height / 2;
     const progressX = Math.min(width, Math.max(0, width * ratio));
+
+    // Amplitude is boosted ~20% on hover (4.0 -> 4.8)
+    const baseAmp = hovered ? 4.8 : 4.0;
+    const amplitude = active ? baseAmp : 3.0;
 
     if (progressX <= 0) {
       return {
@@ -69,13 +76,10 @@ export const ExpressiveWaveSlider: React.FC<ExpressiveWaveSliderProps> = ({
     }
 
     if (progressX >= width) {
-      // Full progress
-      const wavelength = 32;
-      const amplitude = active ? 4.0 : 3.0;
+      const wavelength = 30;
       let d = `M 0,${centerY}`;
 
       for (let x = 2; x <= width; x += 2) {
-        // Taper envelope near ends for organic continuity
         const taperStart = Math.min(1, x / 16);
         const taperEnd = Math.min(1, (width - x) / 16);
         const taper = Math.max(0, Math.min(taperStart, taperEnd));
@@ -91,9 +95,8 @@ export const ExpressiveWaveSlider: React.FC<ExpressiveWaveSliderProps> = ({
       };
     }
 
-    // Standard played wave + straight unplayed track
+    // Standard: Played is wavy, unplayed is flat (needle has cut the groove)
     const wavelength = 30;
-    const amplitude = active ? 4.0 : 3.0;
     let playedD = `M 0,${centerY}`;
 
     const step = 2;
@@ -104,7 +107,7 @@ export const ExpressiveWaveSlider: React.FC<ExpressiveWaveSliderProps> = ({
       const y = centerY + amplitude * taper * Math.sin((x / wavelength) * Math.PI * 2 - phase);
       playedD += ` L ${x.toFixed(1)},${y.toFixed(1)}`;
     }
-    // Connect precisely to progressX on baseline
+    // Connect precisely to progressX on mean baseline
     playedD += ` L ${progressX.toFixed(1)},${centerY}`;
 
     const unplayedD = `M ${progressX.toFixed(1)},${centerY} L ${width.toFixed(1)},${centerY}`;
@@ -113,18 +116,19 @@ export const ExpressiveWaveSlider: React.FC<ExpressiveWaveSliderProps> = ({
       playedD,
       unplayedD,
       thumbX: progressX,
-      thumbY: centerY,
+      thumbY: centerY, // Always pinned to mean line
     };
   }, []);
 
-  // Update DOM directly for max 60/120fps performance without React re-renders
+  // Update DOM directly for max 60/120fps performance
   const renderWaveToDOM = useCallback((phase: number) => {
     const width = widthRef.current || 500;
     const { playedD, unplayedD, thumbX, thumbY } = generateWavePath(
       width,
       progressRatio,
       phase,
-      isPlaying && !isScrubbing
+      isPlaying && !isScrubbing,
+      isHovered
     );
 
     if (playedPathRef.current) {
@@ -137,11 +141,10 @@ export const ExpressiveWaveSlider: React.FC<ExpressiveWaveSliderProps> = ({
       thumbRef.current.setAttribute('cx', thumbX.toFixed(1));
       thumbRef.current.setAttribute('cy', thumbY.toFixed(1));
     }
-  }, [progressRatio, isPlaying, isScrubbing, generateWavePath]);
+  }, [progressRatio, isPlaying, isScrubbing, isHovered, generateWavePath]);
 
   // Animation loop with requestAnimationFrame
   useEffect(() => {
-    // Check reduced motion
     const prefersReducedMotion =
       typeof window !== 'undefined' &&
       window.matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -170,12 +173,12 @@ export const ExpressiveWaveSlider: React.FC<ExpressiveWaveSliderProps> = ({
         cancelAnimationFrame(animFrameIdRef.current);
       }
     };
-  }, [isPlaying, isScrubbing, renderWaveToDOM]);
+  }, [isPlaying, isScrubbing, isHovered, renderWaveToDOM]);
 
-  // Trigger DOM update on progress/ratio change
+  // Trigger DOM update on progress/ratio or hover change
   useEffect(() => {
     renderWaveToDOM(phaseRef.current);
-  }, [progressRatio, renderWaveToDOM]);
+  }, [progressRatio, isHovered, renderWaveToDOM]);
 
   // Pointer scrubbing handlers
   const handlePointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
@@ -206,6 +209,20 @@ export const ExpressiveWaveSlider: React.FC<ExpressiveWaveSliderProps> = ({
 
     window.addEventListener('pointermove', onPointerMove);
     window.addEventListener('pointerup', onPointerUp);
+  };
+
+  const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
+    if (disabled || duration <= 0 || !containerRef.current) return;
+    const rect = containerRef.current.getBoundingClientRect();
+    const x = Math.max(0, Math.min(rect.width, e.clientX - rect.left));
+    const ratio = rect.width > 0 ? x / rect.width : 0;
+    setHoverX(x);
+    setHoverTime(ratio * duration);
+  };
+
+  const handleMouseLeave = () => {
+    setIsHovered(false);
+    setHoverTime(null);
   };
 
   // Keyboard navigation
@@ -240,8 +257,20 @@ export const ExpressiveWaveSlider: React.FC<ExpressiveWaveSliderProps> = ({
       onPointerDown={handlePointerDown}
       onKeyDown={handleKeyDown}
       onMouseEnter={() => setIsHovered(true)}
-      onMouseLeave={() => setIsHovered(false)}
+      onMouseMove={handleMouseMove}
+      onMouseLeave={handleMouseLeave}
     >
+      {/* Time hover tooltip */}
+      {isHovered && hoverTime !== null && !disabled && (
+        <div
+          className="wave-slider-tooltip"
+          style={{ left: `${hoverX}px` }}
+          aria-hidden="true"
+        >
+          {formatDuration(hoverTime)}
+        </div>
+      )}
+
       <svg
         ref={svgRef}
         className="wave-slider-svg"
@@ -264,15 +293,17 @@ export const ExpressiveWaveSlider: React.FC<ExpressiveWaveSliderProps> = ({
           vectorEffect="non-scaling-stroke"
         />
 
-        {/* Playhead thumb */}
+        {/* Playhead thumb pinned to mean line */}
         <circle
           ref={thumbRef}
           className="wave-thumb"
           cx="0"
           cy="12"
-          r={isHovered || isScrubbing ? 7 : 5.5}
+          r={isHovered || isScrubbing ? 6.5 : 5}
         />
       </svg>
     </div>
   );
 };
+
+export default ExpressiveWaveSlider;

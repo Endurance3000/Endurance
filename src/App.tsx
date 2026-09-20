@@ -22,6 +22,14 @@ export const App: React.FC = () => {
   const [isMainPlayerOpen, setIsMainPlayerOpen] = useState<boolean>(false);
   const [editingLyricsTrack, setEditingLyricsTrack] = useState<Track | null>(null);
   const hasNotifiedReadyRef = useRef(false);
+  const contentRef = useRef<HTMLElement>(null);
+
+  // Reset scroll container position to top whenever navigating between primary pages
+  useEffect(() => {
+    if (contentRef.current) {
+      contentRef.current.scrollTop = 0;
+    }
+  }, [currentPage]);
 
   const {
     tracks,
@@ -137,16 +145,24 @@ export const App: React.FC = () => {
     <ThemeProvider>
       <PlaybackProvider>
         <div className="app-shell">
+          {/* Subtle Paper Grain Material Layer */}
+          <div className="app-grain" aria-hidden="true" />
+
           {/* Top Native-Behaving Custom Window Titlebar */}
           <TitleBar />
 
           {/* Main Body Layout: Sidebar + Page View */}
           <div className="app-body">
-            <Sidebar currentPage={currentPage} onNavigate={(p) => {
-              setCurrentPage(p);
-              setIsMainPlayerOpen(false);
-            }} />
-            <main className="app-content">
+            <Sidebar
+              currentPage={currentPage}
+              tracksCount={tracks.length}
+              folders={folders}
+              onNavigate={(p) => {
+                setCurrentPage(p);
+                setIsMainPlayerOpen(false);
+              }}
+            />
+            <main ref={contentRef} className="app-content">
               {renderPage()}
             </main>
           </div>
@@ -174,6 +190,7 @@ export const App: React.FC = () => {
           <PlayerBar
             onToggleExpand={() => setIsMainPlayerOpen(!isMainPlayerOpen)}
             isExpanded={isMainPlayerOpen}
+            onToggleFavorite={toggleFavorite}
           />
         </div>
       </PlaybackProvider>

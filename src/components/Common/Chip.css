@@ -13,7 +13,6 @@
   font-weight: 500;
   cursor: pointer;
   user-select: none;
-  outline: none;
   white-space: nowrap;
   transition: all var(--motion-duration-short-2) var(--motion-easing-standard);
 }

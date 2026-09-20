@@ -69,7 +69,6 @@ export const TitleBar: React.FC = () => {
           <img src="/logo.png" alt="Endurance" className="titlebar-logo-img" width="18" height="18" />
         </div>
         <span className="titlebar-title" data-tauri-drag-region>Endurance</span>
-        <span className="titlebar-badge" data-tauri-drag-region>Local</span>
       </div>
 
       <div className="titlebar-center" data-tauri-drag-region>

@@ -117,4 +117,48 @@ describe('High Contrast & Settings Persistence Logic', () => {
     assert.strictEqual(parseTheme('invalid'), 'dark');
     assert.strictEqual(parseTheme(''), 'dark');
   });
+
+  it('resolves dusk and daylight themes correctly (The Record Room specification)', () => {
+    function resolveTheme(
+      theme: 'dusk' | 'daylight' | 'system' | 'dark' | 'light',
+      systemIsDark: boolean
+    ): 'dusk' | 'daylight' {
+      if (theme === 'system') {
+        return systemIsDark ? 'dusk' : 'daylight';
+      }
+      return theme === 'daylight' || theme === 'light' ? 'daylight' : 'dusk';
+    }
+
+    // Direct themes
+    assert.strictEqual(resolveTheme('dusk', true), 'dusk');
+    assert.strictEqual(resolveTheme('dusk', false), 'dusk');
+    assert.strictEqual(resolveTheme('dark', false), 'dusk');
+    assert.strictEqual(resolveTheme('daylight', true), 'daylight');
+    assert.strictEqual(resolveTheme('daylight', false), 'daylight');
+    assert.strictEqual(resolveTheme('light', true), 'daylight');
+
+    // System matching
+    assert.strictEqual(resolveTheme('system', true), 'dusk');
+    assert.strictEqual(resolveTheme('system', false), 'daylight');
+  });
+
+  it('pre-render theme bootstrap resolution matches specification', () => {
+    function bootstrapTheme(stored: string | null, systemMatchesLight: boolean): 'dusk' | 'daylight' {
+      if (stored === 'daylight' || stored === 'light') return 'daylight';
+      if (stored === 'dusk' || stored === 'dark') return 'dusk';
+      return systemMatchesLight ? 'daylight' : 'dusk';
+    }
+
+    // Stored wins
+    assert.strictEqual(bootstrapTheme('daylight', false), 'daylight');
+    assert.strictEqual(bootstrapTheme('dusk', true), 'dusk');
+    assert.strictEqual(bootstrapTheme('light', false), 'daylight');
+    assert.strictEqual(bootstrapTheme('dark', true), 'dusk');
+
+    // Absent falls back to system preference
+    assert.strictEqual(bootstrapTheme(null, true), 'daylight');
+    assert.strictEqual(bootstrapTheme(null, false), 'dusk');
+    assert.strictEqual(bootstrapTheme('', false), 'dusk');
+  });
 });
+

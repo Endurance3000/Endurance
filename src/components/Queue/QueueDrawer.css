@@ -1,36 +1,44 @@
 /**
- * Material 3 Expressive Queue Drawer Styles
+ * Endurance - The Record Room: Queue Drawer Styles (Phase 4)
  */
 
 .queue-drawer-backdrop {
   position: fixed;
-  top: var(--titlebar-height);
+  top: var(--titlebar-height, 0px);
   left: 0;
   right: 0;
-  bottom: var(--player-bar-height);
-  background-color: rgba(0, 0, 0, 0.4);
+  bottom: var(--player-bar-height, 84px);
+  background-color: rgba(0, 0, 0, 0.36);
   backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
   z-index: 80;
   display: flex;
   justify-content: flex-end;
-  animation: queueFadeIn var(--motion-duration-short-3) var(--motion-easing-standard);
+  animation: queueFadeIn var(--dur-medium) var(--ease-emphasized);
 }
 
 .queue-drawer-panel {
-  width: 380px;
+  width: 360px;
   max-width: 90vw;
   height: 100%;
-  background-color: var(--md-sys-color-surface-container);
-  border-left: 1px solid var(--md-sys-color-outline-subtle);
+  background-color: var(--surface-panel);
+  border-left: 1px solid var(--line-subtle);
   display: flex;
   flex-direction: column;
-  box-shadow: var(--elevation-3);
-  animation: queueSlideIn var(--motion-duration-medium-2) var(--motion-easing-emphasized-decelerate);
+  box-shadow: var(--shadow-lg);
+  transform-origin: right center;
+  animation: queueSlideIn var(--dur-medium) var(--ease-emphasized);
+  position: relative;
+  overflow: hidden;
 }
 
 @keyframes queueFadeIn {
-  from { opacity: 0; }
-  to { opacity: 1; }
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
 }
 
 @keyframes queueSlideIn {
@@ -46,93 +54,94 @@
 
 /* Header */
 .queue-header {
-  padding: var(--space-lg) var(--space-xl);
+  padding: 16px 20px;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  border-bottom: 1px solid var(--md-sys-color-outline-subtle);
-  background-color: var(--md-sys-color-surface-container-high);
+  border-bottom: 1px solid var(--line-subtle);
+  background-color: var(--surface-panel);
+  flex-shrink: 0;
 }
 
 .queue-header-left {
   display: flex;
   align-items: center;
-  gap: var(--space-sm);
+  gap: var(--space-sm, 10px);
 }
 
 .queue-title {
-  font-size: 1.125rem;
-  font-weight: 600;
-  color: var(--md-sys-color-on-surface);
+  font-family: var(--font-display);
+  font-size: 1.25rem;
+  font-weight: 500;
+  letter-spacing: -0.01em;
+  color: var(--ink-primary);
   margin: 0;
+  line-height: 1.2;
 }
 
 .queue-badge {
   font-size: 0.75rem;
   font-weight: 500;
   padding: 2px 8px;
-  border-radius: var(--radius-full);
-  background-color: var(--md-sys-color-surface-variant);
-  color: var(--md-sys-color-on-surface-variant);
+  border-radius: var(--radius-pill);
+  background-color: var(--surface-raised);
+  border: 1px solid var(--line-subtle);
+  color: var(--ink-secondary);
+  font-variant-numeric: tabular-nums;
 }
 
 .queue-header-actions {
   display: flex;
   align-items: center;
-  gap: var(--space-xs);
-}
-
-.queue-clear-btn {
-  font-size: 0.8125rem;
-  font-weight: 500;
-  padding: 4px 10px;
-  border-radius: var(--radius-full);
-  background: transparent;
-  border: 1px solid var(--md-sys-color-outline-subtle);
-  color: var(--md-sys-color-on-surface-variant);
-  cursor: pointer;
-  transition: all var(--motion-duration-short-2) var(--motion-easing-standard);
-}
-
-.queue-clear-btn:hover {
-  background-color: var(--md-sys-color-surface-variant);
-  color: var(--md-sys-color-on-surface);
-  border-color: var(--md-sys-color-outline);
+  gap: var(--space-xs, 6px);
 }
 
 /* Body Content */
 .queue-body {
   flex: 1;
   overflow-y: auto;
-  padding: var(--space-lg);
+  overflow-x: hidden;
+  padding: 18px 18px 24px;
   display: flex;
   flex-direction: column;
-  gap: var(--space-xl);
+  gap: 22px;
+}
+
+.queue-section {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
 }
 
 .queue-section-label {
-  font-size: 0.6875rem;
-  font-weight: 700;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  color: var(--md-sys-color-primary);
-  margin-bottom: var(--space-sm);
+  font-size: 13px;
+  font-weight: 500;
+  letter-spacing: normal;
+  text-transform: none;
+  color: var(--ink-secondary);
+  padding: 0 4px;
 }
 
-/* Now Playing Card in Queue */
+/* Now Playing Card */
 .queue-now-playing-card {
   display: flex;
   align-items: center;
-  gap: var(--space-md);
-  padding: var(--space-md);
-  background: linear-gradient(
-    135deg,
-    var(--md-sys-color-surface-container-highest),
-    var(--md-sys-color-surface-container-high)
-  );
-  border: 1px solid var(--md-sys-color-outline-variant);
-  border-radius: var(--radius-lg);
-  box-shadow: var(--elevation-1);
+  gap: 12px;
+  padding: 10px 12px;
+  background-color: var(--surface-raised);
+  border: 1px solid var(--line-subtle);
+  border-radius: var(--radius-row);
+  box-shadow: var(--shadow-sm);
+  transition: background-color var(--dur-micro) var(--ease-standard);
+}
+
+.queue-now-playing-card .track-artwork,
+.queue-now-playing-card .track-artwork-thumb {
+  width: 48px !important;
+  height: 48px !important;
+  border-radius: var(--radius-control);
+  flex-shrink: 0;
+  box-shadow: var(--shadow-sm);
 }
 
 .queue-card-meta {
@@ -140,45 +149,31 @@
   min-width: 0;
   display: flex;
   flex-direction: column;
+  gap: 2px;
 }
 
 .queue-card-title {
   font-size: 0.9375rem;
   font-weight: 600;
-  color: var(--md-sys-color-on-surface);
+  color: var(--ink-primary);
+  line-height: 1.25;
 }
 
 .queue-card-artist {
   font-size: 0.8125rem;
-  color: var(--md-sys-color-on-surface-variant);
+  color: var(--ink-secondary);
+  line-height: 1.25;
 }
 
-/* Playing Equalizer Indicator Animation */
-.queue-equalizer {
+.queue-playing-indicator {
   display: flex;
-  align-items: flex-end;
-  gap: 2px;
-  height: 16px;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
   padding: 0 4px;
 }
 
-.queue-eq-bar {
-  width: 3px;
-  background-color: var(--md-sys-color-primary);
-  border-radius: 1px;
-  animation: eqBounce 1s ease-in-out infinite alternate;
-}
-
-.queue-eq-bar:nth-child(1) { height: 8px; animation-delay: 0.1s; }
-.queue-eq-bar:nth-child(2) { height: 16px; animation-delay: 0.3s; }
-.queue-eq-bar:nth-child(3) { height: 10px; animation-delay: 0.2s; }
-
-@keyframes eqBounce {
-  0% { height: 4px; }
-  100% { height: 16px; }
-}
-
-/* Up Next List */
+/* Up Next / Next Up List */
 .queue-list {
   display: flex;
   flex-direction: column;
@@ -188,19 +183,30 @@
 .queue-item {
   display: flex;
   align-items: center;
-  gap: var(--space-sm);
-  padding: var(--space-sm) var(--space-md);
-  background-color: var(--md-sys-color-surface-container-low);
+  gap: 10px;
+  padding: 8px 10px;
+  background-color: transparent;
   border: 1px solid transparent;
-  border-radius: var(--radius-md);
-  transition: all var(--motion-duration-short-2) var(--motion-easing-standard);
+  border-radius: var(--radius-row);
+  transition: background-color var(--dur-micro) var(--ease-standard),
+              border-color var(--dur-micro) var(--ease-standard);
   user-select: none;
   cursor: pointer;
   position: relative;
 }
 
 .queue-item:hover {
-  background-color: var(--md-sys-color-surface-container-high);
+  background-color: var(--surface-hover);
+  border-color: var(--line-subtle);
+}
+
+.queue-item .track-artwork,
+.queue-item .track-artwork-thumb {
+  width: 40px !important;
+  height: 40px !important;
+  border-radius: var(--radius-control);
+  flex-shrink: 0;
+  box-shadow: var(--shadow-sm);
 }
 
 /* Drag handle */
@@ -208,28 +214,29 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  color: var(--md-sys-color-on-surface-variant);
+  color: var(--ink-tertiary);
   cursor: grab;
-  padding: 4px 6px;
-  border-radius: var(--radius-xs);
-  opacity: 0.5;
-  transition: all var(--motion-duration-short-1) var(--motion-easing-standard);
+  padding: 4px 2px;
+  border-radius: var(--radius-control);
+  opacity: 0.35;
+  transition: opacity var(--dur-micro) var(--ease-standard),
+              color var(--dur-micro) var(--ease-standard);
   user-select: none;
-  touch-action: none; /* required for pointer capture in WebView2 */
+  touch-action: none;
+}
+
+.queue-item:hover .queue-item-drag-handle,
+.queue-item:focus-within .queue-item-drag-handle {
+  opacity: 0.85;
 }
 
 .queue-item-drag-handle:hover {
   opacity: 1;
-  background: var(--md-sys-color-surface-container-highest);
-  color: var(--md-sys-color-primary);
+  color: var(--accent);
 }
 
 .queue-item-drag-handle:active {
   cursor: grabbing;
-}
-
-.queue-item:hover .queue-item-drag-handle {
-  opacity: 0.9;
 }
 
 .queue-item-meta {
@@ -237,32 +244,39 @@
   min-width: 0;
   display: flex;
   flex-direction: column;
+  gap: 2px;
 }
 
 .queue-item-title {
   font-size: 0.875rem;
   font-weight: 500;
-  color: var(--md-sys-color-on-surface);
+  color: var(--ink-primary);
+  line-height: 1.25;
 }
 
 .queue-item-artist {
   font-size: 0.75rem;
-  color: var(--md-sys-color-on-surface-variant);
+  color: var(--ink-secondary);
+  line-height: 1.25;
 }
 
 .queue-item-duration {
+  width: 44px;
+  text-align: right;
   font-size: 0.75rem;
-  color: var(--md-sys-color-on-surface-variant);
+  color: var(--ink-tertiary);
   font-variant-numeric: tabular-nums;
-  margin-right: var(--space-xs);
+  margin-right: 2px;
+  flex-shrink: 0;
 }
 
 .queue-item-actions {
   display: flex;
   align-items: center;
   gap: 2px;
-  opacity: 0.8;
-  transition: opacity var(--motion-duration-short-1) var(--motion-easing-standard);
+  opacity: 0;
+  transition: opacity var(--dur-micro) var(--ease-standard);
+  flex-shrink: 0;
 }
 
 .queue-item:hover .queue-item-actions,
@@ -271,50 +285,99 @@
 }
 
 /* ── Pointer-events drag states ────────────────────────────────────────── */
-
-/* Source row: stays in the list as a ghost placeholder while dragging */
 .queue-item.dnd-src {
   opacity: 0.3;
-  background-color: var(--md-sys-color-surface-variant);
+  background-color: var(--surface-hover);
   pointer-events: none;
 }
 
-/* Insertion indicator — 3px vivid bar above the target row */
 .queue-item.dnd-insert-above {
-  box-shadow: 0 -3px 0 0 var(--md-sys-color-primary);
-  background-color: color-mix(in srgb, var(--md-sys-color-primary) 8%, transparent);
+  box-shadow: 0 -2px 0 0 var(--accent);
+  background-color: var(--accent-wash);
 }
 
-/* Insertion indicator — 3px vivid bar below the target row (append at end) */
 .queue-item.dnd-insert-below {
-  box-shadow: 0 3px 0 0 var(--md-sys-color-primary);
-  background-color: color-mix(in srgb, var(--md-sys-color-primary) 8%, transparent);
+  box-shadow: 0 2px 0 0 var(--accent);
+  background-color: var(--accent-wash);
 }
 
-/* Empty State in Queue */
+/* Clear queue ghost action footer */
+.queue-actions-footer {
+  display: flex;
+  justify-content: center;
+  padding: 12px 0 4px;
+}
+
+.queue-clear-ghost-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.8125rem;
+  font-weight: 500;
+  font-family: inherit;
+  padding: 6px 14px;
+  border-radius: var(--radius-pill);
+  background: transparent;
+  border: 1px solid var(--line-subtle);
+  color: var(--ink-secondary);
+  cursor: pointer;
+  transition: all var(--dur-micro) var(--ease-standard);
+}
+
+.queue-clear-ghost-btn:hover {
+  background-color: var(--surface-hover);
+  color: var(--ink-primary);
+  border-color: var(--line-medium);
+}
+
+.queue-clear-ghost-btn:active {
+  background-color: var(--surface-active);
+}
+
+/* Empty State */
 .queue-empty-state {
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
   text-align: center;
-  padding: var(--space-3xl) var(--space-lg);
-  color: var(--md-sys-color-on-surface-variant);
+  padding: 32px 16px;
+  color: var(--ink-tertiary);
+  border-radius: var(--radius-row);
+  border: 1px dashed var(--line-subtle);
+  background-color: rgba(0, 0, 0, 0.04);
+}
+
+[data-theme="dusk"] .queue-empty-state {
+  background-color: rgba(255, 255, 255, 0.02);
 }
 
 .queue-empty-icon {
-  margin-bottom: var(--space-md);
-  opacity: 0.5;
+  margin-bottom: 10px;
+  opacity: 0.45;
+  color: var(--ink-tertiary);
 }
 
 .queue-empty-title {
   font-size: 0.9375rem;
   font-weight: 600;
-  color: var(--md-sys-color-on-surface);
-  margin-bottom: var(--space-xs);
+  color: var(--ink-primary);
+  margin-bottom: 4px;
 }
 
 .queue-empty-desc {
   font-size: 0.8125rem;
   line-height: 1.4;
+  color: var(--ink-secondary);
+  max-width: 240px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .queue-drawer-panel,
+  .queue-backdrop,
+  .queue-item,
+  .queue-clear-ghost-btn {
+    animation: none !important;
+    transition: none !important;
+  }
 }
