@@ -9,7 +9,7 @@
   border-right: 1px solid var(--line-subtle);
   display: flex;
   flex-direction: column;
-  padding: var(--space-md) var(--space-sm) var(--player-bar-height, 116px);
+  padding: var(--space-md) var(--space-sm) var(--player-bar-height, 96px);
   user-select: none;
   flex-shrink: 0;
   box-sizing: border-box;

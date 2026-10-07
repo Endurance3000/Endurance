@@ -15,10 +15,10 @@ describe('Phase 9 — Settings and Sidebar (The Record Room)', () => {
 
   describe('9.1 Sidebar Structure & Styling', () => {
     it('renders main navigation items and bottom settings link', () => {
-      assert.match(sidebarSource, /id:\s*'home'/);
-      assert.match(sidebarSource, /id:\s*'songs'/);
-      assert.match(sidebarSource, /id:\s*'favorites'/);
-      assert.match(sidebarSource, /id:\s*'settings'/);
+      assert.match(sidebarSource, /id:\s*['"]home['"]/);
+      assert.match(sidebarSource, /id:\s*['"]songs['"]/);
+      assert.match(sidebarSource, /id:\s*['"]favorites['"]/);
+      assert.match(sidebarSource, /id:\s*['"]settings['"]/);
       assert.match(sidebarSource, /m3-nav-footer/);
     });
 
@@ -37,21 +37,21 @@ describe('Phase 9 — Settings and Sidebar (The Record Room)', () => {
 
   describe('9.2 Settings Page Structure & Categories', () => {
     it('renders all required setting categories', () => {
-      assert.match(settingsSource, /id:\s*'library'/);
-      assert.match(settingsSource, /id:\s*'appearance'/);
-      assert.match(settingsSource, /id:\s*'playback'/);
-      assert.match(settingsSource, /id:\s*'lyrics'/);
-      assert.match(settingsSource, /id:\s*'audio'/);
-      assert.match(settingsSource, /id:\s*'shortcuts'/);
-      assert.match(settingsSource, /id:\s*'about'/);
+      assert.match(settingsSource, /id:\s*['"]library['"]/);
+      assert.match(settingsSource, /id:\s*['"]appearance['"]/);
+      assert.match(settingsSource, /id:\s*['"]playback['"]/);
+      assert.match(settingsSource, /id:\s*['"]lyrics['"]/);
+      assert.match(settingsSource, /id:\s*['"]audio['"]/);
+      assert.match(settingsSource, /id:\s*['"]shortcuts['"]/);
+      assert.match(settingsSource, /id:\s*['"]about['"]/);
     });
 
     it('includes theme selection with Endurance (default dark), Daylight, and Match system', () => {
       // Theme card grid uses setTheme(opt.id) dynamically for all 8 themes
-      assert.match(settingsSource, /id:\s*'endurance'/);
-      assert.match(settingsSource, /id:\s*'daylight'/);
+      assert.match(settingsSource, /id:\s*['"]endurance['"]/);
+      assert.match(settingsSource, /id:\s*['"]daylight['"]/);
       // Match system toggle uses literal setTheme calls
-      assert.match(settingsSource, /setTheme\(theme === 'system' \? 'endurance' : 'system'\)/);
+      assert.match(settingsSource, /setTheme\(theme === ['"]system['"] \? ['"]endurance['"] : ['"]system['"]\)/);
       assert.match(settingsSource, /Match system/);
     });
 

@@ -18,6 +18,8 @@
   --font-family-base: var(--font-ui);
   --font-family-display: var(--font-display);
   --font-family-mono: Consolas, "Cascadia Code", "Courier New", monospace;
+  --font-body: var(--font-ui);
+  --font-mono: var(--font-family-mono);
 
   /* The Record Room Canonical Typography Scale */
   --type-display:  400 clamp(44px, 4.6vw, 76px)/1.00  var(--font-display);

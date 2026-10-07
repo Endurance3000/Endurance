@@ -11,7 +11,7 @@
   justify-content: space-between;
   height: 100vh;
   min-height: 150px;
-  min-width: 320px;
+  min-width: 0;
   overflow: hidden;
   padding: 12px 16px 14px;
   text-align: left;
@@ -98,6 +98,9 @@
   font-size: 15px;
   font-weight: 600;
   line-height: 1.25;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .mini-player-metadata:hover .mini-player-title {
@@ -110,6 +113,9 @@
   font-size: 12.5px;
   font-weight: 500;
   line-height: 1.25;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .mini-player-status,
@@ -261,4 +267,33 @@
   top: 50%;
   transform: translate(-50%, -50%);
   width: 10px;
+}
+
+/* Compact mode for narrow companion window (< 320px) */
+@media (max-width: 319px) {
+  .mini-player-placeholder {
+    padding: 8px 10px 10px;
+  }
+
+  .mini-player-artwork-wrap {
+    width: 48px;
+    height: 48px;
+  }
+
+  .mini-player-title {
+    font-size: 13px;
+  }
+
+  .mini-player-artist {
+    font-size: 11px;
+  }
+
+  .mini-player-volume {
+    display: none;
+  }
+
+  .mini-player-play-btn {
+    width: 34px;
+    height: 34px;
+  }
 }

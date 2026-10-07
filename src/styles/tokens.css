@@ -333,7 +333,7 @@
   /* Shell measurements */
   --titlebar-height:   48px;
   --sidebar-width:     220px;
-  --player-bar-height: 116px;
+  --player-bar-height: 96px;
 
   /* Radii */
   --radius-control: 8px;
@@ -411,6 +411,9 @@
 
   --radius-xs: 4px;
   --radius-full: var(--radius-pill);
+
+  /* Line Aliases */
+  --line-medium: var(--line-strong);
 }
 
 /* Smooth Root Theme Transitions */

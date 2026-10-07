@@ -3,7 +3,7 @@
    ========================================================================== */
 
 .page-container {
-  padding: var(--space-2xl) var(--space-3xl);
+  padding: var(--space-2xl) var(--space-3xl) calc(var(--player-bar-height, 96px) + var(--space-3xl));
   max-width: 1120px;
   width: 100%;
   margin: 0 auto;
@@ -99,7 +99,7 @@
   width: 100%;
   margin: 0 auto;
   padding: var(--space-lg) var(--space-3xl)
-    calc(var(--player-bar-height) + var(--space-4xl));
+    calc(var(--player-bar-height, 96px) + var(--space-4xl));
 }
 
 /* ==========================================================================
@@ -108,7 +108,7 @@
 
 .home-hero-bleed-stage {
   position: relative;
-  overflow: hidden;
+  overflow: visible;
   padding: var(--space-group) var(--space-page-x) var(--space-section);
   margin-left: calc(-1 * var(--space-page-x));
   margin-right: calc(-1 * var(--space-page-x));
@@ -183,7 +183,7 @@
   border-radius: var(--radius-media, 18px);
   box-shadow: var(--shadow-sleeve, 0 28px 64px -12px rgba(0, 0, 0, 0.72));
   cursor: pointer;
-  contain: layout paint;
+  contain: layout style;
   transition:
     transform var(--dur-short, 200ms)
       var(--ease-standard, cubic-bezier(0.2, 0, 0, 1)),
@@ -317,7 +317,7 @@
 
 /* 1. Artist (Small, above, sans) */
 .home-hero-type-artist {
-  font-family: var(--font-body, system-ui, sans-serif);
+  font-family: var(--font-ui);
   font-size: clamp(14px, 1.4vw, 17px);
   font-weight: 500;
   color: var(--ink-secondary);
@@ -351,7 +351,7 @@
 
 /* 3. Album (Own line, no middle dot joining to artist) */
 .home-hero-type-album {
-  font-family: var(--font-body, system-ui, sans-serif);
+  font-family: var(--font-ui);
   font-size: 14px;
   color: var(--ink-tertiary);
   margin-bottom: 14px;
@@ -432,7 +432,7 @@
   padding: 3px 10px;
   border: 1px solid var(--line-strong);
   border-radius: var(--radius-control);
-  font-family: var(--font-mono, monospace);
+  font-family: var(--font-family-mono);
   font-size: 11px;
   font-weight: 600;
   letter-spacing: 0.04em;
@@ -586,7 +586,7 @@
 }
 
 .home-section-heading {
-  font-family: var(--font-body, system-ui, sans-serif);
+  font-family: var(--font-ui);
   font-size: 20px;
   font-weight: 600;
   letter-spacing: -0.01em;
@@ -659,7 +659,7 @@
   transition:
     transform var(--dur-short, 200ms) var(--ease-standard),
     box-shadow var(--dur-short, 200ms) var(--ease-standard);
-  contain: layout paint;
+  contain: layout style;
   overflow: hidden;
 }
 
@@ -1142,10 +1142,7 @@
 
 .songs-table-header {
   display: grid;
-  grid-template-columns: 48px minmax(280px, 1.6fr) minmax(
-      160px,
-      0.9fr
-    ) 72px 96px;
+  grid-template-columns: 48px minmax(280px, 1.6fr) minmax(160px, 0.9fr) 72px 96px;
   align-items: center;
   column-gap: var(--space-md);
   padding: 0 var(--space-md);
@@ -1169,10 +1166,7 @@
 
 .song-row {
   display: grid;
-  grid-template-columns: 48px minmax(280px, 1.6fr) minmax(
-      160px,
-      0.9fr
-    ) 72px 96px;
+  grid-template-columns: 48px minmax(280px, 1.6fr) minmax(160px, 0.9fr) 72px 96px;
   align-items: center;
   column-gap: var(--space-md);
   padding: 0 var(--space-md);
@@ -1865,6 +1859,7 @@ button.setting-badge:hover {
   background: var(--surface-panel);
   border: 1px solid var(--line-subtle);
   border-radius: var(--radius-row);
+  flex-wrap: wrap;
   transition:
     border-color var(--dur-short) var(--ease-standard),
     background-color var(--dur-short) var(--ease-standard);
@@ -1894,6 +1889,8 @@ button.setting-badge:hover {
   font-size: 0.8125rem;
   font-weight: 500;
   color: var(--ink-primary);
+  word-break: break-all;
+  overflow-wrap: anywhere;
 }
 
 .folder-item-meta {

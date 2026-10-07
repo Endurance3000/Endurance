@@ -7,7 +7,7 @@
   pointer-events: none;
   user-select: none;
   z-index: 3;
-  contain: layout paint;
+  contain: layout style;
 }
 
 .tonearm-svg {

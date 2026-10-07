@@ -4,10 +4,10 @@
 
 .lyrics-editor-backdrop {
   position: fixed;
-  top: var(--titlebar-height);
+  top: var(--titlebar-height, 0px);
   left: 0;
   right: 0;
-  bottom: var(--player-bar-height);
+  bottom: var(--player-bar-height, 96px);
   background: rgba(0, 0, 0, 0.72);
   backdrop-filter: blur(6px);
   z-index: 90;
@@ -143,6 +143,7 @@
   font-size: 0.875rem;
   flex-shrink: 0;
   border-bottom: 1px solid transparent;
+  flex-wrap: wrap;
 }
 
 .lyrics-editor-banner-error {
@@ -162,6 +163,8 @@
   align-items: center;
   gap: var(--space-sm);
   flex: 1;
+  min-width: 0;
+  word-break: break-word;
 }
 
 /* ==========================================================================

@@ -7,7 +7,7 @@
   top: var(--titlebar-height, 0px);
   left: 0;
   right: 0;
-  bottom: var(--player-bar-height, 84px);
+  bottom: var(--player-bar-height, 96px);
   background-color: rgba(0, 0, 0, 0.36);
   backdrop-filter: blur(4px);
   -webkit-backdrop-filter: blur(4px);
@@ -157,12 +157,18 @@
   font-weight: 600;
   color: var(--ink-primary);
   line-height: 1.25;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .queue-card-artist {
   font-size: 0.8125rem;
   color: var(--ink-secondary);
   line-height: 1.25;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .queue-playing-indicator {
@@ -252,12 +258,18 @@
   font-weight: 500;
   color: var(--ink-primary);
   line-height: 1.25;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .queue-item-artist {
   font-size: 0.75rem;
   color: var(--ink-secondary);
   line-height: 1.25;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .queue-item-duration {
@@ -327,7 +339,7 @@
 .queue-clear-ghost-btn:hover {
   background-color: var(--surface-hover);
   color: var(--ink-primary);
-  border-color: var(--line-medium);
+  border-color: var(--line-strong);
 }
 
 .queue-clear-ghost-btn:active {

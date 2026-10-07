@@ -45,16 +45,12 @@ export const ExpressiveWaveSlider: React.FC<ExpressiveWaveSliderProps> = ({
       const rect = containerRef.current.getBoundingClientRect();
       if (rect.width > 0) {
         widthRef.current = rect.width;
+        if (svgRef.current) {
+          svgRef.current.setAttribute('viewBox', `0 0 ${rect.width} 24`);
+        }
       }
     }
   }, []);
-
-  useEffect(() => {
-    updateWidth();
-    const handleResize = () => updateWidth();
-    window.addEventListener('resize', handleResize);
-    return () => window.removeEventListener('resize', handleResize);
-  }, [updateWidth]);
 
   // Construct SVG Wave path string
   const generateWavePath = useCallback((width: number, ratio: number, phase: number, active: boolean, hovered: boolean) => {
@@ -123,6 +119,9 @@ export const ExpressiveWaveSlider: React.FC<ExpressiveWaveSliderProps> = ({
   // Update DOM directly for max 60/120fps performance
   const renderWaveToDOM = useCallback((phase: number) => {
     const width = widthRef.current || 500;
+    if (svgRef.current) {
+      svgRef.current.setAttribute('viewBox', `0 0 ${width} 24`);
+    }
     const { playedD, unplayedD, thumbX, thumbY } = generateWavePath(
       width,
       progressRatio,
@@ -142,6 +141,32 @@ export const ExpressiveWaveSlider: React.FC<ExpressiveWaveSliderProps> = ({
       thumbRef.current.setAttribute('cy', thumbY.toFixed(1));
     }
   }, [progressRatio, isPlaying, isScrubbing, isHovered, generateWavePath]);
+
+  useEffect(() => {
+    updateWidth();
+    if (!containerRef.current) return;
+
+    const el = containerRef.current;
+    let ro: ResizeObserver | null = null;
+    if (typeof ResizeObserver !== 'undefined') {
+      ro = new ResizeObserver(() => {
+        updateWidth();
+        renderWaveToDOM(phaseRef.current);
+      });
+      ro.observe(el);
+    }
+
+    const handleResize = () => {
+      updateWidth();
+      renderWaveToDOM(phaseRef.current);
+    };
+    window.addEventListener('resize', handleResize);
+
+    return () => {
+      if (ro) ro.disconnect();
+      window.removeEventListener('resize', handleResize);
+    };
+  }, [updateWidth, renderWaveToDOM]);
 
   // Animation loop with requestAnimationFrame
   useEffect(() => {
@@ -185,9 +210,10 @@ export const ExpressiveWaveSlider: React.FC<ExpressiveWaveSliderProps> = ({
     if (disabled || duration <= 0 || !containerRef.current) return;
 
     updateWidth();
-    const rect = containerRef.current.getBoundingClientRect();
     const calculateTime = (clientX: number) => {
-      const ratio = Math.max(0, Math.min(1, (clientX - rect.left) / rect.width));
+      if (!containerRef.current) return 0;
+      const currentRect = containerRef.current.getBoundingClientRect();
+      const ratio = Math.max(0, Math.min(1, (clientX - currentRect.left) / (currentRect.width || 1)));
       return ratio * duration;
     };
 
