@@ -57,3 +57,8 @@
 .m3-card-interactive:active {
   transform: scale(0.99) translateY(0);
 }
+
+.m3-card-interactive:focus-visible {
+  outline: 2px solid var(--md-sys-color-focus-ring);
+  outline-offset: 2px;
+}

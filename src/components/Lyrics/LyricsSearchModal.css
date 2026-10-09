@@ -128,9 +128,10 @@
               box-shadow var(--motion-duration-short-2) var(--motion-easing-standard);
 }
 
-.lyrics-search-input:focus {
+.lyrics-search-input:focus-visible {
   border-color: var(--md-sys-color-primary);
-  box-shadow: 0 0 0 2px var(--md-sys-color-primary-container);
+  outline: 2px solid var(--md-sys-color-focus-ring);
+  outline-offset: 2px;
 }
 
 .lyrics-search-clear-btn {
@@ -145,6 +146,11 @@
   display: flex;
   align-items: center;
   justify-content: center;
+}
+
+.lyrics-search-clear-btn:focus-visible {
+  outline: 2px solid var(--md-sys-color-focus-ring);
+  outline-offset: 2px;
 }
 
 .lyrics-search-clear-btn:hover {
@@ -301,6 +307,12 @@
   background: var(--md-sys-color-surface-container-highest);
   border-color: var(--md-sys-color-primary);
   box-shadow: 0 0 0 1px var(--md-sys-color-primary);
+}
+
+.lyrics-search-card:focus-visible {
+  outline: 2px solid var(--md-sys-color-focus-ring);
+  outline-offset: 2px;
+  background: var(--md-sys-color-surface-container-highest);
 }
 
 .lyrics-card-top-row {

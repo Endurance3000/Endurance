@@ -316,9 +316,10 @@
   -webkit-user-select: text;
 }
 
-.metadata-input:focus {
+.metadata-input:focus-visible {
   border-color: var(--md-sys-color-primary);
-  outline: 1px solid var(--md-sys-color-primary);
+  outline: 2px solid var(--md-sys-color-focus-ring);
+  outline-offset: 1px;
 }
 
 /* ==========================================================================
@@ -389,9 +390,10 @@
   font-weight: 400;
 }
 
-.timestamp-input:focus {
+.timestamp-input:focus-visible {
   border-color: var(--md-sys-color-primary);
-  outline: 1px solid var(--md-sys-color-primary);
+  outline: 2px solid var(--md-sys-color-focus-ring);
+  outline-offset: 1px;
 }
 
 .timestamp-input.is-invalid {
@@ -400,8 +402,9 @@
   background: rgba(248, 113, 113, 0.08);
 }
 
-.timestamp-input.is-invalid:focus {
-  outline: 1px solid var(--md-sys-color-error);
+.timestamp-input.is-invalid:focus-visible {
+  outline: 2px solid var(--md-sys-color-error);
+  outline-offset: 1px;
 }
 
 /* Lyric Text Input */
@@ -429,9 +432,10 @@
   opacity: 0.35;
 }
 
-.lyric-text-input:focus {
+.lyric-text-input:focus-visible {
   border-color: var(--md-sys-color-primary);
-  outline: 1px solid var(--md-sys-color-primary);
+  outline: 2px solid var(--md-sys-color-focus-ring);
+  outline-offset: 1px;
   background: var(--md-sys-color-surface-container-low);
 }
 
@@ -474,7 +478,7 @@
 }
 
 .lyrics-editor-add-line-btn:focus-visible {
-  outline: 2px solid var(--md-sys-color-primary);
+  outline: 2px solid var(--md-sys-color-focus-ring);
   outline-offset: 2px;
 }
 
