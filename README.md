@@ -421,81 +421,81 @@ With v0.2.0 officially released, v0.3.0 is scoped around **four pillars**: core 
 
 #### 🏠 Home / Library Experience — *Core*
 One of the headline features of v0.3.0.
-- [ ] Completely redesign the Home / empty-library screen
-- [ ] Remove technical/developer information from the Home screen (SQLite, supported formats, implementation details, "local-first" explanations, Material 3/Pixel references)
-- [ ] Create a proper music-player empty state
-- [ ] Add a clear **Add Music / Select Music Folder** action
-- [ ] Surface useful content once music exists — Recently Played, Recently Added, a simple listening section
-- [ ] Make the Home screen feel like part of the player, not documentation
-- [ ] Preserve Endurance's existing warm/premium visual language *(kept intentionally scoped — not a full Spotify-style homepage yet)*
+- [x] Completely redesign the Home / empty-library screen
+- [x] Remove technical/developer information from the Home screen (SQLite, supported formats, implementation details, "local-first" explanations, Material 3/Pixel references)
+- [x] Create a proper music-player empty state
+- [x] Add a clear **Add Music / Select Music Folder** action
+- [x] Surface useful content once music exists — Recently Played, Recently Added, a simple listening section
+- [x] Make the Home screen feel like part of the player, not documentation
+- [x] Preserve Endurance's existing warm/premium visual language *(kept intentionally scoped — not a full Spotify-style homepage yet)*
 
 #### File Opening / Windows Integration — *Core*
 
-- [ ] Register Endurance as a handler for supported audio file types
-- [ ] Open supported audio file types from Windows File Explorer
-- [ ] Automatically select and play the opened track
-- [ ] Handle file paths containing spaces and special characters
-- [ ] Handle missing, invalid, or unsupported files gracefully
-- [ ] Handle multiple files opened together where supported
-- [ ] Forward files to an existing Endurance instance instead of unnecessarily creating duplicate instances
-- [ ] Add equivalent file-opening support for macOS Finder
+- [x] Register Endurance as a handler for supported audio file types
+- [ ] Open supported audio file types from Windows File Explorer *(implemented in CLI/event loop; requires end-to-end Windows Explorer validation)*
+- [x] Automatically select and play the opened track
+- [x] Handle file paths containing spaces and special characters *(verified in CLI argument parser tests)*
+- [x] Handle missing, invalid, or unsupported files gracefully *(verified in CLI filter tests and error handling)*
+- [ ] Handle multiple files opened together where supported *(implemented in payload; requires end-to-end OS validation)*
+- [ ] Forward files to an existing Endurance instance instead of unnecessarily creating duplicate instances *(implemented via TCP single-instance server/client; requires end-to-end OS validation)*
+- [ ] Add equivalent file-opening support for macOS Finder *(not yet implemented; pending Tauri macOS event handler)*
 
 #### Common Audio Format Support — *Core*
 
-- [ ] Add FLAC (`.flac`) library scanning and indexing
-- [ ] Add WAV (`.wav`) library scanning and playback
-- [ ] Add OGG Vorbis (`.ogg`) library scanning and playback
-- [ ] Add Opus (`.opus`) library scanning and playback
-- [ ] Add AAC (`.aac`) library scanning and playback
-- [ ] Add AIFF (`.aiff`, `.aif`) library scanning and playback
-- [ ] Verify metadata extraction for each supported format
-- [ ] Verify embedded artwork handling for each supported format
-- [ ] Verify seeking, queue, shuffle, repeat, volume, and playback history
-- [ ] Integrate supported formats with lyrics, Lyrics Editor, favorites, Mini Player, and dynamic artwork
-- [ ] Add automated format-specific regression tests
-- [ ] Verify supported formats on Windows and macOS
+- [x] Add FLAC (`.flac`) library scanning and indexing
+- [x] Add WAV (`.wav`) library scanning and playback
+- [x] Add OGG Vorbis (`.ogg`) library scanning and playback
+- [x] Add Opus (`.opus`) library scanning and playback
+- [x] Add AAC (`.aac`) library scanning and playback
+- [x] Add AIFF (`.aiff`, `.aif`) library scanning and playback
+- [x] Verify metadata extraction for each supported format *(verified via automated scanner tests)*
+- [ ] Verify embedded artwork handling for each supported format *(implemented in artwork extractor; requires manual/format validation)*
+- [ ] Verify seeking, queue, shuffle, repeat, volume, and playback history *(core playback verified; format-specific playback/seeking validation pending)*
+- [ ] Integrate supported formats with lyrics, Lyrics Editor, favorites, Mini Player, and dynamic artwork *(integrated in data model; format-by-format validation pending)*
+- [x] Add automated format-specific regression tests
+- [ ] Verify supported formats on Windows and macOS *(automated backend tests verified on Windows; real playback and macOS format validation pending)*
 
 #### 🖍️ Text-Selection Behavior — *Core*
-- [ ] Disable browser-like text selection throughout the application
-- [ ] Prevent unintended text selection when dragging across the UI
-- [ ] Preserve selection/editing where it's actually useful — inputs, textareas, Lyrics Editor fields
-- [ ] Verify behavior across Main Player, song lists, sidebar, Settings, Mini Player, and Lyrics Editor
+- [x] Disable browser-like text selection throughout the application
+- [x] Prevent unintended text selection when dragging across the UI
+- [x] Preserve selection/editing where it's actually useful — inputs, textareas, Lyrics Editor fields *(verified in CSS policy tests)*
+- [ ] Verify behavior across Main Player, song lists, sidebar, Settings, Mini Player, and Lyrics Editor *(automated CSS policy verified; comprehensive manual interaction testing pending)*
 
 #### 🎤 Online Lyrics & Local/Online Integration — *Core, Major Feature*
 Builds on the v0.2.0 Lyrics Editor rather than reworking it.
-- [ ] Design the online lyrics architecture and provider abstraction
-- [ ] Search/fetch lyrics for a track from a reliable provider/API
-- [ ] Let the user pick the correct result when multiple matches exist
-- [ ] Import fetched lyrics into the local Lyrics Editor and save as a local `.lrc`
-- [ ] Keep saved lyrics fully usable offline afterward
-- [ ] Handle no-result, error, and network-failure cases cleanly
-- [ ] Never make online lyrics mandatory for playback
+- [x] Design the online lyrics architecture and provider abstraction
+- [x] Search/fetch lyrics for a track from a reliable provider/API
+- [x] Let the user pick the correct result when multiple matches exist
+- [x] Import fetched lyrics into the local Lyrics Editor and save as a local `.lrc`
+- [x] Keep saved lyrics fully usable offline afterward
+- [ ] Handle no-result, error, and network-failure cases cleanly *(implemented and unit-tested with mocked responses; real network edge-case validation ongoing)*
+- [x] Never make online lyrics mandatory for playback
 
 > **Architecture principle:** the local `.lrc` remains the persistent source of truth. Flow: **Local LRC → use immediately**, or when none exists, **online search → user picks a result → save locally → future playback uses the local file.** This keeps the online feature strictly optional and true to Endurance's offline-first design.
 
 #### ✍️ Lyrics Editor Improvements — *Polish*
-- [ ] Refine the editing workflow based on real usage
-- [ ] Improve timestamp editing and line adding/removal
-- [ ] Improve metadata editing
+- [x] Refine the editing workflow based on real usage
+- [x] Improve timestamp editing and line adding/removal
+- [x] Improve metadata editing
 - [ ] Explore a better timestamp creation workflow, potentially playback-assisted *(advanced karaoke/timing tools not committed to yet)*
 
 #### 🎧 Playback & Library Polish — *Polish*
 Investigation-first items, not all guaranteed as shipped features:
-- [ ] Improve queue management
-- [ ] Improve recently played / history experience
-- [ ] Improve library sorting, filtering, and search
-- [ ] Improve playback state persistence
-- [ ] Improve track metadata presentation and artwork cache handling
+- [x] Improve queue management
+- [x] Improve recently played / history experience
+- [x] Improve library sorting, filtering, and search
+- [x] Improve playback state persistence
+- [ ] Improve track metadata presentation and artwork cache handling *(artwork cache implemented; further metadata display polish ongoing)*
 - [ ] Review gapless / track-transition behavior and MP3/M4A playback edge cases
 
 #### 🍎 macOS Physical Validation — *Core*
 Deliberately deferred from v0.2.0, now scheduled for v0.3.0.
 - [ ] Test the ARM64 build on real Apple Silicon hardware
 - [ ] Test the Intel build where hardware is available
-- [ ] Verify native title bar and traffic-light controls
-- [ ] Verify audio playback, Mini Player, lyrics, and Lyrics Editor
-- [ ] Verify keyboard shortcuts and splash screen
-- [ ] Verify file/folder operations and file-opening behavior
+- [ ] Verify native title bar and traffic-light controls *(code implemented; requires physical validation)*
+- [ ] Verify audio playback, Mini Player, lyrics, and Lyrics Editor *(requires physical validation)*
+- [ ] Verify keyboard shortcuts and splash screen *(requires physical validation)*
+- [ ] Verify file/folder operations and file-opening behavior *(requires physical validation)*
 - [ ] Fix any platform-specific issues discovered during testing
 
 #### 📦 macOS Distribution — *Distribution, later*
@@ -506,20 +506,20 @@ Deliberately deferred from v0.2.0, now scheduled for v0.3.0.
 - [ ] Document the macOS installation/distribution process
 
 #### 🛠️ CI / Build Maintenance — *Maintenance*
-- [ ] Update GitHub Actions dependencies causing Node.js 20 warnings
-- [ ] Re-run Windows/macOS packaging and verify all artifacts still build
+- [ ] Update GitHub Actions dependencies causing Node.js 20 warnings *(action versions updated to v4 and Node 24 in package.yml; pending CI run verification)*
+- [ ] Re-run Windows/macOS packaging and verify all artifacts still build *(Windows verified; macOS CI workflow run pending)*
 
 #### 🌤️ Startup Polish — *Polish*
 - [ ] Investigate a brief white window/flash before the splash screen appears, so the flow is a clean **Launch → Splash → Main UI** with no artificial delay
 
 #### 🧭 Desktop-Native Polish — *Polish*
 A pass to move Endurance from "working desktop project" toward "polished desktop application":
-- [ ] Review focus behavior and keyboard navigation throughout
-- [ ] Review hover / pressed / focus states, context menus, dialogs, and overlays
+- [x] Review focus behavior and keyboard navigation throughout *(verified in visibleFocusIndicators.test.ts)*
+- [ ] Review hover / pressed / focus states, context menus, dialogs, and overlays *(focus indicators verified; hover/pressed/menu audit in progress)*
 - [ ] Review window resizing and Mini Player behavior
-- [ ] Review accessibility labels
-- [ ] Review accidental text selection/dragging
-- [ ] Review empty states and error states
+- [ ] Review accessibility labels *(partially implemented; full accessibility audit in progress)*
+- [x] Review accidental text selection/dragging
+- [ ] Review empty states and error states *(Home empty state redesigned; full error state audit in progress)*
 
 #### 🚫 Explicitly Out of Scope for v0.3.0
 To keep the milestone realistic, the following are intentionally deferred:
