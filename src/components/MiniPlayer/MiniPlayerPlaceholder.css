@@ -232,7 +232,8 @@
 }
 
 .mini-player-volume-track:focus-visible {
-  box-shadow: 0 0 0 2px var(--md-sys-color-focus-ring);
+  outline: 2px solid var(--md-sys-color-focus-ring);
+  outline-offset: 2px;
 }
 
 .mini-player-volume-fill {

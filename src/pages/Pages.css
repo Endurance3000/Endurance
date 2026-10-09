@@ -339,6 +339,11 @@
   transform: translateY(-2px);
 }
 
+.home-track-card:focus-visible {
+  outline: 2px solid var(--md-sys-color-focus-ring);
+  outline-offset: 2px;
+}
+
 .home-track-artwork-wrap {
   width: 100%;
   aspect-ratio: 1;
@@ -573,6 +578,8 @@
 
 .song-row:focus-visible {
   background: var(--md-sys-color-surface-container-high);
+  outline: 2px solid var(--md-sys-color-focus-ring);
+  outline-offset: -2px;
 }
 
 .col-index {
@@ -791,6 +798,11 @@ button.setting-badge {
 button.setting-badge:hover {
   background: var(--md-sys-color-surface-container-high);
   border-color: var(--md-sys-color-outline-variant);
+}
+
+button.setting-badge:focus-visible {
+  outline: 2px solid var(--md-sys-color-focus-ring);
+  outline-offset: 2px;
 }
 
 .setting-badge-active {

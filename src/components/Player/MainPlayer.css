@@ -271,6 +271,13 @@
   opacity: 0.75;
 }
 
+.lyric-line:focus-visible {
+  outline: 2px solid var(--md-sys-color-focus-ring);
+  outline-offset: 2px;
+  opacity: 0.95;
+  background: var(--md-sys-color-surface-container);
+}
+
 .lyric-line.active {
   color: var(--md-sys-color-on-surface);
   opacity: 1;

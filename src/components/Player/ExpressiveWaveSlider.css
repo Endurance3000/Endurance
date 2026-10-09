@@ -68,5 +68,6 @@
 /* Focus Indicator Ring for Accessibility */
 .m3-expressive-wave-slider:focus-visible {
   border-radius: var(--radius-sm);
-  box-shadow: 0 0 0 2px var(--md-sys-color-focus-ring);
+  outline: 2px solid var(--md-sys-color-focus-ring);
+  outline-offset: 2px;
 }

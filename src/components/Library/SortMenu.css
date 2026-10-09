@@ -33,7 +33,8 @@
 
 .sort-menu-trigger:focus-visible {
   border-color: var(--md-sys-color-primary);
-  box-shadow: 0 0 0 2px var(--md-sys-color-primary-container);
+  outline: 2px solid var(--md-sys-color-focus-ring);
+  outline-offset: 2px;
 }
 
 .sort-menu-trigger.is-open {
