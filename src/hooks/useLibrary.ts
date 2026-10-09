@@ -99,7 +99,22 @@ export function useLibrary() {
     }
   };
 
-  const toggleFavorite = async (trackId: string) => {
+  useEffect(() => {
+    const handleFavToggled = (e: Event) => {
+      const custom = e as CustomEvent<{ trackId: string; isFavorite: boolean }>;
+      if (custom.detail) {
+        const { trackId, isFavorite } = custom.detail;
+        setTracks((prev) =>
+          prev.map((t) => (t.id === trackId && t.is_favorite !== isFavorite ? { ...t, is_favorite: isFavorite } : t))
+        );
+      }
+    };
+
+    window.addEventListener('endurance:favorite-toggled', handleFavToggled);
+    return () => window.removeEventListener('endurance:favorite-toggled', handleFavToggled);
+  }, []);
+
+  const toggleFavorite = async (trackId: string): Promise<boolean> => {
     // Optimistic UI update
     setTracks((prev) =>
       prev.map((t) => (t.id === trackId ? { ...t, is_favorite: !t.is_favorite } : t))
@@ -110,12 +125,19 @@ export function useLibrary() {
       setTracks((prev) =>
         prev.map((t) => (t.id === trackId ? { ...t, is_favorite: newState } : t))
       );
+      window.dispatchEvent(
+        new CustomEvent('endurance:favorite-toggled', {
+          detail: { trackId, isFavorite: newState },
+        })
+      );
+      return newState;
     } catch (err) {
       console.error('Failed to toggle favorite in SQLite:', err);
       // Revert on failure
       setTracks((prev) =>
         prev.map((t) => (t.id === trackId ? { ...t, is_favorite: !t.is_favorite } : t))
       );
+      throw err;
     }
   };
 

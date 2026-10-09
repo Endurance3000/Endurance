@@ -30,7 +30,7 @@ interface SongsProps {
   isScanning: boolean;
   scanProgress: ScanProgressPayload | null;
   onAddFolder: () => Promise<void>;
-  onToggleFavorite: (trackId: string) => Promise<void>;
+  onToggleFavorite: (trackId: string) => Promise<boolean | void>;
   onRescan: () => Promise<void>;
 }
 

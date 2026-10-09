@@ -13,6 +13,7 @@ import { ThemeProvider } from './state/ThemeContext';
 import { MainPlayer } from './components/Player/MainPlayer';
 import { QueueDrawer } from './components/Queue/QueueDrawer';
 import { LyricsEditorModal } from './components/LyricsEditor/LyricsEditorModal';
+import { LyricsSearchModal } from './components/Lyrics/LyricsSearchModal';
 import { NavigationPage, SystemInfo, Track } from './types';
 import './App.css';
 
@@ -21,6 +22,7 @@ export const App: React.FC = () => {
   const [systemInfo, setSystemInfo] = useState<SystemInfo | null>(null);
   const [isMainPlayerOpen, setIsMainPlayerOpen] = useState<boolean>(false);
   const [editingLyricsTrack, setEditingLyricsTrack] = useState<Track | null>(null);
+  const [searchingLyricsTrack, setSearchingLyricsTrack] = useState<Track | null>(null);
   const hasNotifiedReadyRef = useRef(false);
 
   const {
@@ -65,7 +67,7 @@ export const App: React.FC = () => {
     }
   }, [isLoading, systemInfo]);
 
-  // Listen for global open lyrics editor events (e.g. from SongActionMenu or MainPlayer)
+  // Listen for global open lyrics editor / search events (e.g. from SongActionMenu or MainPlayer)
   useEffect(() => {
     const handleOpenLyricsEditor = (e: Event) => {
       const customEvent = e as CustomEvent<{ track: Track }>;
@@ -74,8 +76,19 @@ export const App: React.FC = () => {
       }
     };
 
+    const handleOpenLyricsSearch = (e: Event) => {
+      const customEvent = e as CustomEvent<{ track: Track }>;
+      if (customEvent.detail?.track) {
+        setSearchingLyricsTrack(customEvent.detail.track);
+      }
+    };
+
     window.addEventListener('endurance:open-lyrics-editor', handleOpenLyricsEditor);
-    return () => window.removeEventListener('endurance:open-lyrics-editor', handleOpenLyricsEditor);
+    window.addEventListener('endurance:open-lyrics-search', handleOpenLyricsSearch);
+    return () => {
+      window.removeEventListener('endurance:open-lyrics-editor', handleOpenLyricsEditor);
+      window.removeEventListener('endurance:open-lyrics-search', handleOpenLyricsSearch);
+    };
   }, []);
 
   const renderPage = () => {
@@ -164,6 +177,14 @@ export const App: React.FC = () => {
             <LyricsEditorModal
               track={editingLyricsTrack}
               onClose={() => setEditingLyricsTrack(null)}
+            />
+          )}
+
+          {/* Lyrics Online Search Modal Overlay */}
+          {searchingLyricsTrack && (
+            <LyricsSearchModal
+              track={searchingLyricsTrack}
+              onClose={() => setSearchingLyricsTrack(null)}
             />
           )}
 

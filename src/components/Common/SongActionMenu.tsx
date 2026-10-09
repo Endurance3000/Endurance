@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
-import { ListPlus, ArrowUpToLine, FolderOpen, Copy, Check, FileEdit } from 'lucide-react';
+import { ListPlus, ArrowUpToLine, FolderOpen, Copy, Check, FileEdit, Heart, Globe } from 'lucide-react';
 import { invoke } from '@tauri-apps/api/core';
 import { Track } from '../../types';
 import { usePlayback } from '../../state/PlaybackContext';
@@ -23,7 +23,7 @@ export const SongActionMenu: React.FC<SongActionMenuProps> = ({
   triggerRef,
   onEditLyrics,
 }) => {
-  const { playNext, addToQueue } = usePlayback();
+  const { playNext, addToQueue, toggleFavorite } = usePlayback();
 
   const menuRef = useRef<HTMLDivElement>(null);
   const firstMenuItemRef = useRef<HTMLButtonElement>(null);
@@ -215,6 +215,25 @@ export const SongActionMenu: React.FC<SongActionMenuProps> = ({
         <span>Add to Queue</span>
       </button>
 
+      <button
+        type="button"
+        className="song-menu-item"
+        role="menuitem"
+        onClick={() => {
+          toggleFavorite(track.id);
+          onClose();
+        }}
+      >
+        <span className="song-menu-item-icon">
+          <Heart
+            size={15}
+            fill={track.is_favorite ? 'currentColor' : 'none'}
+            color={track.is_favorite ? 'var(--md-sys-color-tertiary)' : 'currentColor'}
+          />
+        </span>
+        <span>{track.is_favorite ? 'Remove from Favorites' : 'Add to Favorites'}</span>
+      </button>
+
       <div className="song-menu-divider" />
 
       <button
@@ -227,6 +246,23 @@ export const SongActionMenu: React.FC<SongActionMenuProps> = ({
           <FileEdit size={15} />
         </span>
         <span>Edit Lyrics</span>
+      </button>
+
+      <button
+        type="button"
+        className="song-menu-item"
+        role="menuitem"
+        onClick={() => {
+          onClose();
+          window.dispatchEvent(
+            new CustomEvent('endurance:open-lyrics-search', { detail: { track } })
+          );
+        }}
+      >
+        <span className="song-menu-item-icon">
+          <Globe size={15} />
+        </span>
+        <span>Search Lyrics Online</span>
       </button>
 
       <button

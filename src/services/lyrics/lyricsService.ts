@@ -29,20 +29,15 @@ class LyricsService {
       }
     }
 
-    try {
-      const resolved = await this.getResolvedLyrics(trackFilePath);
+    const resolved = await this.getResolvedLyrics(trackFilePath);
 
-      const parsed = parseLrc(resolved?.content);
-      if (parsed.type !== 'none') {
-        this.cache.set(trackFilePath, parsed);
-      } else {
-        this.cache.delete(trackFilePath);
-      }
-      return parsed;
-    } catch (err) {
-      console.warn('Failed to load track lyrics:', err);
-      return { type: 'none' };
+    const parsed = parseLrc(resolved?.content);
+    if (parsed.type !== 'none') {
+      this.cache.set(trackFilePath, parsed);
+    } else {
+      this.cache.delete(trackFilePath);
     }
+    return parsed;
   }
 
   /**

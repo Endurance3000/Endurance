@@ -93,6 +93,39 @@ export const libraryService = {
   },
 
   /**
+   * Retrieves or imports a track given an absolute file path.
+   */
+  async getTrackForPath(filePath: string): Promise<Track | null> {
+    try {
+      return await invoke<Track>('get_track_for_path', { filePath });
+    } catch (err) {
+      console.warn(`Failed to resolve track for path ${filePath}:`, err);
+      return null;
+    }
+  },
+
+  /**
+   * Retrieves any CLI/OS pending open files queued during startup.
+   */
+  async getPendingOpenFiles(): Promise<string[]> {
+    try {
+      return await invoke<string[]>('get_pending_open_files');
+    } catch (err) {
+      console.warn('Failed to get pending open files:', err);
+      return [];
+    }
+  },
+
+  /**
+   * Listens for files opened via single-instance forward or OS file associations.
+   */
+  async onOpenFiles(callback: (payload: { file_paths: string[] }) => void): Promise<UnlistenFn> {
+    return await listen<{ file_paths: string[] }>('endurance://open-files', (event) => {
+      callback(event.payload);
+    });
+  },
+
+  /**
    * Listens for real-time scan progress events emitted by Rust
    */
   async onScanProgress(callback: (payload: ScanProgressPayload) => void): Promise<UnlistenFn> {

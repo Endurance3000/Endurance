@@ -312,6 +312,8 @@
   padding: var(--space-2xs) var(--space-xs);
   border-radius: var(--radius-sm);
   outline: none;
+  user-select: text;
+  -webkit-user-select: text;
 }
 
 .metadata-input:focus {
@@ -376,6 +378,8 @@
   padding: var(--space-xs) 0;
   border-radius: var(--radius-sm);
   outline: none;
+  user-select: text;
+  -webkit-user-select: text;
   transition: border-color var(--motion-duration-short-1) var(--motion-easing-standard);
 }
 
@@ -415,6 +419,8 @@
   padding: var(--space-xs) var(--space-sm);
   border-radius: var(--radius-sm);
   outline: none;
+  user-select: text;
+  -webkit-user-select: text;
   transition: border-color var(--motion-duration-short-1) var(--motion-easing-standard);
 }
 

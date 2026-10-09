@@ -1,6 +1,7 @@
 use crate::artwork::ArtworkCache;
 use crate::db::Database;
 use crate::lyrics::{find_and_read_lrc, ResolvedLyrics};
+use crate::metadata::MetadataReader;
 use crate::models::{HistoryItem, LibraryFolder, ScanSummary, Track};
 use crate::scanner::LibraryScanner;
 use std::collections::HashMap;
@@ -10,6 +11,97 @@ pub struct AppState {
     pub db: Database,
     pub artwork_cache: ArtworkCache,
     pub scanner: LibraryScanner,
+    pub pending_open_files: std::sync::Arc<std::sync::Mutex<Vec<String>>>,
+}
+
+#[tauri::command]
+pub fn get_pending_open_files(state: State<AppState>) -> Result<Vec<String>, String> {
+    let mut pending = state.pending_open_files.lock().map_err(|e| e.to_string())?;
+    let files = pending.clone();
+    pending.clear();
+    Ok(files)
+}
+
+#[tauri::command]
+pub fn get_track_for_path(file_path: String, state: State<AppState>) -> Result<Track, String> {
+    let path_obj = std::path::Path::new(&file_path);
+    if !path_obj.exists() {
+        return Err(format!("File does not exist: {}", file_path));
+    }
+
+    let canonical_path = path_obj
+        .canonicalize()
+        .unwrap_or_else(|_| path_obj.to_path_buf())
+        .to_string_lossy()
+        .replace(r"\\?\", "")
+        .to_string();
+
+    // Check if track is already in the database
+    if let Ok(Some(existing_track)) = state.db.get_track_by_path(&canonical_path) {
+        return Ok(existing_track);
+    }
+
+    // Otherwise, extract metadata and create track
+    let metadata_reader = crate::metadata::LoftyMetadataReader::new();
+    let raw_meta = metadata_reader
+        .read_metadata(path_obj)
+        .map_err(|e| format!("Failed to read metadata for {}: {}", file_path, e))?;
+
+    let file_size = path_obj.metadata().map(|m| m.len()).unwrap_or(0);
+    let mtime = path_obj
+        .metadata()
+        .ok()
+        .and_then(|m| m.modified().ok())
+        .and_then(|t| t.duration_since(std::time::UNIX_EPOCH).ok())
+        .map(|d| d.as_secs())
+        .unwrap_or(0);
+
+    let mut artwork_hash = None;
+    if let Some(art) = raw_meta.artwork {
+        if let Ok(hash) = state.artwork_cache.store_artwork(&art.data, &art.mime_type) {
+            artwork_hash = Some(hash);
+        }
+    }
+
+    let file_name = path_obj
+        .file_name()
+        .and_then(|s| s.to_str())
+        .unwrap_or("Unknown Track")
+        .to_string();
+
+    let track_id = crate::scanner::generate_track_id(&canonical_path);
+    let now_str = std::time::SystemTime::now()
+        .duration_since(std::time::UNIX_EPOCH)
+        .unwrap_or_default()
+        .as_secs()
+        .to_string();
+
+    let track = Track {
+        id: track_id,
+        file_path: canonical_path,
+        file_name,
+        file_size,
+        modified_time: mtime,
+        title: raw_meta.title,
+        artist: raw_meta.artist,
+        album: raw_meta.album,
+        album_artist: raw_meta.album_artist,
+        genre: raw_meta.genre,
+        year: raw_meta.year,
+        track_number: raw_meta.track_number,
+        disc_number: raw_meta.disc_number,
+        duration: raw_meta.duration,
+        artwork_hash,
+        is_favorite: false,
+        is_available: true,
+        date_added: now_str.clone(),
+        last_scanned: now_str,
+    };
+
+    // Upsert into DB so favorites, history, and artwork references remain stable
+    let _ = state.db.upsert_track(&track);
+
+    Ok(track)
 }
 
 #[tauri::command]
@@ -105,6 +197,14 @@ pub fn save_lyrics_file(
     expected_fingerprint: Option<crate::lyrics::LyricsSourceFingerprint>,
 ) -> Result<crate::lyrics::LyricsSourceFingerprint, String> {
     crate::lyrics::save_lrc_file(&source_path, &content, &encoding, expected_fingerprint.as_ref())
+}
+
+#[tauri::command]
+pub fn create_lrc_sidecar(
+    track_file_path: String,
+    content: String,
+) -> Result<crate::lyrics::LyricsSourceFingerprint, String> {
+    crate::lyrics::create_lrc_sidecar(&track_file_path, &content)
 }
 
 #[tauri::command]

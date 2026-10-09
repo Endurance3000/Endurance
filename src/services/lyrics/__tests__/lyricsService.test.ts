@@ -111,10 +111,18 @@ describe('LyricsService tests', () => {
     assert.strictEqual(parsedEmpty.type, 'none');
   });
 
-  it('getLyrics gracefully handles backend error without throwing', async () => {
+  it('getLyrics propagates backend error when read fails', async () => {
     shouldFail = true;
-    const parsed = await lyricsService.getLyrics('C:/Music/error.mp3');
-    assert.strictEqual(parsed.type, 'none');
+    await assert.rejects(
+      async () => {
+        await lyricsService.getLyrics('C:/Music/error.mp3');
+      },
+      (err: unknown) => {
+        assert.ok(err instanceof Error);
+        assert.strictEqual(err.message, backendErrorMessage);
+        return true;
+      }
+    );
   });
 
   it('clearCache empties in-memory cache', async () => {

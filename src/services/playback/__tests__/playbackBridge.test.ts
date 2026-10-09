@@ -59,6 +59,7 @@ describe("Playback bridge protocol", () => {
       album: "Album One",
       duration: 180,
       artworkHash: "artwork-1",
+      isFavorite: false,
     });
     assert.equal("file_path" in (snapshot.currentTrack ?? {}), false);
   });
@@ -117,6 +118,9 @@ describe("Playback bridge protocol", () => {
       toggleRepeat: () => {
         calls.push("toggle-repeat");
       },
+      toggleFavorite: async (trackId: string) => {
+        calls.push(`toggle-favorite:${trackId}`);
+      },
     };
     const commands: PlaybackCommand[] = [
       { type: "toggle-play" },
@@ -127,6 +131,7 @@ describe("Playback bridge protocol", () => {
       { type: "toggle-mute" },
       { type: "toggle-shuffle" },
       { type: "toggle-repeat" },
+      { type: "toggle-favorite", trackId: "track-1" },
     ];
 
     for (const command of commands) {
@@ -142,6 +147,7 @@ describe("Playback bridge protocol", () => {
       "toggle-mute",
       "toggle-shuffle",
       "toggle-repeat",
+      "toggle-favorite:track-1",
     ]);
   });
 });

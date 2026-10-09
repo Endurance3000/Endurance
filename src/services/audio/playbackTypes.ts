@@ -44,5 +44,6 @@ export interface PlaybackContextType extends PlaybackState {
   toggleMute: () => void;
   toggleShuffle: () => void;
   toggleRepeat: () => void;
+  toggleFavorite: (trackId?: string) => Promise<boolean>;
   clearError: () => void;
 }

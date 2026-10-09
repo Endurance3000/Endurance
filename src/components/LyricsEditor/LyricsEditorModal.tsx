@@ -9,6 +9,7 @@ import {
   Loader2,
   FileQuestion,
   RotateCcw,
+  Globe,
 } from 'lucide-react';
 import { Track } from '../../types';
 import {
@@ -498,11 +499,26 @@ export const LyricsEditorModal: React.FC<LyricsEditorModalProps> = ({
               <FileQuestion size={48} className="lyrics-editor-empty-icon" />
               <h3 className="lyrics-editor-empty-title">No Lyrics File Found</h3>
               <p className="lyrics-editor-empty-desc">
-                No lyrics file found for this track. An existing LRC file is required to edit lyrics.
+                No lyrics file found for this track. An existing LRC file is required to edit lyrics. You can search online for synchronized lyrics and save them to your library.
               </p>
-              <Button variant="tonal" size="md" onClick={onClose}>
-                Close
-              </Button>
+              <div style={{ display: 'flex', gap: 'var(--space-sm)', flexWrap: 'wrap', justifyContent: 'center' }}>
+                <Button
+                  variant="filled"
+                  size="md"
+                  icon={<Globe size={15} />}
+                  onClick={() => {
+                    onClose();
+                    window.dispatchEvent(
+                      new CustomEvent('endurance:open-lyrics-search', { detail: { track } })
+                    );
+                  }}
+                >
+                  Search Online
+                </Button>
+                <Button variant="tonal" size="md" onClick={onClose}>
+                  Close
+                </Button>
+              </div>
             </div>
           )}
 

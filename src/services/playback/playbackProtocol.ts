@@ -14,6 +14,7 @@ export interface PlaybackTrackSnapshot {
   album: string;
   duration: number;
   artworkHash: string | null;
+  isFavorite: boolean;
 }
 
 export interface PlaybackSnapshot {
@@ -38,7 +39,8 @@ export type PlaybackCommand =
   | { type: "set-volume"; volume: number }
   | { type: "toggle-mute" }
   | { type: "toggle-shuffle" }
-  | { type: "toggle-repeat" };
+  | { type: "toggle-repeat" }
+  | { type: "toggle-favorite"; trackId: string };
 
 export interface PlaybackCommandHandlers {
   togglePlay: () => Promise<void>;
@@ -49,6 +51,7 @@ export interface PlaybackCommandHandlers {
   toggleMute: () => void;
   toggleShuffle: () => void;
   toggleRepeat: () => void;
+  toggleFavorite?: (trackId: string) => Promise<void>;
 }
 
 export interface PlaybackSnapshotSource {
@@ -80,6 +83,7 @@ export function createPlaybackSnapshot(
           album: track.album,
           duration: track.duration,
           artworkHash: track.artwork_hash ?? null,
+          isFavorite: track.is_favorite ?? false,
         }
       : null,
     isPlaying: source.isPlaying,
@@ -129,6 +133,11 @@ export async function routePlaybackCommand(
       return;
     case "toggle-repeat":
       handlers.toggleRepeat();
+      return;
+    case "toggle-favorite":
+      if (handlers.toggleFavorite) {
+        await handlers.toggleFavorite(command.trackId);
+      }
       return;
   }
 }

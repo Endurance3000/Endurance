@@ -596,6 +596,122 @@ pub fn save_lrc_file(
     compute_file_fingerprint(target_path)
 }
 
+/// Safely creates a new `.lrc` sidecar file for an audio track that does not currently have any resolved lyrics.
+///
+/// Safety guarantees:
+/// 1. Validates that the audio path exists, is a file, and is a supported audio format.
+/// 2. Checks if the track already has any resolved lyrics file via `resolve_lyric_path`.
+///    If a lyrics file is resolved (e.g. `<stem>.lrc`, `<stem>_private.lrc`, `<stem>_suffix.lrc`),
+///    refuses creation with a conflict error rather than creating a higher-priority file that would shadow existing lyrics.
+/// 3. Derives the target sidecar path strictly as `<parent_dir>/<audio_stem>.lrc`.
+/// 4. Validates that the target path does not already exist.
+/// 5. Uses exclusive creation (`std::fs::OpenOptions::new().write(true).create_new(true)`)
+///    to guarantee at the OS kernel level (`CREATE_NEW` on Windows, `O_CREAT | O_EXCL` on POSIX)
+///    that existing files are never overwritten even in concurrent race conditions.
+/// 6. Writes UTF-8 encoded bytes and flushes with `sync_all`.
+/// 7. If writing/syncing fails, cleans up the created file.
+/// 8. Returns the `LyricsSourceFingerprint` of the newly created file.
+pub fn create_lrc_sidecar(
+    track_file_path: &str,
+    content: &str,
+) -> Result<LyricsSourceFingerprint, String> {
+    let clean_path = track_file_path.trim().trim_matches('"');
+    if clean_path.is_empty() {
+        return Err("Missing audio file path: cannot create sidecar without an audio file".to_string());
+    }
+
+    let audio_path = Path::new(clean_path);
+    if !audio_path.is_file() {
+        return Err(format!(
+            "Audio file does not exist or is not a file: '{}'",
+            audio_path.display()
+        ));
+    }
+
+    if !crate::scanner::is_supported_audio(audio_path) {
+        return Err(format!(
+            "Unsupported audio format for file: '{}'",
+            audio_path.display()
+        ));
+    }
+
+    // Check if the track already has any resolved lyrics file to prevent accidental shadowing
+    if let Some(existing_lyric_path) = resolve_lyric_path(clean_path) {
+        return Err(format!(
+            "Track already has a resolved lyrics file at '{}'. Creation aborted to prevent shadowing.",
+            existing_lyric_path.display()
+        ));
+    }
+
+    let parent_dir = audio_path.parent().ok_or_else(|| {
+        format!(
+            "Invalid audio path: cannot determine parent directory for '{}'",
+            audio_path.display()
+        )
+    })?;
+
+    let stem = audio_path.file_stem().ok_or_else(|| {
+        format!(
+            "Invalid audio path: cannot determine file stem for '{}'",
+            audio_path.display()
+        )
+    })?;
+
+    let target_path = parent_dir.join(format!("{}.lrc", stem.to_string_lossy()));
+
+    if target_path.exists() {
+        return Err(format!(
+            "Target lyrics file already exists at '{}'. Will not overwrite.",
+            target_path.display()
+        ));
+    }
+
+    // Atomic exclusive creation (CREATE_NEW on Windows, O_CREAT | O_EXCL on POSIX)
+    let mut file = match fs::OpenOptions::new()
+        .write(true)
+        .create_new(true)
+        .open(&target_path)
+    {
+        Ok(f) => f,
+        Err(e) if e.kind() == std::io::ErrorKind::AlreadyExists => {
+            return Err(format!(
+                "Target lyrics file already exists at '{}'. Will not overwrite.",
+                target_path.display()
+            ));
+        }
+        Err(e) => {
+            return Err(format!(
+                "Failed to create lyrics file '{}': {}",
+                target_path.display(),
+                e
+            ));
+        }
+    };
+
+    let bytes = content.as_bytes();
+    if let Err(e) = file.write_all(bytes) {
+        let _ = fs::remove_file(&target_path);
+        return Err(format!(
+            "Failed to write content to '{}': {}",
+            target_path.display(),
+            e
+        ));
+    }
+
+    if let Err(e) = file.sync_all() {
+        let _ = fs::remove_file(&target_path);
+        return Err(format!(
+            "Failed to sync lyrics file '{}': {}",
+            target_path.display(),
+            e
+        ));
+    }
+
+    drop(file);
+
+    compute_file_fingerprint(&target_path)
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -1381,5 +1497,160 @@ mod tests {
 
             let _ = fs::remove_dir_all(&temp_dir);
         }
+    }
+
+    // 21. create_lrc_sidecar: Success for valid audio track and readable by find_and_read_lrc
+    #[test]
+    fn test_create_lrc_sidecar_success_and_readability() {
+        let temp_dir = create_temp_dir("create_success");
+        let audio = temp_dir.join("ambient.flac");
+        fs::write(&audio, b"flac data").unwrap();
+
+        let lrc_content = "[00:01.00]Ambient opening\n[00:05.50]Ambient chorus";
+        let fp = create_lrc_sidecar(&audio.to_string_lossy(), lrc_content)
+            .expect("Should create new sidecar");
+
+        assert_eq!(fp.algorithm, "sha256");
+        assert!(!fp.value.is_empty());
+
+        let expected_lrc = temp_dir.join("ambient.lrc");
+        assert!(expected_lrc.is_file(), "Target file ambient.lrc must exist");
+
+        // Verify readable by existing lyrics reader find_and_read_lrc
+        let resolved = find_and_read_lrc(&audio.to_string_lossy())
+            .unwrap()
+            .expect("Should resolve newly created sidecar");
+        assert_eq!(resolved.file_path, expected_lrc.to_string_lossy());
+        assert_eq!(resolved.content, lrc_content);
+        assert_eq!(resolved.encoding.as_deref(), Some("utf-8"));
+        assert_eq!(resolved.source_fingerprint.as_ref(), Some(&fp));
+
+        let _ = fs::remove_dir_all(&temp_dir);
+    }
+
+    // 22. create_lrc_sidecar: Target filename is strictly exact-stem .lrc
+    #[test]
+    fn test_create_lrc_sidecar_exact_stem_filename() {
+        let temp_dir = create_temp_dir("create_stem");
+        let audio = temp_dir.join("My Favorite Track (2024).opus");
+        fs::write(&audio, b"opus data").unwrap();
+
+        let content = "[00:00.00]Instrumental Intro";
+        let _ = create_lrc_sidecar(&audio.to_string_lossy(), content).unwrap();
+
+        let expected_lrc = temp_dir.join("My Favorite Track (2024).lrc");
+        assert!(expected_lrc.exists());
+        assert_eq!(fs::read_to_string(&expected_lrc).unwrap(), content);
+
+        let _ = fs::remove_dir_all(&temp_dir);
+    }
+
+    // 23. create_lrc_sidecar: Refuses to overwrite existing exact-stem .lrc
+    #[test]
+    fn test_create_lrc_sidecar_refuses_overwrite_existing_exact_stem() {
+        let temp_dir = create_temp_dir("create_no_overwrite");
+        let audio = temp_dir.join("existing_song.mp3");
+        let existing_lrc = temp_dir.join("existing_song.lrc");
+        let original_content = "[00:01.00]Original lyrics";
+        fs::write(&audio, b"audio").unwrap();
+        fs::write(&existing_lrc, original_content.as_bytes()).unwrap();
+
+        let err = create_lrc_sidecar(&audio.to_string_lossy(), "[00:02.00]New lyrics")
+            .unwrap_err();
+
+        assert!(
+            err.contains("already has a resolved lyrics file") || err.contains("already exists"),
+            "Error was: {}",
+            err
+        );
+
+        // Original file must remain untouched
+        assert_eq!(fs::read_to_string(&existing_lrc).unwrap(), original_content);
+
+        let _ = fs::remove_dir_all(&temp_dir);
+    }
+
+    // 24. create_lrc_sidecar: Refuses when lower-priority/suffix lyrics are already resolved (shadowing prevention)
+    #[test]
+    fn test_create_lrc_sidecar_refuses_when_shadowing_existing_resolved_lyrics() {
+        let temp_dir = create_temp_dir("create_shadow_prevent");
+        let audio = temp_dir.join("shadow_song.wav");
+        let private_lrc = temp_dir.join("shadow_song_private.lrc");
+        let original_private_content = "[00:05.00]Private lyrics";
+        fs::write(&audio, b"wav audio").unwrap();
+        fs::write(&private_lrc, original_private_content.as_bytes()).unwrap();
+
+        let err = create_lrc_sidecar(&audio.to_string_lossy(), "[00:01.00]Attempted shadow lyrics")
+            .unwrap_err();
+
+        assert!(
+            err.contains("already has a resolved lyrics file"),
+            "Error was: {}",
+            err
+        );
+
+        // Exact stem .lrc must NOT have been created
+        let exact_lrc = temp_dir.join("shadow_song.lrc");
+        assert!(!exact_lrc.exists());
+        // Existing private lyrics remain untouched
+        assert_eq!(fs::read_to_string(&private_lrc).unwrap(), original_private_content);
+
+        let _ = fs::remove_dir_all(&temp_dir);
+    }
+
+    // 25. create_lrc_sidecar: Refuses missing or invalid audio file
+    #[test]
+    fn test_create_lrc_sidecar_refuses_missing_or_invalid_audio_file() {
+        let temp_dir = create_temp_dir("create_invalid_audio");
+        let nonexistent_audio = temp_dir.join("nonexistent.mp3");
+
+        let err = create_lrc_sidecar(&nonexistent_audio.to_string_lossy(), "[00:00.00]Test")
+            .unwrap_err();
+        assert!(err.contains("does not exist"), "Error was: {}", err);
+
+        // Directory instead of file
+        let err_dir = create_lrc_sidecar(&temp_dir.to_string_lossy(), "[00:00.00]Test")
+            .unwrap_err();
+        assert!(err_dir.contains("does not exist or is not a file"), "Error was: {}", err_dir);
+
+        // Unsupported audio format (e.g. .txt or .wma)
+        let text_file = temp_dir.join("notes.txt");
+        fs::write(&text_file, b"some text").unwrap();
+        let err_fmt = create_lrc_sidecar(&text_file.to_string_lossy(), "[00:00.00]Test")
+            .unwrap_err();
+        assert!(err_fmt.contains("Unsupported audio format"), "Error was: {}", err_fmt);
+
+        let _ = fs::remove_dir_all(&temp_dir);
+    }
+
+    // 26. create_lrc_sidecar: Kernel-level exclusive creation refusal (no-overwrite guarantee)
+    #[test]
+    fn test_create_lrc_sidecar_exclusive_create_prevents_clobber() {
+        let temp_dir = create_temp_dir("create_exclusive");
+        let audio = temp_dir.join("beat.m4a");
+        let target_lrc = temp_dir.join("beat.lrc");
+        fs::write(&audio, b"m4a data").unwrap();
+
+        // Pre-create target file right before creation
+        fs::write(&target_lrc, b"pre-existing content").unwrap();
+
+        let err = create_lrc_sidecar(&audio.to_string_lossy(), "new content")
+            .unwrap_err();
+        assert!(
+            err.contains("already exists") || err.contains("already has a resolved lyrics file"),
+            "Error was: {}",
+            err
+        );
+        // Pre-existing content must remain untouched
+        assert_eq!(fs::read_to_string(&target_lrc).unwrap(), "pre-existing content");
+
+        // Also test kernel-level create_new(true) directly fails with AlreadyExists on the target path
+        let open_res = fs::OpenOptions::new()
+            .write(true)
+            .create_new(true)
+            .open(&target_lrc);
+        assert_eq!(open_res.unwrap_err().kind(), std::io::ErrorKind::AlreadyExists);
+
+        let _ = fs::remove_dir_all(&temp_dir);
     }
 }

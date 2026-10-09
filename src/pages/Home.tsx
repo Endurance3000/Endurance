@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { Button } from '../components/Common/Button';
 import { IconButton } from '../components/Common/IconButton';
 import { Card } from '../components/Common/Card';
@@ -9,15 +9,17 @@ import {
   Play,
   Pause,
   Sparkles,
-  Music,
-  ShieldCheck,
-  Zap,
   MoreHorizontal,
+  Compass,
 } from 'lucide-react';
 import { usePlayback } from '../state/PlaybackContext';
 import { historyService } from '../services/history/historyService';
 import { SongActionMenu } from '../components/Common/SongActionMenu';
 import { Track, LibraryFolder, HistoryItem } from '../types';
+import {
+  getUniqueHistoryTracks,
+  getRecentlyAddedTracks,
+} from '../utils/homeCollectionHelper';
 import './Pages.css';
 
 interface HomeProps {
@@ -43,8 +45,6 @@ export const Home: React.FC<HomeProps> = ({
   });
 
   // Stores the exact More Options button that opened the current menu.
-  // Right-click/context-menu openings explicitly clear this ref because
-  // there is no button trigger to restore focus to.
   const menuTriggerRef = useRef<HTMLButtonElement | null>(null);
 
   useEffect(() => {
@@ -53,27 +53,17 @@ export const Home: React.FC<HomeProps> = ({
     return unsub;
   }, []);
 
-  // Deduplicate history items so unique tracks appear in "Recently Played"
-  const recentHistoryTracks: Track[] = [];
-  const seenIds = new Set<string>();
+  // Deduplicate playback history items
+  const recentHistoryTracks = useMemo(
+    () => getUniqueHistoryTracks(historyItems, 6),
+    [historyItems]
+  );
 
-  for (const item of historyItems) {
-    if (!seenIds.has(item.track.id)) {
-      seenIds.add(item.track.id);
-      recentHistoryTracks.push(item.track);
-
-      if (recentHistoryTracks.length >= 4) break;
-    }
-  }
-
-  // Take up to 4 most recently added tracks for the quick access preview
-  const recentTracks = [...tracks]
-    .sort(
-      (a, b) =>
-        (parseInt(b.date_added, 10) || 0) -
-        (parseInt(a.date_added, 10) || 0)
-    )
-    .slice(0, 4);
+  // Derive recently added tracks independently from library data
+  const recentTracks = useMemo(
+    () => getRecentlyAddedTracks(tracks, 6),
+    [tracks]
+  );
 
   const handleOpenMenu = (
     e: React.MouseEvent<HTMLButtonElement>,
@@ -82,9 +72,7 @@ export const Home: React.FC<HomeProps> = ({
     e.preventDefault();
     e.stopPropagation();
 
-    // Remember exactly which button opened the menu.
     menuTriggerRef.current = e.currentTarget;
-
     const rect = e.currentTarget.getBoundingClientRect();
 
     setMenuPosition({
@@ -100,8 +88,6 @@ export const Home: React.FC<HomeProps> = ({
     track: Track
   ) => {
     e.preventDefault();
-
-    // Context-menu opening has no button trigger to restore focus to.
     menuTriggerRef.current = null;
 
     setMenuPosition({
@@ -112,115 +98,178 @@ export const Home: React.FC<HomeProps> = ({
     setMenuTrack(track);
   };
 
+  // Determine active spotlight track (currently active track or most recently played track)
+  const spotlightTrack = currentTrack || (recentHistoryTracks.length > 0 ? recentHistoryTracks[0] : null);
+  const isSpotlightCurrent = currentTrack !== null && spotlightTrack?.id === currentTrack.id;
+  const isSpotlightPlaying = isSpotlightCurrent && isPlaying;
+
+  const handleSpotlightAction = () => {
+    if (!spotlightTrack) return;
+    if (isSpotlightCurrent) {
+      togglePlay();
+    } else {
+      playTrack(spotlightTrack, recentHistoryTracks.length > 0 ? recentHistoryTracks : tracks);
+    }
+  };
+
+  const getGreeting = () => {
+    const hour = new Date().getHours();
+    if (hour < 12) return 'Good morning';
+    if (hour < 18) return 'Good afternoon';
+    return 'Good evening';
+  };
+
   return (
     <div className="page-container motion-fade-in">
-      <header className="page-header">
-        <h1 className="page-title">Welcome to Endurance</h1>
-
-        <p className="page-subtitle">
-          A personal, local-first audio player inspired by Material 3
-          Expressive and Google Pixel aesthetics.
-        </p>
-      </header>
-
-      {/* Hero Welcome Card */}
-      <section className="m3-hero-card">
-        <div className="hero-content">
-          <div className="hero-badge">
-            <Sparkles size={14} /> Local Music Library Active
-          </div>
-
-          <h2 className="hero-title">Your Local Music Sanctuary</h2>
-
-          <p className="hero-description">
-            Endurance references your local audio files directly with zero
-            cloud telemetry. Enjoy synchronized lyrics, dynamic
-            artwork-derived palettes, and expressive motion.
+      {/* Compact Restrained Header */}
+      <header className="home-header">
+        <div className="home-header-text">
+          <h1 className="home-title">{getGreeting()}</h1>
+          <p className="home-subtitle">
+            {tracks.length > 0
+              ? `${tracks.length} ${tracks.length === 1 ? 'track' : 'tracks'} indexed across ${folders.length} ${
+                  folders.length === 1 ? 'folder' : 'folders'
+                }`
+              : 'Local-first offline music player'}
           </p>
+        </div>
 
-          <div className="hero-actions">
-            <Button
-              variant="filled"
-              icon={<FolderPlus size={18} />}
-              onClick={onAddFolder}
-            >
-              Add Music Folder
-            </Button>
+        <div className="home-header-actions">
+          <Button
+            variant="tonal"
+            size="sm"
+            icon={<FolderPlus size={16} />}
+            onClick={onAddFolder}
+          >
+            Add Folder
+          </Button>
 
+          {tracks.length > 0 && (
             <Button
-              variant="tonal"
-              icon={<Play size={18} />}
+              variant="text"
+              size="sm"
+              icon={<Compass size={16} />}
               onClick={onNavigateSongs}
             >
-              Browse Songs ({tracks.length})
+              Browse Library
             </Button>
-          </div>
+          )}
         </div>
-      </section>
+      </header>
 
-      {/* Quick Glance Section */}
-      <SectionHeader
-        title="Library Glance"
-        subtitle="Current status of your local audio collection"
-      />
+      {/* Listening Spotlight Section */}
+      {spotlightTrack ? (
+        <section
+          className="home-spotlight-card"
+          aria-label="Now Playing Spotlight"
+        >
+          <div className="home-spotlight-main">
+            {/* Artwork with subtle vinyl sleeve edge */}
+            <div className="home-spotlight-artwork-wrapper">
+              <div className="home-spotlight-jacket">
+                <TrackArtwork
+                  artworkHash={spotlightTrack.artwork_hash}
+                  alt={spotlightTrack.title}
+                  size="lg"
+                />
+              </div>
 
-      <div className="quick-glance-grid">
-        <Card variant="filled" interactive className="glance-card">
-          <div className="glance-icon-wrap">
-            <Music size={20} className="glance-icon" />
+              <div
+                className={`vinyl-sleeve-disc ${
+                  isSpotlightPlaying ? 'playing' : ''
+                }`}
+                aria-hidden="true"
+              />
+            </div>
+
+            <div className="home-spotlight-info">
+              <span className="home-spotlight-badge">
+                <Sparkles size={11} />
+                {isSpotlightCurrent
+                  ? isPlaying
+                    ? 'Now Playing'
+                    : 'Paused'
+                  : 'Jump Back In'}
+              </span>
+
+              <h2 className="home-spotlight-title truncate" title={spotlightTrack.title}>
+                {spotlightTrack.title}
+              </h2>
+
+              <p className="home-spotlight-meta truncate" title={`${spotlightTrack.artist}${spotlightTrack.album ? ` • ${spotlightTrack.album}` : ''}`}>
+                {spotlightTrack.artist}
+                {spotlightTrack.album ? ` • ${spotlightTrack.album}` : ''}
+              </p>
+            </div>
           </div>
 
-          <div className="glance-label">Total Tracks</div>
+          <div className="home-spotlight-actions">
+            <Button
+              variant="filled"
+              size="sm"
+              icon={
+                isSpotlightPlaying ? (
+                  <Pause size={16} fill="currentColor" />
+                ) : (
+                  <Play size={16} fill="currentColor" />
+                )
+              }
+              onClick={handleSpotlightAction}
+              aria-label={isSpotlightPlaying ? 'Pause' : 'Play track'}
+            >
+              {isSpotlightPlaying ? 'Pause' : 'Play'}
+            </Button>
 
-          <div className="glance-value">{tracks.length} Songs</div>
-
-          <p className="glance-hint">
-            {folders.length} configured{' '}
-            {folders.length === 1 ? 'directory' : 'directories'}
-          </p>
-        </Card>
-
-        <Card variant="filled" interactive className="glance-card">
-          <div className="glance-icon-wrap">
-            <ShieldCheck size={20} className="glance-icon" />
+            <IconButton
+              icon={<MoreHorizontal size={16} />}
+              aria-label="More options for current track"
+              size="sm"
+              onClick={(e) => handleOpenMenu(e, spotlightTrack)}
+            />
+          </div>
+        </section>
+      ) : tracks.length === 0 ? (
+        <section className="home-empty-card" aria-label="Empty Library">
+          <div className="home-empty-icon-wrap">
+            <FolderPlus size={24} />
           </div>
 
-          <div className="glance-label">Offline Core</div>
+          <h2 className="home-empty-title">
+            Your music sanctuary is empty
+          </h2>
 
-          <div className="glance-value">SQLite Database</div>
-
-          <p className="glance-hint">
-            Versioned local migrations; zero remote tracking
+          <p className="home-empty-desc">
+            Select a local folder on your computer containing MP3 or M4A audio files to get started.
           </p>
-        </Card>
 
-        <Card variant="filled" interactive className="glance-card">
-          <div className="glance-icon-wrap">
-            <Zap size={20} className="glance-icon" />
-          </div>
+          <Button
+            variant="filled"
+            icon={<FolderPlus size={16} />}
+            onClick={onAddFolder}
+          >
+            Choose Music Directory
+          </Button>
+        </section>
+      ) : null}
 
-          <div className="glance-label">Formats Supported</div>
-
-          <div className="glance-value">MP3 & M4A</div>
-
-          <p className="glance-hint">
-            Fast rescan caching via file size & modification time
-          </p>
-        </Card>
-      </div>
-
-      {/* Recently Played Section */}
+      {/* Recently Played Collection */}
       {recentHistoryTracks.length > 0 && (
-        <>
+        <section className="home-section" aria-label="Recently Played Tracks">
           <SectionHeader
             title="Recently Played"
             subtitle="Pick up where you left off"
+            action={
+              <Button
+                variant="text"
+                size="sm"
+                onClick={onNavigateSongs}
+              >
+                View Library
+              </Button>
+            }
           />
 
-          <div
-            className="demo-cards-grid"
-            style={{ marginBottom: 'var(--space-3xl)' }}
-          >
+          <div className="home-cards-grid">
             {recentHistoryTracks.map((track) => {
               const isCurrentTrack = currentTrack?.id === track.id;
               const isCardPlaying = isCurrentTrack && isPlaying;
@@ -236,75 +285,76 @@ export const Home: React.FC<HomeProps> = ({
               return (
                 <Card
                   key={`hist_${track.id}`}
-                  variant="elevated"
+                  variant="filled"
                   interactive
                   padding="sm"
-                  className="demo-album-card"
+                  className="home-track-card"
                   onClick={handleCardClick}
                   onContextMenu={(e) => handleContextMenu(e, track)}
-                  aria-label={`${isCardPlaying ? 'Pause' : 'Play'} ${
-                    track.title
-                  }`}
+                  aria-label={`${isCardPlaying ? 'Pause' : 'Play'} ${track.title}`}
                 >
-                  <div className="demo-album-artwork">
+                  <div className="home-track-artwork-wrap">
                     <TrackArtwork
                       artworkHash={track.artwork_hash}
                       alt={track.title}
                       size="lg"
                     />
 
-                    <div className="demo-album-play-overlay">
-                      {isCardPlaying ? (
-                        <Pause size={20} fill="currentColor" />
-                      ) : (
-                        <Play size={20} fill="currentColor" />
-                      )}
+                    <div className="home-track-play-overlay">
+                      <div className="home-track-play-btn-circle">
+                        {isCardPlaying ? (
+                          <Pause size={18} fill="currentColor" />
+                        ) : (
+                          <Play size={18} fill="currentColor" />
+                        )}
+                      </div>
                     </div>
                   </div>
 
-                  <div className="demo-album-card-header">
-                    <div className="demo-album-meta-wrap">
-                      <div className="demo-album-title truncate">
-                        {track.title}
-                      </div>
-
-                      <div className="demo-album-artist truncate">
-                        {track.artist}
-                      </div>
+                  <div className="home-track-card-body">
+                    <div className="home-track-title" title={track.title}>
+                      {track.title}
                     </div>
 
-                    <IconButton
-                      icon={<MoreHorizontal size={14} />}
-                      aria-label="More options"
-                      size="sm"
-                      onClick={(e) => handleOpenMenu(e, track)}
-                    />
+                    <div className="home-track-footer">
+                      <span className="home-track-artist truncate" title={track.artist}>
+                        {track.artist}
+                      </span>
+
+                      <IconButton
+                        icon={<MoreHorizontal size={14} />}
+                        aria-label="More options"
+                        size="sm"
+                        className="home-track-more-btn"
+                        onClick={(e) => handleOpenMenu(e, track)}
+                      />
+                    </div>
                   </div>
                 </Card>
               );
             })}
           </div>
-        </>
+        </section>
       )}
 
-      {/* Recently Added Section */}
-      {recentTracks.length > 0 ? (
-        <>
+      {/* Recently Added Collection */}
+      {recentTracks.length > 0 && (
+        <section className="home-section" aria-label="Recently Added Tracks">
           <SectionHeader
-            title="Recently Added Tracks"
-            subtitle="Audio tracks recently indexed in your library"
+            title="Recently Added"
+            subtitle="Newest indexed audio files in your library"
             action={
               <Button
                 variant="text"
                 size="sm"
                 onClick={onNavigateSongs}
               >
-                View All
+                View All ({tracks.length})
               </Button>
             }
           />
 
-          <div className="demo-cards-grid">
+          <div className="home-cards-grid">
             {recentTracks.map((track) => {
               const isCurrentTrack = currentTrack?.id === track.id;
               const isCardPlaying = isCurrentTrack && isPlaying;
@@ -320,87 +370,56 @@ export const Home: React.FC<HomeProps> = ({
               return (
                 <Card
                   key={track.id}
-                  variant="elevated"
+                  variant="filled"
                   interactive
                   padding="sm"
-                  className="demo-album-card"
+                  className="home-track-card"
                   onClick={handleCardClick}
                   onContextMenu={(e) => handleContextMenu(e, track)}
-                  aria-label={`${isCardPlaying ? 'Pause' : 'Play'} ${
-                    track.title
-                  }`}
+                  aria-label={`${isCardPlaying ? 'Pause' : 'Play'} ${track.title}`}
                 >
-                  <div className="demo-album-artwork">
+                  <div className="home-track-artwork-wrap">
                     <TrackArtwork
                       artworkHash={track.artwork_hash}
                       alt={track.title}
                       size="lg"
                     />
 
-                    <div className="demo-album-play-overlay">
-                      {isCardPlaying ? (
-                        <Pause size={20} fill="currentColor" />
-                      ) : (
-                        <Play size={20} fill="currentColor" />
-                      )}
+                    <div className="home-track-play-overlay">
+                      <div className="home-track-play-btn-circle">
+                        {isCardPlaying ? (
+                          <Pause size={18} fill="currentColor" />
+                        ) : (
+                          <Play size={18} fill="currentColor" />
+                        )}
+                      </div>
                     </div>
                   </div>
 
-                  <div className="demo-album-card-header">
-                    <div className="demo-album-meta-wrap">
-                      <div className="demo-album-title truncate">
-                        {track.title}
-                      </div>
-
-                      <div className="demo-album-artist truncate">
-                        {track.artist}
-                      </div>
+                  <div className="home-track-card-body">
+                    <div className="home-track-title" title={track.title}>
+                      {track.title}
                     </div>
 
-                    <IconButton
-                      icon={<MoreHorizontal size={14} />}
-                      aria-label="More options"
-                      size="sm"
-                      onClick={(e) => handleOpenMenu(e, track)}
-                    />
+                    <div className="home-track-footer">
+                      <span className="home-track-artist truncate" title={track.artist}>
+                        {track.artist}
+                      </span>
+
+                      <IconButton
+                        icon={<MoreHorizontal size={14} />}
+                        aria-label="More options"
+                        size="sm"
+                        className="home-track-more-btn"
+                        onClick={(e) => handleOpenMenu(e, track)}
+                      />
+                    </div>
                   </div>
                 </Card>
               );
             })}
           </div>
-        </>
-      ) : (
-        <>
-          <SectionHeader
-            title="Get Started"
-            subtitle="Add a music directory to build your library"
-          />
-
-          <Card
-            variant="outlined"
-            padding="lg"
-            className="home-empty-card"
-          >
-            <FolderPlus size={32} className="home-empty-icon" />
-
-            <h3 className="home-empty-title">
-              Your library is currently empty
-            </h3>
-
-            <p className="home-empty-desc">
-              Choose a folder containing MP3 or M4A music files to begin
-              enjoying Endurance.
-            </p>
-
-            <Button
-              variant="filled"
-              icon={<FolderPlus size={16} />}
-              onClick={onAddFolder}
-            >
-              Choose Music Directory
-            </Button>
-          </Card>
-        </>
+        </section>
       )}
 
       {/* Contextual Song Action Menu */}

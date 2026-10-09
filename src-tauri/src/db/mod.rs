@@ -161,6 +161,57 @@ impl Database {
         Ok(tracks)
     }
 
+    pub fn get_track_by_path(&self, file_path: &str) -> Result<Option<Track>, String> {
+        let conn = self.conn.lock().map_err(|e| e.to_string())?;
+        let mut stmt = conn
+            .prepare(
+                r#"
+                SELECT 
+                    id, file_path, file_name, file_size, modified_time,
+                    title, artist, album, album_artist, genre,
+                    year, track_number, disc_number, duration, artwork_hash,
+                    is_favorite, is_available, date_added, last_scanned
+                FROM tracks
+                WHERE file_path = ?1
+                "#,
+            )
+            .map_err(|e| e.to_string())?;
+
+        let mut rows = stmt
+            .query_map(params![file_path], |row| {
+                let is_fav_int: i32 = row.get(15)?;
+                let is_avail_int: i32 = row.get(16)?;
+                Ok(Track {
+                    id: row.get(0)?,
+                    file_path: row.get(1)?,
+                    file_name: row.get(2)?,
+                    file_size: row.get::<_, i64>(3)? as u64,
+                    modified_time: row.get::<_, i64>(4)? as u64,
+                    title: row.get(5)?,
+                    artist: row.get(6)?,
+                    album: row.get(7)?,
+                    album_artist: row.get(8)?,
+                    genre: row.get(9)?,
+                    year: row.get(10)?,
+                    track_number: row.get(11)?,
+                    disc_number: row.get(12)?,
+                    duration: row.get(13)?,
+                    artwork_hash: row.get(14)?,
+                    is_favorite: is_fav_int == 1,
+                    is_available: is_avail_int == 1,
+                    date_added: row.get(17)?,
+                    last_scanned: row.get(18)?,
+                })
+            })
+            .map_err(|e| e.to_string())?;
+
+        if let Some(row) = rows.next() {
+            Ok(Some(row.map_err(|e| e.to_string())?))
+        } else {
+            Ok(None)
+        }
+    }
+
     /// Fast lookup of existing (file_size, modified_time, is_available) for all tracks currently in DB.
     /// Used by the scanner to avoid re-parsing unchanged files.
     pub fn get_track_cache_map(&self) -> Result<HashMap<String, (u64, u64, bool)>, String> {
