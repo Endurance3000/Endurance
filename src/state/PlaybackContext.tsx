@@ -30,11 +30,18 @@ import {
 } from "../services/audio/queueHelper";
 import { historyService } from "../services/history/historyService";
 import { preferencesService } from "../services/preferences/preferencesService";
+import { libraryService } from "../services/library/libraryService";
 import { playbackBridge } from "../services/playback/playbackBridge";
 import {
   createPlaybackSnapshot,
   PlaybackSnapshot,
 } from "../services/playback/playbackProtocol";
+import {
+  PLAYBACK_SESSION_PREF_KEY,
+  SessionWriteCoordinator,
+  deserializeSession,
+  reconcileSessionTracks,
+} from "../services/playback/playbackSessionHelper";
 import { useTheme } from "./ThemeContext";
 
 import {
@@ -77,6 +84,13 @@ export const PlaybackProvider: React.FC<{ children: React.ReactNode }> = ({
   const hasRecordedHistoryRef = useRef<boolean>(false);
   const playbackRevisionRef = useRef(0);
   const latestPlaybackSnapshotRef = useRef<PlaybackSnapshot | null>(null);
+
+  // Session persistence and restoration coordination
+  const sessionCoordinatorRef = useRef<SessionWriteCoordinator>(
+    new SessionWriteCoordinator()
+  );
+  const hasUserActedRef = useRef<boolean>(false);
+  const isSessionRestoredRef = useRef<boolean>(false);
 
   // Refs for callbacks to prevent stale state in audio event listeners
   const stateRef = useRef({
@@ -189,6 +203,18 @@ export const PlaybackProvider: React.FC<{ children: React.ReactNode }> = ({
     });
   }, []);
 
+  // Best-effort flush on page/window unload
+  useEffect(() => {
+    const handleBeforeUnload = () => {
+      void sessionCoordinatorRef.current.flushImmediate(stateRef.current);
+    };
+    window.addEventListener("beforeunload", handleBeforeUnload);
+    return () => {
+      window.removeEventListener("beforeunload", handleBeforeUnload);
+      sessionCoordinatorRef.current.cancelPending();
+    };
+  }, []);
+
   // Connect AudioEngine callbacks
   useEffect(() => {
     audioEngine.setVolume(volume);
@@ -204,6 +230,12 @@ export const PlaybackProvider: React.FC<{ children: React.ReactNode }> = ({
       },
       onTimeUpdate: (time) => {
         setCurrentTime(time);
+
+        // Throttle session position persistence during active playback (~every 5s)
+        sessionCoordinatorRef.current.scheduleThrottledSave(
+          () => stateRef.current,
+          5000
+        );
 
         // Check meaningful playback threshold for history (>15 seconds or >30% duration)
         const track = stateRef.current.currentTrack;
@@ -251,6 +283,7 @@ export const PlaybackProvider: React.FC<{ children: React.ReactNode }> = ({
 
   const playTrack = useCallback(
     async (track: Track, newQueue?: Track[]) => {
+      hasUserActedRef.current = true;
       setPlaybackError(null);
       hasRecordedHistoryRef.current = false;
       let targetQueue = stateRef.current.playbackQueue;
@@ -283,14 +316,24 @@ export const PlaybackProvider: React.FC<{ children: React.ReactNode }> = ({
       // Trigger dynamic color adaptation based on new artwork
       applyTrackArtworkColors(track);
 
+      void sessionCoordinatorRef.current.flushImmediate({
+        currentTrack: track,
+        currentTime: 0,
+        originalQueue: targetOriginal,
+        playbackQueue: targetQueue,
+        currentIndex: resolvedIndex,
+      });
+
       await audioEngine.loadAndPlay(track.file_path);
     },
     [applyTrackArtworkColors],
   );
 
   const togglePlay = useCallback(async () => {
+    hasUserActedRef.current = true;
     if (stateRef.current.isPlaying) {
       audioEngine.pause();
+      void sessionCoordinatorRef.current.flushImmediate(stateRef.current);
     } else {
       if (stateRef.current.currentTrack) {
         await audioEngine.play();
@@ -302,19 +345,28 @@ export const PlaybackProvider: React.FC<{ children: React.ReactNode }> = ({
   }, [playTrack]);
 
   const pause = useCallback(() => {
+    hasUserActedRef.current = true;
     audioEngine.pause();
+    void sessionCoordinatorRef.current.flushImmediate(stateRef.current);
   }, []);
 
   const resume = useCallback(async () => {
+    hasUserActedRef.current = true;
     await audioEngine.play();
   }, []);
 
   const seek = useCallback((seconds: number) => {
+    hasUserActedRef.current = true;
     audioEngine.seek(seconds);
     setCurrentTime(seconds);
+    void sessionCoordinatorRef.current.flushImmediate({
+      ...stateRef.current,
+      currentTime: seconds,
+    });
   }, []);
 
   const nextTrack = useCallback(async () => {
+    hasUserActedRef.current = true;
     const {
       playbackQueue: queue,
       currentIndex: idx,
@@ -334,6 +386,12 @@ export const PlaybackProvider: React.FC<{ children: React.ReactNode }> = ({
         setCurrentTime(0);
         setDuration(nextResult.track.duration || 0);
         applyTrackArtworkColors(nextResult.track);
+        void sessionCoordinatorRef.current.flushImmediate({
+          ...stateRef.current,
+          currentTrack: nextResult.track,
+          currentIndex: nextResult.index,
+          currentTime: 0,
+        });
         await audioEngine.loadAndPlay(nextResult.track.file_path);
       }
     } else {
@@ -341,10 +399,15 @@ export const PlaybackProvider: React.FC<{ children: React.ReactNode }> = ({
       audioEngine.stop();
       setIsPlaying(false);
       setCurrentTime(0);
+      void sessionCoordinatorRef.current.flushImmediate({
+        ...stateRef.current,
+        currentTime: 0,
+      });
     }
   }, [seek, applyTrackArtworkColors]);
 
   const prevTrack = useCallback(async () => {
+    hasUserActedRef.current = true;
     const {
       playbackQueue: queue,
       currentIndex: idx,
@@ -364,6 +427,12 @@ export const PlaybackProvider: React.FC<{ children: React.ReactNode }> = ({
         setCurrentTime(0);
         setDuration(prevResult.track.duration || 0);
         applyTrackArtworkColors(prevResult.track);
+        void sessionCoordinatorRef.current.flushImmediate({
+          ...stateRef.current,
+          currentTrack: prevResult.track,
+          currentIndex: prevResult.index,
+          currentTime: 0,
+        });
         await audioEngine.loadAndPlay(prevResult.track.file_path);
       }
     }
@@ -389,6 +458,12 @@ export const PlaybackProvider: React.FC<{ children: React.ReactNode }> = ({
         setCurrentTime(0);
         setDuration(nextResult.track.duration || 0);
         applyTrackArtworkColors(nextResult.track);
+        void sessionCoordinatorRef.current.flushImmediate({
+          ...stateRef.current,
+          currentTrack: nextResult.track,
+          currentIndex: nextResult.index,
+          currentTime: 0,
+        });
         await audioEngine.loadAndPlay(nextResult.track.file_path);
       }
     } else {
@@ -396,65 +471,111 @@ export const PlaybackProvider: React.FC<{ children: React.ReactNode }> = ({
       audioEngine.stop();
       setIsPlaying(false);
       setCurrentTime(0);
+      void sessionCoordinatorRef.current.flushImmediate({
+        ...stateRef.current,
+        currentTime: 0,
+      });
     }
   }, [seek, applyTrackArtworkColors]);
 
   // Queue Operations
   const addToQueue = useCallback((tracks: Track | Track[]) => {
+    hasUserActedRef.current = true;
     const { playbackQueue: currentQ, currentIndex: currentIdx } =
       stateRef.current;
     const result = addToQueueHelper(currentQ, currentIdx, tracks);
     setPlaybackQueue(result.queue);
     setOriginalQueue(result.queue);
     setCurrentIndex(result.currentIndex);
+    void sessionCoordinatorRef.current.flushImmediate({
+      ...stateRef.current,
+      playbackQueue: result.queue,
+      originalQueue: result.queue,
+      currentIndex: result.currentIndex,
+    });
   }, []);
 
   const playNext = useCallback((track: Track) => {
+    hasUserActedRef.current = true;
     const { playbackQueue: currentQ, currentIndex: currentIdx } =
       stateRef.current;
     const result = playNextHelper(currentQ, currentIdx, track);
     setPlaybackQueue(result.queue);
     setOriginalQueue(result.queue);
     setCurrentIndex(result.currentIndex);
+    void sessionCoordinatorRef.current.flushImmediate({
+      ...stateRef.current,
+      playbackQueue: result.queue,
+      originalQueue: result.queue,
+      currentIndex: result.currentIndex,
+    });
   }, []);
 
   const removeFromQueue = useCallback((index: number) => {
+    hasUserActedRef.current = true;
     const { playbackQueue: currentQ, currentIndex: currentIdx } =
       stateRef.current;
     const result = removeFromQueueHelper(currentQ, currentIdx, index);
     setPlaybackQueue(result.queue);
     setOriginalQueue(result.queue);
     setCurrentIndex(result.currentIndex);
+    void sessionCoordinatorRef.current.flushImmediate({
+      ...stateRef.current,
+      playbackQueue: result.queue,
+      originalQueue: result.queue,
+      currentIndex: result.currentIndex,
+    });
   }, []);
 
   const reorderQueue = useCallback((fromIndex: number, toIndex: number) => {
+    hasUserActedRef.current = true;
     const { playbackQueue: currentQ, currentIndex: currentIdx } =
       stateRef.current;
     const result = reorderQueueHelper(currentQ, currentIdx, fromIndex, toIndex);
     setPlaybackQueue(result.queue);
     setOriginalQueue(result.queue);
     setCurrentIndex(result.currentIndex);
+    void sessionCoordinatorRef.current.flushImmediate({
+      ...stateRef.current,
+      playbackQueue: result.queue,
+      originalQueue: result.queue,
+      currentIndex: result.currentIndex,
+    });
   }, []);
 
   const clearQueue = useCallback(() => {
+    hasUserActedRef.current = true;
     const { playbackQueue: currentQ, currentIndex: currentIdx } =
       stateRef.current;
     const result = clearQueueHelper(currentQ, currentIdx);
     setPlaybackQueue(result.queue);
     setOriginalQueue(result.queue);
     setCurrentIndex(result.currentIndex);
+    void sessionCoordinatorRef.current.flushImmediate({
+      ...stateRef.current,
+      playbackQueue: result.queue,
+      originalQueue: result.queue,
+      currentIndex: result.currentIndex,
+    });
   }, []);
 
   const clearUpcomingQueue = useCallback(() => {
+    hasUserActedRef.current = true;
     const { playbackQueue: currentQ, currentIndex: currentIdx } =
       stateRef.current;
     const result = clearUpcomingHelper(currentQ, currentIdx);
     setPlaybackQueue(result.queue);
     setOriginalQueue(result.queue);
+    void sessionCoordinatorRef.current.flushImmediate({
+      ...stateRef.current,
+      playbackQueue: result.queue,
+      originalQueue: result.queue,
+    });
   }, []);
 
   const playQueueItem = useCallback(
     async (index: number) => {
+      hasUserActedRef.current = true;
       const { playbackQueue: queue } = stateRef.current;
       if (index < 0 || index >= queue.length) return;
       const track = queue[index];
@@ -465,6 +586,12 @@ export const PlaybackProvider: React.FC<{ children: React.ReactNode }> = ({
       setCurrentTime(0);
       setDuration(track.duration || 0);
       applyTrackArtworkColors(track);
+      void sessionCoordinatorRef.current.flushImmediate({
+        ...stateRef.current,
+        currentTrack: track,
+        currentIndex: index,
+        currentTime: 0,
+      });
       await audioEngine.loadAndPlay(track.file_path);
     },
     [applyTrackArtworkColors],
@@ -472,6 +599,7 @@ export const PlaybackProvider: React.FC<{ children: React.ReactNode }> = ({
 
   const playTrackPreservingQueue = useCallback(
     async (track: Track) => {
+      hasUserActedRef.current = true;
       const { playbackQueue: currentQ, currentIndex: currentIdx } =
         stateRef.current;
       const result = playTrackPreservingQueueHelper(
@@ -488,6 +616,14 @@ export const PlaybackProvider: React.FC<{ children: React.ReactNode }> = ({
       setCurrentTime(0);
       setDuration(track.duration || 0);
       applyTrackArtworkColors(track);
+      void sessionCoordinatorRef.current.flushImmediate({
+        ...stateRef.current,
+        currentTrack: track,
+        playbackQueue: result.queue,
+        originalQueue: result.queue,
+        currentIndex: result.currentIndex,
+        currentTime: 0,
+      });
       await audioEngine.loadAndPlay(track.file_path);
     },
     [applyTrackArtworkColors],
@@ -521,6 +657,7 @@ export const PlaybackProvider: React.FC<{ children: React.ReactNode }> = ({
   }, []);
 
   const shuffleQueue = useCallback(() => {
+    hasUserActedRef.current = true;
     const { playbackQueue: currentQ, currentIndex: currentIdx } =
       stateRef.current;
     const result = shuffleQueueHelper(currentQ, currentIdx);
@@ -529,9 +666,16 @@ export const PlaybackProvider: React.FC<{ children: React.ReactNode }> = ({
     setCurrentIndex(result.currentIndex);
     setShuffleEnabled(true);
     preferencesService.set("shuffle", "true");
+    void sessionCoordinatorRef.current.flushImmediate({
+      ...stateRef.current,
+      playbackQueue: result.queue,
+      originalQueue: result.queue,
+      currentIndex: result.currentIndex,
+    });
   }, []);
 
   const toggleShuffle = useCallback(() => {
+    hasUserActedRef.current = true;
     const {
       playbackQueue: currentQ,
       currentIndex: currentIdx,
@@ -546,6 +690,12 @@ export const PlaybackProvider: React.FC<{ children: React.ReactNode }> = ({
       setCurrentIndex(result.currentIndex);
       setShuffleEnabled(false);
       preferencesService.set("shuffle", "false");
+      void sessionCoordinatorRef.current.flushImmediate({
+        ...stateRef.current,
+        playbackQueue: result.queue,
+        originalQueue: result.queue,
+        currentIndex: result.currentIndex,
+      });
     } else {
       // Turn Shuffle ON -> fresh randomized permutation with Fisher-Yates
       const result = shuffleQueueHelper(currentQ, currentIdx);
@@ -554,11 +704,18 @@ export const PlaybackProvider: React.FC<{ children: React.ReactNode }> = ({
       setCurrentIndex(result.currentIndex);
       setShuffleEnabled(true);
       preferencesService.set("shuffle", "true");
+      void sessionCoordinatorRef.current.flushImmediate({
+        ...stateRef.current,
+        playbackQueue: result.queue,
+        originalQueue: result.queue,
+        currentIndex: result.currentIndex,
+      });
     }
   }, []);
 
   const shuffleAll = useCallback(
     async (allTracks: Track[]) => {
+      hasUserActedRef.current = true;
       if (!allTracks || allTracks.length === 0) return;
       const { queue, firstTrack } = shuffleAllHelper(allTracks);
       if (!firstTrack) return;
@@ -575,6 +732,14 @@ export const PlaybackProvider: React.FC<{ children: React.ReactNode }> = ({
       setDuration(firstTrack.duration || 0);
 
       applyTrackArtworkColors(firstTrack);
+      void sessionCoordinatorRef.current.flushImmediate({
+        ...stateRef.current,
+        currentTrack: firstTrack,
+        playbackQueue: queue,
+        originalQueue: queue,
+        currentIndex: 0,
+        currentTime: 0,
+      });
       await audioEngine.loadAndPlay(firstTrack.file_path);
     },
     [applyTrackArtworkColors],
@@ -590,6 +755,82 @@ export const PlaybackProvider: React.FC<{ children: React.ReactNode }> = ({
       preferencesService.set("repeat", next);
       return next;
     });
+  }, []);
+
+  const toggleFavorite = useCallback(
+    async (trackId?: string): Promise<boolean> => {
+      const targetId = trackId || stateRef.current.currentTrack?.id;
+      if (!targetId) return false;
+
+      // Optimistic update in playback state
+      setCurrentTrack((prev) =>
+        prev && prev.id === targetId ? { ...prev, is_favorite: !prev.is_favorite } : prev
+      );
+      setOriginalQueue((prev) =>
+        prev.map((t) => (t.id === targetId ? { ...t, is_favorite: !t.is_favorite } : t))
+      );
+      setPlaybackQueue((prev) =>
+        prev.map((t) => (t.id === targetId ? { ...t, is_favorite: !t.is_favorite } : t))
+      );
+
+      try {
+        const newState = await libraryService.toggleTrackFavorite(targetId);
+        setCurrentTrack((prev) =>
+          prev && prev.id === targetId ? { ...prev, is_favorite: newState } : prev
+        );
+        setOriginalQueue((prev) =>
+          prev.map((t) => (t.id === targetId ? { ...t, is_favorite: newState } : t))
+        );
+        setPlaybackQueue((prev) =>
+          prev.map((t) => (t.id === targetId ? { ...t, is_favorite: newState } : t))
+        );
+
+        window.dispatchEvent(
+          new CustomEvent("endurance:favorite-toggled", {
+            detail: { trackId: targetId, isFavorite: newState },
+          })
+        );
+        return newState;
+      } catch (err) {
+        console.error("Failed to toggle track favorite in playback:", err);
+        // Revert on error
+        setCurrentTrack((prev) =>
+          prev && prev.id === targetId ? { ...prev, is_favorite: !prev.is_favorite } : prev
+        );
+        setOriginalQueue((prev) =>
+          prev.map((t) => (t.id === targetId ? { ...t, is_favorite: !t.is_favorite } : t))
+        );
+        setPlaybackQueue((prev) =>
+          prev.map((t) => (t.id === targetId ? { ...t, is_favorite: !t.is_favorite } : t))
+        );
+        throw err;
+      }
+    },
+    [],
+  );
+
+  // Sync external favorite toggles (from Songs page, Favorites page, etc.)
+  useEffect(() => {
+    const handleFavToggled = (e: Event) => {
+      const custom = e as CustomEvent<{ trackId: string; isFavorite: boolean }>;
+      if (custom.detail) {
+        const { trackId, isFavorite } = custom.detail;
+        setCurrentTrack((prev) =>
+          prev && prev.id === trackId && prev.is_favorite !== isFavorite
+            ? { ...prev, is_favorite: isFavorite }
+            : prev
+        );
+        setOriginalQueue((prev) =>
+          prev.map((t) => (t.id === trackId && t.is_favorite !== isFavorite ? { ...t, is_favorite: isFavorite } : t))
+        );
+        setPlaybackQueue((prev) =>
+          prev.map((t) => (t.id === trackId && t.is_favorite !== isFavorite ? { ...t, is_favorite: isFavorite } : t))
+        );
+      }
+    };
+
+    window.addEventListener("endurance:favorite-toggled", handleFavToggled);
+    return () => window.removeEventListener("endurance:favorite-toggled", handleFavToggled);
   }, []);
 
   const clearError = useCallback(() => {
@@ -618,6 +859,9 @@ export const PlaybackProvider: React.FC<{ children: React.ReactNode }> = ({
           toggleMute,
           toggleShuffle,
           toggleRepeat,
+          toggleFavorite: async (trackId: string) => {
+            await toggleFavorite(trackId);
+          },
         });
 
         if (disposed) {
@@ -650,7 +894,130 @@ export const PlaybackProvider: React.FC<{ children: React.ReactNode }> = ({
     toggleMute,
     toggleShuffle,
     toggleRepeat,
+    toggleFavorite,
   ]);
+
+  // Handle files opened via CLI/OS and restore persisted playback session on startup
+  useEffect(() => {
+    let isDisposed = false;
+    let unlistenFn: (() => void) | null = null;
+
+    const handleFiles = async (filePaths: string[]) => {
+      if (!filePaths || filePaths.length === 0) return;
+      hasUserActedRef.current = true;
+      const resolvedTracks: Track[] = [];
+      for (const path of filePaths) {
+        const track = await libraryService.getTrackForPath(path);
+        if (track) {
+          resolvedTracks.push(track);
+        }
+      }
+
+      if (!isDisposed && resolvedTracks.length > 0) {
+        await playTrack(resolvedTracks[0], resolvedTracks);
+      }
+    };
+
+    const initializeStartupSession = async () => {
+      // 1. Process pending startup files first (takes absolute priority over saved session)
+      try {
+        const pendingPaths = await libraryService.getPendingOpenFiles();
+        if (!isDisposed && pendingPaths.length > 0) {
+          await handleFiles(pendingPaths);
+          return;
+        }
+      } catch (err) {
+        console.warn("Failed to check pending open files:", err);
+      }
+
+      if (isDisposed || hasUserActedRef.current || isSessionRestoredRef.current) {
+        return;
+      }
+
+      // 2. Concurrently fetch library tracks and preferences
+      try {
+        const [prefs, allTracks] = await Promise.all([
+          preferencesService.loadAll(),
+          libraryService.getTracks(),
+        ]);
+
+        if (isDisposed || hasUserActedRef.current || isSessionRestoredRef.current) {
+          return;
+        }
+
+        const rawSession = prefs.get(PLAYBACK_SESSION_PREF_KEY);
+        const parsedSession = deserializeSession(rawSession);
+        if (!parsedSession || allTracks.length === 0) {
+          return;
+        }
+
+        const tracksMap = new Map<string, Track>();
+        for (const t of allTracks) {
+          tracksMap.set(t.id, t);
+        }
+
+        const reconciled = reconcileSessionTracks(parsedSession, tracksMap);
+        if (!reconciled || isDisposed || hasUserActedRef.current) {
+          return;
+        }
+
+        isSessionRestoredRef.current = true;
+
+        // Populate React queue and track state
+        setCurrentTrack(reconciled.currentTrack);
+        setOriginalQueue(reconciled.originalQueue);
+        setPlaybackQueue(reconciled.playbackQueue);
+        setCurrentIndex(reconciled.currentIndex);
+        setDuration(reconciled.currentTrack.duration || 0);
+
+        applyTrackArtworkColors(reconciled.currentTrack);
+
+        // Preload audio into <audio> element in strictly paused state
+        try {
+          const preloadResult = await audioEngine.preloadTrack(
+            reconciled.currentTrack.file_path,
+            reconciled.currentTime
+          );
+
+          if (!isDisposed && !hasUserActedRef.current) {
+            setCurrentTime(preloadResult.clampedTime);
+            if (preloadResult.duration > 0) {
+              setDuration(preloadResult.duration);
+            }
+          }
+        } catch (err) {
+          console.warn("Could not preload restored track audio:", err);
+          if (!isDisposed && !hasUserActedRef.current) {
+            setCurrentTime(0);
+          }
+        }
+      } catch (err) {
+        console.warn("Playback session restoration failed gracefully:", err);
+      }
+    };
+
+    // 2. Listen for runtime file open events
+    libraryService
+      .onOpenFiles((payload) => {
+        if (!isDisposed && payload.file_paths?.length > 0) {
+          void handleFiles(payload.file_paths);
+        }
+      })
+      .then((unlisten) => {
+        if (isDisposed) {
+          unlisten();
+        } else {
+          unlistenFn = unlisten;
+        }
+      });
+
+    void initializeStartupSession();
+
+    return () => {
+      isDisposed = true;
+      unlistenFn?.();
+    };
+  }, [playTrack, applyTrackArtworkColors]);
 
   // Global Keyboard Shortcuts (Space, ArrowLeft/Right, ArrowUp/Down, M)
   useEffect(() => {
@@ -714,6 +1081,7 @@ export const PlaybackProvider: React.FC<{ children: React.ReactNode }> = ({
         toggleMute,
         toggleShuffle,
         toggleRepeat,
+        toggleFavorite,
         clearError,
       }}
     >

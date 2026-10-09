@@ -14,6 +14,7 @@ export class AudioEngine {
   private audio: HTMLAudioElement;
   private callbacks: AudioEngineCallbacks = {};
   private currentSourcePath: string | null = null;
+  private isSeeking = false;
 
   constructor() {
     this.audio = new Audio();
@@ -26,7 +27,16 @@ export class AudioEngine {
   }
 
   private setupEventListeners() {
+    this.audio.addEventListener('seeking', () => {
+      this.isSeeking = true;
+    });
+
+    this.audio.addEventListener('seeked', () => {
+      this.isSeeking = false;
+    });
+
     this.audio.addEventListener('play', () => {
+      this.isSeeking = false;
       this.callbacks.onPlay?.();
       this.callbacks.onLoadingChange?.(false);
     });
@@ -46,18 +56,27 @@ export class AudioEngine {
     });
 
     this.audio.addEventListener('ended', () => {
+      this.isSeeking = false;
       this.callbacks.onEnded?.();
     });
 
     this.audio.addEventListener('waiting', () => {
-      this.callbacks.onLoadingChange?.(true);
+      if (!this.isSeeking) {
+        this.callbacks.onLoadingChange?.(true);
+      }
     });
 
     this.audio.addEventListener('canplay', () => {
       this.callbacks.onLoadingChange?.(false);
     });
 
+    this.audio.addEventListener('playing', () => {
+      this.isSeeking = false;
+      this.callbacks.onLoadingChange?.(false);
+    });
+
     this.audio.addEventListener('error', () => {
+      this.isSeeking = false;
       this.callbacks.onLoadingChange?.(false);
       const mediaError = this.audio.error;
       let message = 'Unable to play audio file.';
@@ -102,6 +121,7 @@ export class AudioEngine {
    * Loads a track and starts playback.
    */
   public async loadAndPlay(filePath: string): Promise<void> {
+    this.isSeeking = false;
     this.callbacks.onLoadingChange?.(true);
     const assetUrl = this.resolveSourceUrl(filePath);
 
@@ -123,6 +143,88 @@ export class AudioEngine {
       }
       this.callbacks.onError?.(`Playback error: ${errorMsg}`);
     }
+  }
+
+  /**
+   * Preloads a track into the audio element in a strictly paused state at a specific seek position.
+   * Waits for metadata readiness, clamps the target seek position against real duration,
+   * handles media load errors, and guarantees playback does not start.
+   */
+  public async preloadTrack(
+    filePath: string,
+    targetTime: number = 0
+  ): Promise<{ clampedTime: number; duration: number }> {
+    this.isSeeking = false;
+    this.callbacks.onLoadingChange?.(true);
+    const assetUrl = this.resolveSourceUrl(filePath);
+
+    this.currentSourcePath = filePath;
+    this.audio.src = assetUrl;
+    this.audio.load();
+
+    return new Promise((resolve, reject) => {
+      let resolved = false;
+
+      const cleanup = () => {
+        this.audio.removeEventListener('loadedmetadata', onMetadata);
+        this.audio.removeEventListener('error', onError);
+      };
+
+      const onMetadata = () => {
+        if (resolved) return;
+        resolved = true;
+        cleanup();
+
+        const duration =
+          this.audio.duration &&
+          !isNaN(this.audio.duration) &&
+          isFinite(this.audio.duration)
+            ? this.audio.duration
+            : 0;
+
+        const clamped =
+          duration > 0
+            ? Math.max(0, Math.min(targetTime, Math.max(0, duration - 0.5)))
+            : 0;
+
+        try {
+          if (clamped > 0) {
+            this.audio.currentTime = clamped;
+          }
+        } catch (e) {
+          console.warn('Could not set preloaded currentTime:', e);
+        }
+
+        this.callbacks.onLoadingChange?.(false);
+        this.callbacks.onTimeUpdate?.(clamped);
+        if (duration > 0) {
+          this.callbacks.onDurationChange?.(duration);
+        }
+
+        // Guarantee strictly paused state
+        this.audio.pause();
+        resolve({ clampedTime: clamped, duration });
+      };
+
+      const onError = () => {
+        if (resolved) return;
+        resolved = true;
+        cleanup();
+        this.callbacks.onLoadingChange?.(false);
+        reject(
+          new Error(
+            this.audio.error?.message || 'Failed to preload audio track'
+          )
+        );
+      };
+
+      if (this.audio.readyState >= 1) {
+        onMetadata();
+      } else {
+        this.audio.addEventListener('loadedmetadata', onMetadata);
+        this.audio.addEventListener('error', onError);
+      }
+    });
   }
 
   /**
@@ -153,6 +255,7 @@ export class AudioEngine {
   public seek(timeSeconds: number): void {
     if (isNaN(timeSeconds) || !isFinite(timeSeconds)) return;
     const target = Math.max(0, Math.min(this.audio.duration || 0, timeSeconds));
+    this.isSeeking = true;
     this.audio.currentTime = target;
   }
 

@@ -11,7 +11,7 @@ import './Pages.css';
 
 interface FavoritesProps {
   tracks: Track[];
-  onToggleFavorite: (trackId: string) => Promise<void>;
+  onToggleFavorite: (trackId: string) => Promise<boolean | void>;
   onBrowseSongs: () => void;
 }
 

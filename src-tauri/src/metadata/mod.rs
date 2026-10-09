@@ -43,76 +43,108 @@ impl Default for LoftyMetadataReader {
 
 impl MetadataReader for LoftyMetadataReader {
     fn read_metadata(&self, path: &Path) -> Result<RawMetadata, String> {
-        let tagged_file = Probe::open(path)
-            .map_err(|e| format!("Failed to open audio file: {}", e))?
-            .read()
-            .map_err(|e| format!("Failed to parse audio tags: {}", e))?;
-
-        let properties = tagged_file.properties();
-        let duration = properties.duration().as_secs_f64();
-
-        // Get primary tag or first available tag (ID3v2, ID3v1, MP4 ilst, etc.)
-        let tag = tagged_file.primary_tag().or_else(|| tagged_file.first_tag());
-
-        // Derive title fallback from filename if metadata tag is empty
         let filename_stem = path
             .file_stem()
             .and_then(|s| s.to_str())
             .unwrap_or("Unknown Track")
             .to_string();
 
-        let title = tag
-            .and_then(|t| t.title().as_deref().map(|s| s.trim().to_string()))
-            .filter(|s| !s.is_empty())
-            .unwrap_or(filename_stem);
+        let probe = Probe::open(path).map_err(|e| format!("Failed to open audio file: {}", e))?;
+        
+        match probe
+            .options(lofty::config::ParseOptions::new().parsing_mode(lofty::config::ParsingMode::Relaxed))
+            .read()
+        {
+            Ok(tagged_file) => {
+                let properties = tagged_file.properties();
+                let duration = properties.duration().as_secs_f64();
 
-        let artist = tag
-            .and_then(|t| t.artist().as_deref().map(|s| s.trim().to_string()))
-            .filter(|s| !s.is_empty())
-            .unwrap_or_else(|| "Unknown Artist".to_string());
+                // Get primary tag or first available tag (ID3v2, ID3v1, MP4 ilst, etc.)
+                let tag = tagged_file.primary_tag().or_else(|| tagged_file.first_tag());
 
-        let album = tag
-            .and_then(|t| t.album().as_deref().map(|s| s.trim().to_string()))
-            .filter(|s| !s.is_empty())
-            .unwrap_or_else(|| "Unknown Album".to_string());
+                let title = tag
+                    .and_then(|t| t.title().as_deref().map(|s| s.trim().to_string()))
+                    .filter(|s| !s.is_empty())
+                    .unwrap_or(filename_stem);
 
-        let genre = tag
-            .and_then(|t| t.genre().as_deref().map(|s| s.trim().to_string()))
-            .filter(|s| !s.is_empty());
+                let artist = tag
+                    .and_then(|t| t.artist().as_deref().map(|s| s.trim().to_string()))
+                    .filter(|s| !s.is_empty())
+                    .unwrap_or_else(|| "Unknown Artist".to_string());
 
-        let year = tag.and_then(|t| t.year());
-        let track_number = tag.and_then(|t| t.track());
-        let disc_number = tag.and_then(|t| t.disk());
+                let album = tag
+                    .and_then(|t| t.album().as_deref().map(|s| s.trim().to_string()))
+                    .filter(|s| !s.is_empty())
+                    .unwrap_or_else(|| "Unknown Album".to_string());
 
-        // Extract picture (FrontCover preferred, or first available)
-        let artwork = tag.and_then(|t| {
-            let pictures = t.pictures();
-            let pic = pictures
-                .iter()
-                .find(|p| p.pic_type() == lofty::picture::PictureType::CoverFront)
-                .or_else(|| pictures.first());
+                let genre = tag
+                    .and_then(|t| t.genre().as_deref().map(|s| s.trim().to_string()))
+                    .filter(|s| !s.is_empty());
 
-            pic.map(|p| ExtractedArtwork {
-                data: p.data().to_vec(),
-                mime_type: p
-                    .mime_type()
-                    .as_deref()
-                    .map(|m| m.as_str().to_string())
-                    .unwrap_or_else(|| "image/jpeg".to_string()),
-            })
-        });
+                let year = tag.and_then(|t| t.year());
+                let track_number = tag.and_then(|t| t.track());
+                let disc_number = tag.and_then(|t| t.disk());
 
-        Ok(RawMetadata {
-            title,
-            artist,
-            album,
-            album_artist: None,
-            genre,
-            year,
-            track_number,
-            disc_number,
-            duration,
-            artwork,
-        })
+                // Extract picture (CoverFront preferred, or first available)
+                let artwork = tag.and_then(|t| {
+                    let pictures = t.pictures();
+                    let pic = pictures
+                        .iter()
+                        .find(|p| p.pic_type() == lofty::picture::PictureType::CoverFront)
+                        .or_else(|| pictures.first());
+
+                    pic.map(|p| ExtractedArtwork {
+                        data: p.data().to_vec(),
+                        mime_type: p
+                            .mime_type()
+                            .as_deref()
+                            .map(|m| m.as_str().to_string())
+                            .unwrap_or_else(|| "image/jpeg".to_string()),
+                    })
+                });
+
+                Ok(RawMetadata {
+                    title,
+                    artist,
+                    album,
+                    album_artist: None,
+                    genre,
+                    year,
+                    track_number,
+                    disc_number,
+                    duration,
+                    artwork,
+                })
+            }
+            Err(tag_err) => {
+                // Fallback: If tag parsing fails (e.g. malformed or vendor-specific atoms),
+                // attempt to read stream audio properties directly without tags to preserve track playback & duration.
+                let prop_probe = Probe::open(path)
+                    .map_err(|e| format!("Failed to reopen audio file: {}", e))?;
+                match prop_probe
+                    .options(lofty::config::ParseOptions::new().read_tags(false))
+                    .read()
+                {
+                    Ok(tagged_file) => {
+                        let properties = tagged_file.properties();
+                        let duration = properties.duration().as_secs_f64();
+                        Ok(RawMetadata {
+                            title: filename_stem,
+                            artist: "Unknown Artist".to_string(),
+                            album: "Unknown Album".to_string(),
+                            album_artist: None,
+                            genre: None,
+                            year: None,
+                            track_number: None,
+                            disc_number: None,
+                            duration,
+                            artwork: None,
+                        })
+                    }
+                    Err(_) => Err(format!("Failed to parse audio tags or properties: {}", tag_err)),
+                }
+            }
+        }
     }
 }
+

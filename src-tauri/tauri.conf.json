@@ -57,6 +57,14 @@
       "icons/icon.icns",
       "icons/icon.png"
     ],
+    "fileAssociations": [
+      {
+        "ext": ["mp3", "m4a", "flac", "wav", "ogg", "opus", "aac", "aiff", "aif"],
+        "name": "Audio File",
+        "description": "Audio File",
+        "role": "Viewer"
+      }
+    ],
     "windows": {
       "certificateThumbprint": null,
       "digestAlgorithm": "sha256",

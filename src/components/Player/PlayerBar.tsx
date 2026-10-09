@@ -6,6 +6,7 @@ import {
   SkipForward,
   Shuffle,
   Repeat,
+  Heart,
   Volume2,
   Volume1,
   VolumeX,
@@ -48,6 +49,7 @@ export const PlayerBar: React.FC<PlayerBarProps> = ({ onToggleExpand, isExpanded
     toggleMute,
     toggleShuffle,
     toggleRepeat,
+    toggleFavorite,
     clearError,
     isQueueOpen,
     toggleQueue,
@@ -298,6 +300,35 @@ export const PlayerBar: React.FC<PlayerBarProps> = ({ onToggleExpand, isExpanded
           onClick={() => void miniPlayerService.open()}
           size="sm"
           className="player-extra-btn"
+        />
+
+        <IconButton
+          icon={
+            <Heart
+              size={18}
+              fill={currentTrack?.is_favorite ? 'currentColor' : 'none'}
+            />
+          }
+          aria-label={
+            currentTrack?.is_favorite
+              ? 'Remove from Favorites'
+              : 'Add to Favorites'
+          }
+          tooltip={
+            currentTrack?.is_favorite
+              ? 'Remove from Favorites'
+              : 'Add to Favorites'
+          }
+          disabled={!hasTrack}
+          className={`player-extra-btn player-fav-btn ${
+            currentTrack?.is_favorite ? 'is-favorite' : ''
+          }`}
+          onClick={() => {
+            if (currentTrack) {
+              toggleFavorite(currentTrack.id);
+            }
+          }}
+          size="sm"
         />
 
         <div className="player-volume-control">

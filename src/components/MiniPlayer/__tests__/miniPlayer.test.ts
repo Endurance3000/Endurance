@@ -19,6 +19,7 @@ function createSnapshot(
       album: "Album One",
       duration: 180,
       artworkHash: "artwork-hash-1",
+      isFavorite: false,
     },
     isPlaying: false,
     currentTime: 42,

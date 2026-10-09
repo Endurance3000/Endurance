@@ -33,7 +33,7 @@ pub async fn open_mini_player(app_handle: AppHandle) -> Result<(), String> {
     .min_inner_size(MINI_PLAYER_MIN_WIDTH, MINI_PLAYER_MIN_HEIGHT)
     .resizable(true)
     .decorations(true)
-    .visible(true)
+    .visible(false)
     .focused(true)
     .build();
 
@@ -41,6 +41,19 @@ pub async fn open_mini_player(app_handle: AppHandle) -> Result<(), String> {
         Ok(_) => Ok(()),
         Err(error) => Err(format!("Failed to create Mini Player: {error}")),
     }
+}
+
+#[tauri::command]
+pub fn show_mini_player(app_handle: AppHandle) -> Result<(), String> {
+    if let Some(window) = app_handle.get_webview_window(MINI_PLAYER_LABEL) {
+        window
+            .show()
+            .map_err(|error| format!("Failed to show Mini Player: {error}"))?;
+        window
+            .set_focus()
+            .map_err(|error| format!("Failed to focus Mini Player: {error}"))?;
+    }
+    Ok(())
 }
 
 #[tauri::command]

@@ -37,6 +37,20 @@
   background-color: var(--md-sys-color-surface-container-high);
 }
 
+.player-fav-btn {
+  color: var(--md-sys-color-on-surface-variant);
+  transition: color var(--motion-duration-short-2) var(--motion-easing-standard),
+              transform var(--motion-duration-short-1) var(--motion-easing-standard);
+}
+
+.player-fav-btn:hover:not(:disabled) {
+  color: var(--md-sys-color-tertiary);
+}
+
+.player-fav-btn.is-favorite {
+  color: var(--md-sys-color-tertiary);
+}
+
 .player-artwork-container {
   flex-shrink: 0;
   position: relative;

@@ -25,6 +25,8 @@
   display: flex;
   flex-direction: column;
   box-shadow: var(--elevation-3);
+  user-select: none;
+  -webkit-user-select: none;
   animation: queueSlideIn var(--motion-duration-medium-2) var(--motion-easing-emphasized-decelerate);
 }
 

@@ -1,5 +1,5 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { ChevronDown, Music2, FileEdit } from 'lucide-react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
+import { ChevronDown, Music2, FileEdit, Globe, AlertCircle, RotateCcw } from 'lucide-react';
 import { Track } from '../../types';
 import { usePlayback } from '../../state/PlaybackContext';
 import { lyricsService } from '../../services/lyrics/lyricsService';
@@ -7,16 +7,31 @@ import { findActiveLyricIndex, ParsedLyrics } from '../../services/lyrics/lrcPar
 import { libraryService } from '../../services/library/libraryService';
 import './MainPlayer.css';
 
+export type LyricsLifecycleStatus =
+  | 'idle'
+  | 'loading'
+  | 'lyrics-available'
+  | 'no-lyrics'
+  | 'error';
+
 interface MainPlayerProps {
   onClose: () => void;
   onEditLyrics?: (track: Track) => void;
+  onSearchLyrics?: (track: Track) => void;
 }
 
-export const MainPlayer: React.FC<MainPlayerProps> = ({ onClose, onEditLyrics }) => {
+export const MainPlayer: React.FC<MainPlayerProps> = ({
+  onClose,
+  onEditLyrics,
+  onSearchLyrics,
+}) => {
   const { currentTrack, currentTime, seek } = usePlayback();
+  const [lyricsStatus, setLyricsStatus] = useState<LyricsLifecycleStatus>('loading');
   const [lyricsData, setLyricsData] = useState<ParsedLyrics>({ type: 'none' });
+  const [lyricsError, setLyricsError] = useState<string | null>(null);
   const [artworkDataUri, setArtworkDataUri] = useState<string | null>(null);
 
+  const requestSeqRef = useRef<number>(0);
   const activeLineRef = useRef<HTMLDivElement | null>(null);
   const scrollContainerRef = useRef<HTMLDivElement | null>(null);
 
@@ -27,8 +42,6 @@ export const MainPlayer: React.FC<MainPlayerProps> = ({ onClose, onEditLyrics })
   const wasOpenRef = useRef(false);
 
   // Remember the element that opened the overlay.
-  // This lets MainPlayer restore focus without requiring the parent
-  // component to pass a trigger ref.
   useEffect(() => {
     openerRef.current =
       document.activeElement instanceof HTMLElement
@@ -51,26 +64,53 @@ export const MainPlayer: React.FC<MainPlayerProps> = ({ onClose, onEditLyrics })
     };
   }, []);
 
+  const loadLyricsForTrack = useCallback(
+    async (track: Track | null, bypassCache = true) => {
+      requestSeqRef.current += 1;
+      const currentSeq = requestSeqRef.current;
+
+      if (!track) {
+        setLyricsStatus('idle');
+        setLyricsData({ type: 'none' });
+        setLyricsError(null);
+        return;
+      }
+
+      setLyricsStatus('loading');
+      setLyricsData({ type: 'none' });
+      setLyricsError(null);
+
+      const filePath = track.file_path;
+
+      try {
+        const loaded = await lyricsService.getLyrics(filePath, bypassCache);
+        if (requestSeqRef.current !== currentSeq) {
+          return;
+        }
+
+        if (loaded.type === 'synced' || loaded.type === 'plain') {
+          setLyricsData(loaded);
+          setLyricsStatus('lyrics-available');
+        } else {
+          setLyricsData({ type: 'none' });
+          setLyricsStatus('no-lyrics');
+        }
+      } catch (err: unknown) {
+        if (requestSeqRef.current !== currentSeq) {
+          return;
+        }
+        console.warn('Failed to load track lyrics:', err);
+        setLyricsError(err instanceof Error ? err.message : 'Failed to read lyrics file');
+        setLyricsStatus('error');
+      }
+    },
+    []
+  );
+
   // Load lyrics when current track changes
   useEffect(() => {
-    let isMounted = true;
-    setLyricsData({ type: 'none' });
-
-    if (!currentTrack) {
-      return;
-    }
-
-    const filePath = currentTrack.file_path;
-    lyricsService.getLyrics(filePath, true).then((loaded) => {
-      if (isMounted) {
-        setLyricsData(loaded);
-      }
-    });
-
-    return () => {
-      isMounted = false;
-    };
-  }, [currentTrack?.id]);
+    void loadLyricsForTrack(currentTrack, true);
+  }, [currentTrack?.id, loadLyricsForTrack]);
 
   // Refresh lyrics on disk update
   useEffect(() => {
@@ -78,15 +118,13 @@ export const MainPlayer: React.FC<MainPlayerProps> = ({ onClose, onEditLyrics })
       const customEvent = e as CustomEvent<{ filePath?: string }>;
       if (!currentTrack) return;
       if (!customEvent.detail?.filePath || customEvent.detail.filePath === currentTrack.file_path) {
-        lyricsService.getLyrics(currentTrack.file_path, true).then((loaded) => {
-          setLyricsData(loaded);
-        });
+        void loadLyricsForTrack(currentTrack, true);
       }
     };
 
     window.addEventListener('endurance:lyrics-updated', handleLyricsUpdated);
     return () => window.removeEventListener('endurance:lyrics-updated', handleLyricsUpdated);
-  }, [currentTrack]);
+  }, [currentTrack, loadLyricsForTrack]);
 
   const handleEditLyrics = () => {
     if (!currentTrack) return;
@@ -95,6 +133,17 @@ export const MainPlayer: React.FC<MainPlayerProps> = ({ onClose, onEditLyrics })
     } else {
       window.dispatchEvent(
         new CustomEvent('endurance:open-lyrics-editor', { detail: { track: currentTrack } })
+      );
+    }
+  };
+
+  const handleSearchLyrics = () => {
+    if (!currentTrack) return;
+    if (onSearchLyrics) {
+      onSearchLyrics(currentTrack);
+    } else {
+      window.dispatchEvent(
+        new CustomEvent('endurance:open-lyrics-search', { detail: { track: currentTrack } })
       );
     }
   };
@@ -256,18 +305,12 @@ export const MainPlayer: React.FC<MainPlayerProps> = ({ onClose, onEditLyrics })
           hasLyrics ? 'has-lyrics' : 'no-lyrics'
         }`}
       >
-        {/* LEFT COLUMN: Large Artwork */}
+        {/* LEFT COLUMN: Artwork & Primary Track Metadata */}
         <section
-          className={`main-player-left ${
-            hasLyrics ? 'has-lyrics' : 'no-lyrics'
-          }`}
+          className="main-player-left"
           aria-label="Current Song Overview"
         >
-          <div
-            className={`main-player-artwork-wrap ${
-              hasLyrics ? 'artwork-standard' : 'artwork-expanded'
-            }`}
-          >
+          <div className="main-player-artwork-wrap">
             {artworkDataUri ? (
               <img
                 key={currentTrack.artwork_hash || currentTrack.id}
@@ -277,45 +320,54 @@ export const MainPlayer: React.FC<MainPlayerProps> = ({ onClose, onEditLyrics })
               />
             ) : (
               <Music2
-                size={hasLyrics ? 88 : 120}
+                size={80}
                 className="main-player-artwork-fallback"
               />
             )}
           </div>
 
-          {/* Title and artist underneath artwork ONLY rendered
-              when lyrics ARE available */}
-          {hasLyrics && (
-            <div
-              className="main-player-meta-left motion-fade-in"
-              key={currentTrack.id}
-            >
-              <h1 className="main-player-title-left">
-                {currentTrack.title}
-              </h1>
+          <div
+            className="main-player-meta-left motion-fade-in"
+            key={currentTrack.id}
+          >
+            <h1 className="main-player-title-left" title={currentTrack.title}>
+              {currentTrack.title}
+            </h1>
 
-              <h2 className="main-player-artist-left">
-                {currentTrack.artist}
-              </h2>
+            <h2 className="main-player-artist-left" title={currentTrack.artist}>
+              {currentTrack.artist}
+            </h2>
 
-              {currentTrack.album && (
-                <span className="main-player-album-left">
-                  {currentTrack.album}
-                </span>
-              )}
-            </div>
-          )}
+            {currentTrack.album && (
+              <span className="main-player-album-left truncate" title={currentTrack.album}>
+                {currentTrack.album}
+              </span>
+            )}
+          </div>
         </section>
 
-        {/* RIGHT COLUMN: 3 Mutually Exclusive States */}
+        {/* RIGHT COLUMN: Synchronized Lyrics, Plain Lyrics, Loading Skeleton, Error, or Empty State */}
         <section
           className={`main-player-right ${
-            hasLyrics ? 'has-lyrics' : 'no-lyrics'
+            lyricsStatus === 'lyrics-available' ? 'has-lyrics' : 'no-lyrics'
           }`}
           aria-label="Lyrics and Details"
         >
-          {/* STATE 3: Synchronized LRC Lyrics */}
-          {isSyncedLyrics && (
+          {/* Loading Skeleton Placeholder (Theme-Aware, Prevents Flashing Empty State) */}
+          {lyricsStatus === 'loading' && (
+            <div className="lyrics-loading-skeleton motion-fade-in" aria-label="Loading lyrics">
+              <div className="lyrics-skeleton-line skeleton-short" />
+              <div className="lyrics-skeleton-line skeleton-medium" />
+              <div className="lyrics-skeleton-line skeleton-long" />
+              <div className="lyrics-skeleton-line skeleton-medium" />
+              <div className="lyrics-skeleton-line skeleton-short" />
+              <div className="lyrics-skeleton-line skeleton-long" />
+              <div className="lyrics-skeleton-line skeleton-medium" />
+            </div>
+          )}
+
+          {/* Synchronized LRC Lyrics */}
+          {lyricsStatus === 'lyrics-available' && isSyncedLyrics && (
             <div
               className="lyrics-scroll-container"
               ref={scrollContainerRef}
@@ -347,8 +399,8 @@ export const MainPlayer: React.FC<MainPlayerProps> = ({ onClose, onEditLyrics })
             </div>
           )}
 
-          {/* STATE 2: Plain-Text Lyrics */}
-          {isPlainLyrics && (
+          {/* Plain-Text Lyrics */}
+          {lyricsStatus === 'lyrics-available' && isPlainLyrics && (
             <div className="plain-lyrics-scroll-container motion-fade-in">
               {lyricsData.lines.map((line, idx) => (
                 <p key={idx} className="plain-lyric-line">
@@ -358,35 +410,62 @@ export const MainPlayer: React.FC<MainPlayerProps> = ({ onClose, onEditLyrics })
             </div>
           )}
 
-          {/* STATE 1: No Lyrics File Available */}
-          {isNoLyrics && (
+          {/* Load Error State */}
+          {lyricsStatus === 'error' && (
+            <div className="no-lyrics-fallback motion-fade-in">
+              <div className="no-lyrics-card lyrics-error-card">
+                <AlertCircle size={36} className="lyrics-error-icon" />
+                <h3 className="no-lyrics-heading">Failed to Load Lyrics</h3>
+                <p className="no-lyrics-description">
+                  {lyricsError || 'An error occurred while reading the lyrics file.'}
+                </p>
+                <button
+                  type="button"
+                  className="main-player-collapse-btn main-player-edit-lyrics-btn"
+                  onClick={() => loadLyricsForTrack(currentTrack, true)}
+                  aria-label="Retry Loading Lyrics"
+                >
+                  <RotateCcw size={16} />
+                  <span>Retry</span>
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* Confirmed No Lyrics Available (Understated Empty State) */}
+          {lyricsStatus === 'no-lyrics' && (
             <div
               className="no-lyrics-fallback motion-fade-in"
               key={currentTrack.id}
             >
-              <div className="no-lyrics-title">
-                {currentTrack.title}
-              </div>
-
-              <div className="no-lyrics-artist">
-                {currentTrack.artist}
-              </div>
-
-              {currentTrack.album && (
-                <div className="no-lyrics-album">
-                  {currentTrack.album}
+              <div className="no-lyrics-card">
+                <Music2 size={36} className="no-lyrics-icon" />
+                <h3 className="no-lyrics-heading">No Lyrics Available</h3>
+                <p className="no-lyrics-description">
+                  Synchronized or plain text lyrics haven't been found for this track.
+                </p>
+                <div className="no-lyrics-actions">
+                  <button
+                    type="button"
+                    className="main-player-collapse-btn main-player-search-lyrics-btn"
+                    onClick={handleSearchLyrics}
+                    aria-label="Search Lyrics Online"
+                    title="Search Lyrics Online"
+                  >
+                    <Globe size={16} />
+                    <span>Search Online</span>
+                  </button>
+                  <button
+                    type="button"
+                    className="main-player-collapse-btn main-player-edit-lyrics-btn"
+                    onClick={handleEditLyrics}
+                    aria-label="Add or Edit Lyrics"
+                    title="Add or Edit Lyrics"
+                  >
+                    <FileEdit size={16} />
+                    <span>Add or Edit Lyrics</span>
+                  </button>
                 </div>
-              )}
-
-              <div style={{ marginTop: 'var(--space-md)' }}>
-                <button
-                  type="button"
-                  className="main-player-collapse-btn"
-                  onClick={handleEditLyrics}
-                >
-                  <FileEdit size={15} />
-                  <span>Edit Lyrics</span>
-                </button>
               </div>
             </div>
           )}

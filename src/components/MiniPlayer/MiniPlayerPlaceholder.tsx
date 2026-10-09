@@ -1,5 +1,6 @@
 import React, { useEffect, useRef, useState } from "react";
 import {
+  Heart,
   Loader2,
   Pause,
   Pin,
@@ -20,6 +21,7 @@ import {
   connectMiniPlayerBridge,
   sendMiniPlayerCommand,
 } from "./miniPlayerBridge";
+import { useTheme } from "../../state/ThemeContext";
 
 interface MiniPlayerVolumeProps {
   volume: number;
@@ -130,10 +132,29 @@ export const MiniPlayerView: React.FC<{
   const [alwaysOnTop, setAlwaysOnTop] = useState(false);
   const [alwaysOnTopError, setAlwaysOnTopError] = useState(false);
 
+  let themeContext: ReturnType<typeof useTheme> | null = null;
+  try {
+    // eslint-disable-next-line react-hooks/rules-of-hooks
+    themeContext = useTheme();
+  } catch {
+    // Fallback when rendered outside ThemeProvider in isolated tests
+  }
+
+  const isHydrated = snapshot !== null;
   const currentTrack = snapshot?.currentTrack ?? null;
   const hasTrack = currentTrack !== null;
   const duration = snapshot?.duration ?? 0;
   const currentTime = snapshot?.currentTime ?? 0;
+
+  useEffect(() => {
+    if (themeContext?.applyTrackArtworkColors) {
+      if (currentTrack?.artworkHash) {
+        void themeContext.applyTrackArtworkColors(currentTrack);
+      } else {
+        void themeContext.applyTrackArtworkColors(null);
+      }
+    }
+  }, [currentTrack, themeContext]);
 
   const clampedCurrentTime =
     duration > 0
@@ -156,13 +177,20 @@ export const MiniPlayerView: React.FC<{
     }
   };
 
+  const handleToggleFavorite = async () => {
+    if (!currentTrack?.id) return;
+    await sendMiniPlayerCommand({ type: "toggle-favorite", trackId: currentTrack.id });
+  };
+
   return (
     <main aria-label="Mini Player" className="mini-player-placeholder">
       <section className="mini-player-now-playing" aria-label="Now playing">
         <TrackArtwork
-          artworkHash={currentTrack?.artworkHash}
+          artworkHash={isHydrated ? currentTrack?.artworkHash : undefined}
           alt={
-            currentTrack?.album || currentTrack?.title || "No track selected"
+            isHydrated
+              ? currentTrack?.album || currentTrack?.title || "No track selected"
+              : "Connecting to player"
           }
           size="lg"
           className="mini-player-artwork"
@@ -171,12 +199,34 @@ export const MiniPlayerView: React.FC<{
         <div className="mini-player-metadata">
           {hasTrack ? (
             <>
-              <strong
-                className="mini-player-title truncate"
-                title={currentTrack.title}
-              >
-                {currentTrack.title}
-              </strong>
+              <div className="mini-player-title-row">
+                <strong
+                  className="mini-player-title truncate"
+                  title={currentTrack.title}
+                >
+                  {currentTrack.title}
+                </strong>
+                <button
+                  type="button"
+                  className={`mini-player-fav-btn ${currentTrack.isFavorite ? "is-favorite" : ""}`}
+                  aria-label={
+                    currentTrack.isFavorite
+                      ? "Remove from Favorites"
+                      : "Add to Favorites"
+                  }
+                  title={
+                    currentTrack.isFavorite
+                      ? "Remove from Favorites"
+                      : "Add to Favorites"
+                  }
+                  onClick={handleToggleFavorite}
+                >
+                  <Heart
+                    size={14}
+                    fill={currentTrack.isFavorite ? "currentColor" : "none"}
+                  />
+                </button>
+              </div>
 
               <span
                 className="mini-player-artist truncate"
@@ -185,7 +235,7 @@ export const MiniPlayerView: React.FC<{
                 {currentTrack.artist}
               </span>
             </>
-          ) : (
+          ) : isHydrated ? (
             <>
               <strong className="mini-player-title">
                 No Track Selected
@@ -193,6 +243,16 @@ export const MiniPlayerView: React.FC<{
 
               <span className="mini-player-artist">
                 Endurance Offline Player
+              </span>
+            </>
+          ) : (
+            <>
+              <strong className="mini-player-title mini-player-hydrating">
+                Connecting...
+              </strong>
+
+              <span className="mini-player-artist mini-player-hydrating">
+                Restoring playback state
               </span>
             </>
           )}
@@ -265,18 +325,22 @@ export const MiniPlayerView: React.FC<{
           }
           disabled={!hasTrack && !(snapshot?.isLoading ?? false)}
           aria-label={
-            snapshot?.isLoading
-              ? "Loading audio"
-              : snapshot?.isPlaying
-                ? "Pause"
-                : "Play"
+            !isHydrated
+              ? "Connecting to player"
+              : snapshot?.isLoading
+                ? "Loading audio"
+                : snapshot?.isPlaying
+                  ? "Pause"
+                  : "Play"
           }
           title={
-            snapshot?.isLoading
-              ? "Loading audio"
-              : snapshot?.isPlaying
-                ? "Pause"
-                : "Play"
+            !isHydrated
+              ? "Connecting to player"
+              : snapshot?.isLoading
+                ? "Loading audio"
+                : snapshot?.isPlaying
+                  ? "Pause"
+                  : "Play"
           }
         >
           {snapshot?.isLoading ? (
@@ -368,6 +432,11 @@ export const MiniPlayer: React.FC = () => {
           );
         }
       });
+
+    // Reveal the window smoothly once DOM and bridge are initialized
+    void invoke("show_mini_player").catch(() => {
+      // Non-Tauri fallback
+    });
 
     return () => {
       disposed = true;
