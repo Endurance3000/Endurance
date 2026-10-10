@@ -19,6 +19,7 @@ describe('Visible Keyboard Focus Indicators Audit & Accessibility', () => {
   const lyricsEditorCss = readSource('src/components/LyricsEditor/LyricsEditorModal.css');
   const miniPlayerCss = readSource('src/components/MiniPlayer/MiniPlayerPlaceholder.css');
   const queueDrawerCss = readSource('src/components/Queue/QueueDrawer.css');
+  const searchFieldCss = readSource('src/components/Common/SearchField.css');
   const pagesCss = readSource('src/pages/Pages.css');
   const cardCss = readSource('src/components/Common/Card.css');
   const cardTsx = readSource('src/components/Common/Card.tsx');
@@ -62,6 +63,12 @@ describe('Visible Keyboard Focus Indicators Audit & Accessibility', () => {
   });
 
   describe('Menus, Library, and Tables', () => {
+    it('uses a rounded keyboard focus treatment for the library search field', () => {
+      assert.match(searchFieldCss, /\.m3-search-field:has\(\.m3-search-input:focus-visible\)\s*\{[\s\S]*?border-color:\s*var\(--md-sys-color-primary\);[\s\S]*?box-shadow:/);
+      assert.match(searchFieldCss, /\.m3-search-input:focus-visible\s*\{[^}]*outline:\s*none;[^}]*\}/);
+      assert.doesNotMatch(searchFieldCss, /\.m3-search-input:focus-visible\s*\{[^}]*outline:\s*2px solid/);
+    });
+
     it('provides high-contrast focus-visible outline for sort-menu-trigger', () => {
       assert.match(sortMenuCss, /\.sort-menu-trigger:focus-visible\s*\{[\s\S]*?outline:\s*2px solid var\(--md-sys-color-focus-ring\);/);
     });
