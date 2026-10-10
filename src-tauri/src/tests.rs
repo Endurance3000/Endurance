@@ -272,7 +272,7 @@ mod tests {
     fn test_get_system_info_reports_dynamic_platform() {
         let info = crate::get_system_info();
         assert_eq!(info["app_name"], "Endurance");
-        assert_eq!(info["version"], "0.1.0");
+        assert_eq!(info["version"], "0.3.0");
         assert_eq!(info["platform"], std::env::consts::OS);
         assert_eq!(info["status"], "ready");
         assert_eq!(info["offline"], true);

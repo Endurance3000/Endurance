@@ -1,28 +1,31 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { invoke } from '@tauri-apps/api/core';
-import { TitleBar } from './components/Common/TitleBar';
-import { Sidebar } from './components/Sidebar/Sidebar';
-import { PlayerBar } from './components/Player/PlayerBar';
-import { Home } from './pages/Home';
-import { Songs } from './pages/Songs';
-import { Favorites } from './pages/Favorites';
-import { SettingsPage } from './pages/SettingsPage';
-import { useLibrary } from './hooks/useLibrary';
-import { PlaybackProvider } from './state/PlaybackContext';
-import { ThemeProvider } from './state/ThemeContext';
-import { MainPlayer } from './components/Player/MainPlayer';
-import { QueueDrawer } from './components/Queue/QueueDrawer';
-import { LyricsEditorModal } from './components/LyricsEditor/LyricsEditorModal';
-import { LyricsSearchModal } from './components/Lyrics/LyricsSearchModal';
-import { NavigationPage, SystemInfo, Track } from './types';
-import './App.css';
+import React, { useState, useEffect, useRef } from "react";
+import { invoke } from "@tauri-apps/api/core";
+import { TitleBar } from "./components/Common/TitleBar";
+import { Sidebar } from "./components/Sidebar/Sidebar";
+import { PlayerBar } from "./components/Player/PlayerBar";
+import { Home } from "./pages/Home";
+import { Songs } from "./pages/Songs";
+import { Favorites } from "./pages/Favorites";
+import { SettingsPage } from "./pages/SettingsPage";
+import { useLibrary } from "./hooks/useLibrary";
+import { PlaybackProvider } from "./state/PlaybackContext";
+import { ThemeProvider } from "./state/ThemeContext";
+import { MainPlayer } from "./components/Player/MainPlayer";
+import { QueueDrawer } from "./components/Queue/QueueDrawer";
+import { LyricsEditorModal } from "./components/LyricsEditor/LyricsEditorModal";
+import { LyricsSearchModal } from "./components/Lyrics/LyricsSearchModal";
+import { NavigationPage, SystemInfo, Track } from "./types";
+import "./App.css";
 
 export const App: React.FC = () => {
-  const [currentPage, setCurrentPage] = useState<NavigationPage>('home');
+  const [currentPage, setCurrentPage] = useState<NavigationPage>("home");
   const [systemInfo, setSystemInfo] = useState<SystemInfo | null>(null);
   const [isMainPlayerOpen, setIsMainPlayerOpen] = useState<boolean>(false);
-  const [editingLyricsTrack, setEditingLyricsTrack] = useState<Track | null>(null);
-  const [searchingLyricsTrack, setSearchingLyricsTrack] = useState<Track | null>(null);
+  const [editingLyricsTrack, setEditingLyricsTrack] = useState<Track | null>(
+    null,
+  );
+  const [searchingLyricsTrack, setSearchingLyricsTrack] =
+    useState<Track | null>(null);
   const hasNotifiedReadyRef = useRef(false);
 
   const {
@@ -40,15 +43,18 @@ export const App: React.FC = () => {
   useEffect(() => {
     const fetchSystemInfo = async () => {
       try {
-        const info = await invoke<SystemInfo>('get_system_info');
+        const info = await invoke<SystemInfo>("get_system_info");
         setSystemInfo(info);
       } catch (err) {
-        console.warn('Tauri invoke not active (running in web preview mode):', err);
+        console.warn(
+          "Tauri invoke not active (running in web preview mode):",
+          err,
+        );
         setSystemInfo({
-          app_name: 'Endurance',
-          version: '0.1.0',
-          platform: 'windows',
-          status: 'ready',
+          app_name: "Endurance",
+          version: "0.3.0",
+          platform: "unknown",
+          status: "unavailable",
           offline: true,
         });
       }
@@ -61,8 +67,8 @@ export const App: React.FC = () => {
   useEffect(() => {
     if (!isLoading && systemInfo !== null && !hasNotifiedReadyRef.current) {
       hasNotifiedReadyRef.current = true;
-      invoke('close_splashscreen').catch((err) => {
-        console.warn('Could not close splashscreen:', err);
+      invoke("close_splashscreen").catch((err) => {
+        console.warn("Could not close splashscreen:", err);
       });
     }
   }, [isLoading, systemInfo]);
@@ -83,26 +89,38 @@ export const App: React.FC = () => {
       }
     };
 
-    window.addEventListener('endurance:open-lyrics-editor', handleOpenLyricsEditor);
-    window.addEventListener('endurance:open-lyrics-search', handleOpenLyricsSearch);
+    window.addEventListener(
+      "endurance:open-lyrics-editor",
+      handleOpenLyricsEditor,
+    );
+    window.addEventListener(
+      "endurance:open-lyrics-search",
+      handleOpenLyricsSearch,
+    );
     return () => {
-      window.removeEventListener('endurance:open-lyrics-editor', handleOpenLyricsEditor);
-      window.removeEventListener('endurance:open-lyrics-search', handleOpenLyricsSearch);
+      window.removeEventListener(
+        "endurance:open-lyrics-editor",
+        handleOpenLyricsEditor,
+      );
+      window.removeEventListener(
+        "endurance:open-lyrics-search",
+        handleOpenLyricsSearch,
+      );
     };
   }, []);
 
   const renderPage = () => {
     switch (currentPage) {
-      case 'home':
+      case "home":
         return (
           <Home
             tracks={tracks}
             folders={folders}
-            onNavigateSongs={() => setCurrentPage('songs')}
+            onNavigateSongs={() => setCurrentPage("songs")}
             onAddFolder={addFolder}
           />
         );
-      case 'songs':
+      case "songs":
         return (
           <Songs
             tracks={tracks}
@@ -114,15 +132,15 @@ export const App: React.FC = () => {
             onRescan={rescan}
           />
         );
-      case 'favorites':
+      case "favorites":
         return (
           <Favorites
             tracks={tracks}
             onToggleFavorite={toggleFavorite}
-            onBrowseSongs={() => setCurrentPage('songs')}
+            onBrowseSongs={() => setCurrentPage("songs")}
           />
         );
-      case 'settings':
+      case "settings":
         return (
           <SettingsPage
             systemInfo={systemInfo}
@@ -139,7 +157,7 @@ export const App: React.FC = () => {
           <Home
             tracks={tracks}
             folders={folders}
-            onNavigateSongs={() => setCurrentPage('songs')}
+            onNavigateSongs={() => setCurrentPage("songs")}
             onAddFolder={addFolder}
           />
         );
@@ -155,13 +173,14 @@ export const App: React.FC = () => {
 
           {/* Main Body Layout: Sidebar + Page View */}
           <div className="app-body">
-            <Sidebar currentPage={currentPage} onNavigate={(p) => {
-              setCurrentPage(p);
-              setIsMainPlayerOpen(false);
-            }} />
-            <main className="app-content">
-              {renderPage()}
-            </main>
+            <Sidebar
+              currentPage={currentPage}
+              onNavigate={(p) => {
+                setCurrentPage(p);
+                setIsMainPlayerOpen(false);
+              }}
+            />
+            <main className="app-content">{renderPage()}</main>
           </div>
 
           {/* Main Player Full View Overlay (Artwork Left, Lyrics Right) */}
