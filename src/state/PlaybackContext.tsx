@@ -42,6 +42,7 @@ import {
   deserializeSession,
   reconcileSessionTracks,
 } from "../services/playback/playbackSessionHelper";
+import { deduplicateOpenFiles } from "../services/playback/openFileHelper";
 import { useTheme } from "./ThemeContext";
 
 import {
@@ -91,6 +92,7 @@ export const PlaybackProvider: React.FC<{ children: React.ReactNode }> = ({
   );
   const hasUserActedRef = useRef<boolean>(false);
   const isSessionRestoredRef = useRef<boolean>(false);
+  const recentHandledFilesRef = useRef<Map<string, number>>(new Map());
 
   // Refs for callbacks to prevent stale state in audio event listeners
   const stateRef = useRef({
@@ -903,10 +905,14 @@ export const PlaybackProvider: React.FC<{ children: React.ReactNode }> = ({
     let unlistenFn: (() => void) | null = null;
 
     const handleFiles = async (filePaths: string[]) => {
-      if (!filePaths || filePaths.length === 0) return;
+      const pathsToProcess = deduplicateOpenFiles(
+        filePaths,
+        recentHandledFilesRef.current,
+      );
+      if (pathsToProcess.length === 0) return;
       hasUserActedRef.current = true;
       const resolvedTracks: Track[] = [];
-      for (const path of filePaths) {
+      for (const path of pathsToProcess) {
         const track = await libraryService.getTrackForPath(path);
         if (track) {
           resolvedTracks.push(track);
