@@ -645,5 +645,76 @@ mod tests {
         let result4 = parse_audio_file_arguments(args4);
         assert_eq!(result4.len(), 5);
     }
+
+    #[test]
+    fn test_parse_opened_file_urls() {
+        use crate::single_instance::{parse_opened_file_urls, parse_opened_file_url_strings};
+
+        let temp_dir = std::env::temp_dir().join(format!("endurance_opened_urls_test_{}", std::process::id()));
+        let _ = std::fs::create_dir_all(&temp_dir);
+
+        let space_file = temp_dir.join("Song With Spaces.mp3");
+        let unicode_file = temp_dir.join("日本語_曲.flac");
+        let accent_file = temp_dir.join("accent_é_track.wav");
+        let non_audio = temp_dir.join("notes.txt");
+        let lrc_file = temp_dir.join("lyrics.lrc");
+        let ogg_file = temp_dir.join("track.OGG");
+        let opus_file = temp_dir.join("track.opus");
+        let aac_file = temp_dir.join("track.AAC");
+        let aiff_file = temp_dir.join("track.AIFF");
+
+        let url_space = url::Url::from_file_path(&space_file).unwrap();
+        let url_unicode = url::Url::from_file_path(&unicode_file).unwrap();
+        let url_accent = url::Url::from_file_path(&accent_file).unwrap();
+        let url_non_audio = url::Url::from_file_path(&non_audio).unwrap();
+        let url_lrc = url::Url::from_file_path(&lrc_file).unwrap();
+        let url_ogg = url::Url::from_file_path(&ogg_file).unwrap();
+        let url_opus = url::Url::from_file_path(&opus_file).unwrap();
+        let url_aac = url::Url::from_file_path(&aac_file).unwrap();
+        let url_aiff = url::Url::from_file_path(&aiff_file).unwrap();
+        let http_url = url::Url::parse("https://example.com/stream.mp3").unwrap();
+
+        // 1. Verify URL percent-encoding works properly
+        assert!(url_space.as_str().contains("%20"));
+
+        let urls = vec![
+            url_space.clone(),
+            url_unicode,
+            url_accent,
+            url_non_audio,
+            url_lrc,
+            url_ogg,
+            url_opus,
+            url_aac,
+            url_aiff,
+            http_url,
+            url_space.clone(), // Duplicate URL
+        ];
+
+        let result = parse_opened_file_urls(&urls);
+
+        // Should extract valid audio files, ignore non-audio, ignore HTTP, and deduplicate
+        assert_eq!(result.len(), 7); // space, unicode, accent, ogg, opus, aac, aiff
+        assert!(result.iter().any(|p| p.ends_with("Song With Spaces.mp3")));
+        assert!(result.iter().any(|p| p.ends_with("日本語_曲.flac")));
+        assert!(result.iter().any(|p| p.ends_with("accent_é_track.wav")));
+        assert!(result.iter().any(|p| p.ends_with("track.OGG")));
+        assert!(result.iter().any(|p| p.ends_with("track.opus")));
+        assert!(result.iter().any(|p| p.ends_with("track.AAC")));
+        assert!(result.iter().any(|p| p.ends_with("track.AIFF")));
+        assert!(!result.iter().any(|p| p.ends_with("notes.txt")));
+        assert!(!result.iter().any(|p| p.ends_with("lyrics.lrc")));
+
+        // 2. Helper test for string URLs
+        let str_urls = vec![
+            url_space.as_str().to_string(),
+            "invalid://not-a-valid-url".to_string(),
+        ];
+        let str_result = parse_opened_file_url_strings(&str_urls);
+        assert_eq!(str_result.len(), 1);
+        assert!(str_result[0].ends_with("Song With Spaces.mp3"));
+
+        let _ = std::fs::remove_dir_all(&temp_dir);
+    }
 }
 

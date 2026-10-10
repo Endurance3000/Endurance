@@ -45,30 +45,78 @@ impl SingleInstanceServer {
                     }
 
                     if let Ok(file_paths) = serde_json::from_slice::<Vec<String>>(&buffer) {
-                        if !file_paths.is_empty() {
-                            // Focus and restore main window
-                            if let Some(main) = app_handle.get_webview_window("main") {
-                                let _ = main.unminimize();
-                                let _ = main.show();
-                                let _ = main.set_focus();
-                            }
-
-                            // Store in pending queue as fallback
-                            if let Ok(mut pending) = pending_files.lock() {
-                                pending.extend(file_paths.clone());
-                            }
-
-                            // Emit live event to frontend
-                            let _ = app_handle.emit(
-                                "endurance://open-files",
-                                OpenFilesPayload { file_paths },
-                            );
-                        }
+                        handle_open_file_paths(&app_handle, &pending_files, file_paths);
                     }
                 }
             }
         });
     }
+}
+
+/// Dispatches open file paths to the running frontend, focuses the main window,
+/// and updates the pending files queue as fallback.
+pub fn handle_open_file_paths(
+    app_handle: &AppHandle,
+    pending_files: &Arc<Mutex<Vec<String>>>,
+    file_paths: Vec<String>,
+) {
+    if file_paths.is_empty() {
+        return;
+    }
+
+    // 1. Focus and restore main window
+    if let Some(main) = app_handle.get_webview_window("main") {
+        let _ = main.unminimize();
+        let _ = main.show();
+        let _ = main.set_focus();
+    }
+
+    // 2. Store in pending queue as fallback for startup/cold start
+    if let Ok(mut pending) = pending_files.lock() {
+        for path in &file_paths {
+            if !pending.contains(path) {
+                pending.push(path.clone());
+            }
+        }
+    }
+
+    // 3. Emit live event to frontend if already running
+    let _ = app_handle.emit(
+        "endurance://open-files",
+        OpenFilesPayload { file_paths },
+    );
+}
+
+/// Parses file URLs (such as from macOS Finder RunEvent::Opened) into valid local audio file paths.
+/// Handles percent-decoding (spaces, Unicode, symbols) safely via Url::to_file_path.
+pub fn parse_opened_file_urls(urls: &[url::Url]) -> Vec<String> {
+    let mut valid_paths = Vec::new();
+    for url in urls {
+        if let Ok(path) = url.to_file_path() {
+            if is_supported_audio(&path) {
+                let normalized = if path.is_absolute() {
+                    path.to_string_lossy().replace(r"\\?\", "").to_string()
+                } else if let Ok(canonical) = path.canonicalize() {
+                    canonical.to_string_lossy().replace(r"\\?\", "").to_string()
+                } else {
+                    path.to_string_lossy().replace(r"\\?\", "").to_string()
+                };
+                if !valid_paths.contains(&normalized) {
+                    valid_paths.push(normalized);
+                }
+            }
+        }
+    }
+    valid_paths
+}
+
+/// Helper for parsing URL strings (useful for tests and external inputs).
+pub fn parse_opened_file_url_strings<S: AsRef<str>>(url_strings: &[S]) -> Vec<String> {
+    let urls: Vec<url::Url> = url_strings
+        .iter()
+        .filter_map(|s| url::Url::parse(s.as_ref()).ok())
+        .collect();
+    parse_opened_file_urls(&urls)
 }
 
 /// Parses CLI arguments and filters out binary paths/flags, extracting valid audio file paths.

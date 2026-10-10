@@ -14,7 +14,11 @@ use artwork::ArtworkCache;
 use commands::AppState;
 use db::Database;
 use scanner::LibraryScanner;
-use single_instance::{check_or_forward_instance, parse_audio_file_arguments, SingleInstanceResult};
+use single_instance::{
+    check_or_forward_instance, parse_audio_file_arguments, SingleInstanceResult,
+};
+#[cfg(any(target_os = "macos", target_os = "ios", target_os = "android"))]
+use single_instance::{handle_open_file_paths, parse_opened_file_urls};
 use std::sync::{Arc, Mutex};
 use tauri::{Manager, RunEvent};
 
@@ -46,6 +50,8 @@ pub fn run() {
 
     let pending_files = Arc::new(Mutex::new(initial_files));
     let pending_files_for_setup = pending_files.clone();
+    #[cfg(any(target_os = "macos", target_os = "ios", target_os = "android"))]
+    let pending_files_for_events = pending_files.clone();
 
     tauri::Builder::default()
         .setup(move |app| {
@@ -113,8 +119,13 @@ pub fn run() {
                     mini_player::close_mini_player(app_handle);
                 }
             }
-            // NOTE: RunEvent::Opened (macOS Finder open-file events) will be added
-            // when upgrading to a Tauri version that exposes this variant.
+            #[cfg(any(target_os = "macos", target_os = "ios", target_os = "android"))]
+            RunEvent::Opened { urls } => {
+                let valid_paths = parse_opened_file_urls(&urls);
+                if !valid_paths.is_empty() {
+                    handle_open_file_paths(app_handle, &pending_files_for_events, valid_paths);
+                }
+            }
             _ => {}
         });
 }
