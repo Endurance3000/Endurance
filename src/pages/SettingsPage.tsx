@@ -1,10 +1,7 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from "react";
 import {
   Palette,
-  PlaySquare,
   FolderCog,
-  FileText,
-  Volume2,
   Keyboard,
   Info,
   ShieldCheck,
@@ -13,17 +10,16 @@ import {
   RefreshCw,
   Loader2,
   Folder,
-} from 'lucide-react';
-import { Card } from '../components/Common/Card';
-import { Chip } from '../components/Common/Chip';
-import { Button } from '../components/Common/Button';
-import { IconButton } from '../components/Common/IconButton';
-import { formatDate } from '../utils/formatters';
-import { SystemInfo, LibraryFolder } from '../types';
-import { useTheme } from '../state/ThemeContext';
-import { preferencesService } from '../services/preferences/preferencesService';
-import { getPrimaryModifierLabel } from '../services/audio/shortcutHelper';
-import './Pages.css';
+} from "lucide-react";
+import { Card } from "../components/Common/Card";
+import { Chip } from "../components/Common/Chip";
+import { Button } from "../components/Common/Button";
+import { IconButton } from "../components/Common/IconButton";
+import { formatDate } from "../utils/formatters";
+import { SystemInfo, LibraryFolder } from "../types";
+import { useTheme } from "../state/ThemeContext";
+import { getPrimaryModifierLabel } from "../services/audio/shortcutHelper";
+import "./Pages.css";
 
 interface SettingsPageProps {
   systemInfo: SystemInfo | null;
@@ -35,7 +31,7 @@ interface SettingsPageProps {
   onRescan: () => Promise<void>;
 }
 
-type SettingsCategory = 'appearance' | 'playback' | 'library' | 'lyrics' | 'audio' | 'shortcuts' | 'about';
+type SettingsCategory = "library" | "appearance" | "shortcuts" | "about";
 
 export const SettingsPage: React.FC<SettingsPageProps> = ({
   systemInfo,
@@ -46,65 +42,39 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({
   onRemoveFolder,
   onRescan,
 }) => {
-  const [activeCategory, setActiveCategory] = useState<SettingsCategory>('library');
-  const { theme, setTheme, dynamicColorEnabled, setDynamicColorEnabled, highContrast, setHighContrast } = useTheme();
-
-  // Interactive toggle states with local persistence
-  const [gaplessPlayback, setGaplessPlaybackState] = useState(true);
-  const [showLyricsOnRight, setShowLyricsOnRightState] = useState(true);
-  const [hardwareAcceleration, setHardwareAccelerationState] = useState(true);
-
-  useEffect(() => {
-    preferencesService.loadAll().then((prefs) => {
-      const savedGapless = prefs.get('gapless_playback');
-      if (savedGapless !== undefined && savedGapless !== '') {
-        setGaplessPlaybackState(savedGapless === 'true');
-      }
-      const savedLyricsRight = prefs.get('show_lyrics_right');
-      if (savedLyricsRight !== undefined && savedLyricsRight !== '') {
-        setShowLyricsOnRightState(savedLyricsRight === 'true');
-      }
-      const savedHw = prefs.get('hardware_acceleration');
-      if (savedHw !== undefined && savedHw !== '') {
-        setHardwareAccelerationState(savedHw === 'true');
-      }
-    });
-  }, []);
-
-  const setGaplessPlayback = (val: boolean) => {
-    setGaplessPlaybackState(val);
-    preferencesService.set('gapless_playback', val ? 'true' : 'false');
-  };
-
-  const setShowLyricsOnRight = (val: boolean) => {
-    setShowLyricsOnRightState(val);
-    preferencesService.set('show_lyrics_right', val ? 'true' : 'false');
-  };
-
-  const setHardwareAcceleration = (val: boolean) => {
-    setHardwareAccelerationState(val);
-    preferencesService.set('hardware_acceleration', val ? 'true' : 'false');
-  };
+  const [activeCategory, setActiveCategory] =
+    useState<SettingsCategory>("library");
+  const {
+    theme,
+    setTheme,
+    dynamicColorEnabled,
+    setDynamicColorEnabled,
+    highContrast,
+    setHighContrast,
+  } = useTheme();
 
   const categories = [
-    { id: 'library', label: 'Library', icon: <FolderCog size={16} /> },
-    { id: 'appearance', label: 'Appearance', icon: <Palette size={16} /> },
-    { id: 'playback', label: 'Playback', icon: <PlaySquare size={16} /> },
-    { id: 'lyrics', label: 'Lyrics', icon: <FileText size={16} /> },
-    { id: 'audio', label: 'Audio', icon: <Volume2 size={16} /> },
-    { id: 'shortcuts', label: 'Shortcuts', icon: <Keyboard size={16} /> },
-    { id: 'about', label: 'About', icon: <Info size={16} /> },
+    { id: "library", label: "Library", icon: <FolderCog size={16} /> },
+    { id: "appearance", label: "Appearance", icon: <Palette size={16} /> },
+    { id: "shortcuts", label: "Shortcuts", icon: <Keyboard size={16} /> },
+    { id: "about", label: "About", icon: <Info size={16} /> },
   ] as const;
 
   return (
     <div className="page-container motion-fade-in">
       <header className="page-header">
         <h1 className="page-title">Settings</h1>
-        <p className="page-subtitle">Configure Endurance appearance, audio behavior, and local storage</p>
+        <p className="page-subtitle">
+          Configure Endurance appearance, audio behavior, and local storage
+        </p>
       </header>
 
       {/* Category Filter Chips Bar */}
-      <div className="chips-bar settings-chips-bar" role="tablist" aria-label="Settings Categories">
+      <div
+        className="chips-bar settings-chips-bar"
+        role="tablist"
+        aria-label="Settings Categories"
+      >
         {categories.map((cat) => (
           <Chip
             key={cat.id}
@@ -121,24 +91,37 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({
 
       <div className="settings-content-area">
         {/* Library Settings */}
-        {activeCategory === 'library' && (
-          <Card variant="filled" padding="lg" className="settings-section-card motion-fade-in">
+        {activeCategory === "library" && (
+          <Card
+            variant="filled"
+            padding="lg"
+            className="settings-section-card motion-fade-in"
+          >
             <div className="settings-header-action-row">
               <div>
-                <h2 className="settings-section-title">Music Library Folders</h2>
+                <h2 className="settings-section-title">
+                  Music Library Folders
+                </h2>
                 <p className="settings-section-desc">
-                  Manage indexed directories on your Windows computer ({folders.length} configured, {tracksCount} tracks indexed)
+                  Manage indexed directories on your computer ({folders.length}{" "}
+                  configured, {tracksCount} tracks indexed)
                 </p>
               </div>
               <div className="settings-header-buttons">
                 <Button
                   variant="tonal"
                   size="sm"
-                  icon={isScanning ? <Loader2 size={15} className="spin-animation" /> : <RefreshCw size={15} />}
+                  icon={
+                    isScanning ? (
+                      <Loader2 size={15} className="spin-animation" />
+                    ) : (
+                      <RefreshCw size={15} />
+                    )
+                  }
                   onClick={onRescan}
                   disabled={isScanning || folders.length === 0}
                 >
-                  {isScanning ? 'Scanning...' : 'Rescan All'}
+                  {isScanning ? "Scanning..." : "Rescan All"}
                 </Button>
                 <Button
                   variant="filled"
@@ -157,7 +140,10 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({
               {folders.length === 0 ? (
                 <div className="folders-empty-notice">
                   <Folder size={24} className="folders-empty-icon" />
-                  <span>No music folders added yet. Click &quot;Add Folder&quot; to pick your music directory.</span>
+                  <span>
+                    No music folders added yet. Click &quot;Add Folder&quot; to
+                    pick your music directory.
+                  </span>
                 </div>
               ) : (
                 folders.map((folder) => (
@@ -166,9 +152,14 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({
                       <Folder size={18} />
                     </div>
                     <div className="folder-item-details">
-                      <span className="folder-item-path truncate">{folder.path}</span>
+                      <span className="folder-item-path truncate">
+                        {folder.path}
+                      </span>
                       <span className="folder-item-meta">
-                        Last scanned: {folder.last_scanned ? formatDate(folder.last_scanned) : 'Never'}
+                        Last scanned:{" "}
+                        {folder.last_scanned
+                          ? formatDate(folder.last_scanned)
+                          : "Never"}
                       </span>
                     </div>
                     <IconButton
@@ -186,7 +177,10 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({
             <div className="settings-row">
               <div>
                 <div className="setting-label">Supported Formats</div>
-                <div className="setting-sublabel">Case-insensitive offline formats: MP3, M4A/AAC, FLAC, WAV, OGG, Opus, AIFF</div>
+                <div className="setting-sublabel">
+                  Case-insensitive offline formats: MP3, M4A/AAC, FLAC, WAV,
+                  OGG, Opus, AIFF
+                </div>
               </div>
               <span className="setting-badge">MP3, FLAC, WAV & more</span>
             </div>
@@ -195,44 +189,60 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({
               <div>
                 <div className="setting-label">File Safety Principle</div>
                 <div className="setting-sublabel">
-                  Endurance never moves, renames, or modifies your local audio files. Scanning is strictly read-only.
+                  Endurance never moves, renames, or modifies your local audio
+                  files. Scanning is strictly read-only.
                 </div>
               </div>
-              <span className="setting-badge setting-badge-success">Read-Only Safe</span>
+              <span className="setting-badge setting-badge-success">
+                Read-Only Safe
+              </span>
             </div>
           </Card>
         )}
 
         {/* Appearance Settings */}
-        {activeCategory === 'appearance' && (
-          <Card variant="filled" padding="lg" className="settings-section-card motion-fade-in">
+        {activeCategory === "appearance" && (
+          <Card
+            variant="filled"
+            padding="lg"
+            className="settings-section-card motion-fade-in"
+          >
             <h2 className="settings-section-title">Appearance & Theme</h2>
-            <p className="settings-section-desc">Customize how Endurance looks on your Windows desktop</p>
+            <p className="settings-section-desc">
+              Customize how Endurance looks on your desktop
+            </p>
 
             <div className="settings-row">
               <div>
                 <div className="setting-label">Theme Mode</div>
-                <div className="setting-sublabel">Choose between Dark, Light, or automatic System theme matching Windows</div>
+                <div className="setting-sublabel">
+                  Choose Dark, Light, or automatic System theme matching your
+                  device
+                </div>
               </div>
-              <div className="theme-toggle-group" role="group" aria-label="Theme Mode Selection">
+              <div
+                className="theme-toggle-group"
+                role="group"
+                aria-label="Theme Mode Selection"
+              >
                 <button
                   type="button"
-                  className={`setting-badge ${theme === 'dark' ? 'setting-badge-active' : ''}`}
-                  onClick={() => setTheme('dark')}
+                  className={`setting-badge ${theme === "dark" ? "setting-badge-active" : ""}`}
+                  onClick={() => setTheme("dark")}
                 >
                   Dark
                 </button>
                 <button
                   type="button"
-                  className={`setting-badge ${theme === 'light' ? 'setting-badge-active' : ''}`}
-                  onClick={() => setTheme('light')}
+                  className={`setting-badge ${theme === "light" ? "setting-badge-active" : ""}`}
+                  onClick={() => setTheme("light")}
                 >
                   Light
                 </button>
                 <button
                   type="button"
-                  className={`setting-badge ${theme === 'system' ? 'setting-badge-active' : ''}`}
-                  onClick={() => setTheme('system')}
+                  className={`setting-badge ${theme === "system" ? "setting-badge-active" : ""}`}
+                  onClick={() => setTheme("system")}
                 >
                   System
                 </button>
@@ -242,11 +252,14 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({
             <div className="settings-row">
               <div>
                 <div className="setting-label">Dynamic Album Color Palette</div>
-                <div className="setting-sublabel">Extract harmonious tonal accents from the active playing album artwork</div>
+                <div className="setting-sublabel">
+                  Extract harmonious tonal accents from the active playing album
+                  artwork
+                </div>
               </div>
               <button
                 type="button"
-                className={`m3-switch ${dynamicColorEnabled ? 'active' : ''}`}
+                className={`m3-switch ${dynamicColorEnabled ? "active" : ""}`}
                 onClick={() => setDynamicColorEnabled(!dynamicColorEnabled)}
                 aria-label="Toggle Dynamic Album Color Palette"
               >
@@ -257,11 +270,13 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({
             <div className="settings-row">
               <div>
                 <div className="setting-label">High Contrast Text</div>
-                <div className="setting-sublabel">Enhance border and typography contrast for accessibility</div>
+                <div className="setting-sublabel">
+                  Enhance border and typography contrast for accessibility
+                </div>
               </div>
               <button
                 type="button"
-                className={`m3-switch ${highContrast ? 'active' : ''}`}
+                className={`m3-switch ${highContrast ? "active" : ""}`}
                 onClick={() => setHighContrast(!highContrast)}
                 aria-label="Toggle High Contrast Text"
               >
@@ -271,96 +286,17 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({
           </Card>
         )}
 
-        {/* Playback Settings */}
-        {activeCategory === 'playback' && (
-          <Card variant="filled" padding="lg" className="settings-section-card motion-fade-in">
-            <h2 className="settings-section-title">Playback Engine</h2>
-            <p className="settings-section-desc">Audio transitions, repeat modes, and seek behavior</p>
-
-            <div className="settings-row">
-              <div>
-                <div className="setting-label">Gapless Playback</div>
-                <div className="setting-sublabel">Pre-buffer upcoming track in queue to avoid silence between songs</div>
-              </div>
-              <button
-                type="button"
-                className={`m3-switch ${gaplessPlayback ? 'active' : ''}`}
-                onClick={() => setGaplessPlayback(!gaplessPlayback)}
-                aria-label="Toggle Gapless Playback"
-              >
-                <span className="m3-switch-thumb" />
-              </button>
-            </div>
-
-            <div className="settings-row">
-              <div>
-                <div className="setting-label">Seek Step Interval</div>
-                <div className="setting-sublabel">Duration skipped when using Left/Right arrow keys</div>
-              </div>
-              <span className="setting-badge">5 seconds</span>
-            </div>
-          </Card>
-        )}
-
-        {/* Lyrics Settings */}
-        {activeCategory === 'lyrics' && (
-          <Card variant="filled" padding="lg" className="settings-section-card motion-fade-in">
-            <h2 className="settings-section-title">Synchronized Lyrics</h2>
-            <p className="settings-section-desc">Layout rules and .lrc file synchronization</p>
-
-            <div className="settings-row">
-              <div>
-                <div className="setting-label">Right-Hand Lyrics Layout</div>
-                <div className="setting-sublabel">Adheres to Master Layout: Artwork LEFT, Lyrics RIGHT</div>
-              </div>
-              <button
-                type="button"
-                className={`m3-switch ${showLyricsOnRight ? 'active' : ''}`}
-                onClick={() => setShowLyricsOnRight(!showLyricsOnRight)}
-                aria-label="Toggle Right-Hand Lyrics Layout"
-              >
-                <span className="m3-switch-thumb" />
-              </button>
-            </div>
-
-            <div className="settings-row">
-              <div>
-                <div className="setting-label">No-Lyrics Fallback</div>
-                <div className="setting-sublabel">Displays Title and Artist on the right when synchronized lyrics are absent</div>
-              </div>
-              <span className="setting-badge">Intentional Design State</span>
-            </div>
-          </Card>
-        )}
-
-        {/* Audio Settings */}
-        {activeCategory === 'audio' && (
-          <Card variant="filled" padding="lg" className="settings-section-card motion-fade-in">
-            <h2 className="settings-section-title">Audio Output</h2>
-            <p className="settings-section-desc">Windows audio device routing and volume behavior</p>
-
-            <div className="settings-row">
-              <div>
-                <div className="setting-label">Hardware Acceleration</div>
-                <div className="setting-sublabel">Use Windows hardware audio processing where supported</div>
-              </div>
-              <button
-                type="button"
-                className={`m3-switch ${hardwareAcceleration ? 'active' : ''}`}
-                onClick={() => setHardwareAcceleration(!hardwareAcceleration)}
-                aria-label="Toggle Hardware Acceleration"
-              >
-                <span className="m3-switch-thumb" />
-              </button>
-            </div>
-          </Card>
-        )}
-
         {/* Shortcuts Settings */}
-        {activeCategory === 'shortcuts' && (
-          <Card variant="filled" padding="lg" className="settings-section-card motion-fade-in">
+        {activeCategory === "shortcuts" && (
+          <Card
+            variant="filled"
+            padding="lg"
+            className="settings-section-card motion-fade-in"
+          >
             <h2 className="settings-section-title">Keyboard Shortcuts</h2>
-            <p className="settings-section-desc">Quick desktop control shortcuts</p>
+            <p className="settings-section-desc">
+              Quick desktop control shortcuts
+            </p>
 
             <div className="settings-row">
               <span className="setting-label">Play / Pause</span>
@@ -390,44 +326,70 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({
         )}
 
         {/* About Section */}
-        {activeCategory === 'about' && (
-          <Card variant="filled" padding="lg" className="settings-section-card motion-fade-in">
+        {activeCategory === "about" && (
+          <Card
+            variant="filled"
+            padding="lg"
+            className="settings-section-card motion-fade-in"
+          >
             <h2 className="settings-section-title">About Endurance</h2>
-            <p className="settings-section-desc">Architecture and local runtime diagnostics</p>
+            <p className="settings-section-desc">
+              Architecture and local runtime diagnostics
+            </p>
 
             <div className="settings-row">
               <div>
                 <div className="setting-label">Desktop Shell</div>
-                <div className="setting-sublabel">Tauri v2 + Rust MSVC backend</div>
+                <div className="setting-sublabel">
+                  Tauri v2 + Rust desktop backend
+                </div>
               </div>
-              <span className="setting-badge">v0.1.0</span>
+              <span className="setting-badge">
+                v{systemInfo?.version ?? "..."}
+              </span>
             </div>
 
             <div className="settings-row">
-              <div>
-                <div className="setting-label">Frontend Stack</div>
-                <div className="setting-sublabel">React 19 + TypeScript + Vite 6</div>
-              </div>
-              <span className="setting-badge">Vite Production</span>
-            </div>
-
-            <div className="settings-row">
-              <div>
-                <div className="setting-label">Backend IPC Bridge</div>
-                <div className="setting-sublabel">Bi-directional Tauri Command Handlers</div>
-              </div>
-              <span className="setting-badge setting-badge-success">
-                <ShieldCheck size={12} style={{ display: 'inline', marginRight: 4 }} />
-                {systemInfo?.status === 'ready' ? 'Connected (Rust IPC Active)' : 'Connecting...'}
+              <span className="setting-label">Platform</span>
+              <span className="setting-badge">
+                {systemInfo?.platform ?? "..."}
               </span>
             </div>
 
             <div className="settings-row">
               <div>
-                <div className="setting-label">Offline Integrity</div>
-                <div className="setting-sublabel">Zero remote cloud APIs or external telemetry</div>
+                <div className="setting-label">Frontend Stack</div>
+                <div className="setting-sublabel">
+                  React 19 + TypeScript + Vite
+                </div>
               </div>
-              <span className="setting-badge">100% Offline</span>
+            </div>
+
+            <div className="settings-row">
+              <div>
+                <div className="setting-label">Backend IPC Bridge</div>
+                <div className="setting-sublabel">
+                  Bi-directional Tauri Command Handlers
+                </div>
+              </div>
+              <span className="setting-badge setting-badge-success">
+                <ShieldCheck
+                  size={12}
+                  style={{ display: "inline", marginRight: 4 }}
+                />
+                {systemInfo?.status === "ready"
+                  ? "Connected (Rust IPC Active)"
+                  : "Connecting..."}
+              </span>
+            </div>
+
+            <div className="settings-row">
+              <div>
+                <div className="setting-label">Local-first design</div>
+                <div className="setting-sublabel">
+                  Your library and preferences are stored locally.
+                </div>
+              </div>
             </div>
           </Card>
         )}
