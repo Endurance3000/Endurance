@@ -21,6 +21,7 @@ import { SortMenu, SortOption, VALID_SORT_OPTIONS } from '../components/Library/
 import { usePlayback } from '../state/PlaybackContext';
 import { preferencesService } from '../services/preferences/preferencesService';
 import { formatDuration } from '../utils/formatters';
+import { sortSongs } from '../utils/songsSortHelper';
 import { Track, LibraryFolder, ScanProgressPayload } from '../types';
 import './Pages.css';
 
@@ -101,29 +102,7 @@ export const Songs: React.FC<SongsProps> = ({
   });
 
   // 2. Sort order
-  const displayTracks = [...filteredTracks].sort((a, b) => {
-    const activeSort =
-      selectedFilter === 'recent' && selectedSort === 'title-asc'
-        ? 'date-desc'
-        : selectedSort;
-
-    switch (activeSort) {
-      case 'title-asc':
-        return a.title.localeCompare(b.title, undefined, { sensitivity: 'base' });
-
-      case 'title-desc':
-        return b.title.localeCompare(a.title, undefined, { sensitivity: 'base' });
-
-      case 'date-desc':
-        return (parseInt(b.date_added, 10) || 0) - (parseInt(a.date_added, 10) || 0);
-
-      case 'date-asc':
-        return (parseInt(a.date_added, 10) || 0) - (parseInt(b.date_added, 10) || 0);
-
-      default:
-        return a.title.localeCompare(b.title, undefined, { sensitivity: 'base' });
-    }
-  });
+  const displayTracks = sortSongs(filteredTracks, selectedSort);
 
   return (
     <div className="page-container motion-fade-in">
